@@ -1,0 +1,7 @@
+{
+	"name": "@darbot-code/config-typescript",
+	"private": true,
+	"publishConfig": {
+		"access": "public"
+	}
+}
