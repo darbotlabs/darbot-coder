@@ -1,10 +1,39 @@
+🤖 darbot-coder
+
+> **AI A**darbot-coder** is an AI-Whether you're seeking a flexible coding partner, a system architect, or specialized roles like a QA engineer or product manager, darbot-coder can help you build software more efficiently.owered **autonomous coding agent orchestration platform** that lives in your editor. Building on Darbot's foundation, darbot-coder can:
+
+- Communicate in natural language
+- Read and write files dir## License
+
+[Apache 2.0 © 2025 Darbot Framework](./LICENSE)
+
+---
+
+**Enjoy darbot-coder!** Whether you keep it on a short leash or let it roam autonomously, we can't wait to see what you build. If you have questions or feature ideas, drop by our community. Happy coding!n your workspace
+- Run terminal commands
+- Automate browser actions
+- Integrate with any OpenAI-compatible or custom API/model
+- Adapt its "personality" and capabilities through **Custom Modes**
+- **Orchestrate multiple AI agents** for complex workflows
+- **Optimize costs** through intelligent model routing
+
+Whether you're seeking a flexible coding partner, a system architect, or specialized roles like a QA engineer or product manager, darbot-coder can help you build software more efficiently through intelligent agent coordination.stration Platform for Software Development**
+
+## 🙏 **Attribution & Inspiration**
+
+**darbot-coder is a derivative work based on open-source AI coding tools**, building upon excellent foundations in AI-assisted coding. We are deeply grateful to the open-source community for their foundational work that made this orchestration platform possible.
+
+**darbot-coder** creates an AI agent orchestration platform that embodies the **darbotian philosophy**: *"Proficiency and determination through ethical results driven outcomes."*
+
+**Key features:**
+- **Multi-agent coordination** for complex workflows
+- **Intelligent task orchestration** with parallel execution
+- **Cost optimization** through smart routing
+- **Darbotian philosophy** integration for ethical AI development
+<br>
+<br>
+
 <div align="center">
-
-<img src="./assets/darbot-coder_master-4k_transparent-dark-only.png" alt="darbot-coder" width="256" height="256" />
-
-# 🤖 darbot-coder
-
-> **AI-powered autonomous coding agent orchestration platform** that lives in your editor. Building on Darbot's foundation, darbot-coder can orchestrate multiple AI agents for complex workflows while optimizing costs through intelligent model routing.
 
 <a href="https://marketplace.visualstudio.com/items?itemName=DarbotFramework.darbot-coder" target="_blank"><img src="https://img.shields.io/badge/Download%20on%20VS%20Marketplace-blue?style=for-the-badge&logo=visualstudiocode&logoColor=white" alt="Download on VS Marketplace"></a>
 <a href="https://github.com/DarbotFramework/darbot-coder/discussions/categories/feature-requests" target="_blank"><img src="https://img.shields.io/badge/Feature%20Requests-yellow?style=for-the-badge" alt="Feature Requests"></a>
@@ -15,16 +44,14 @@
 
 **darbot-coder** is an AI-powered **autonomous coding agent** that lives in your editor. This orchestration platform can:
 
-- **Communicate in natural language**
-- **Read and write files** directly in your workspace
-- **Run terminal commands**
-- **Automate browser actions**
-- **Integrate with any OpenAI-compatible or custom API/model**
-- **Adapt its "personality" and capabilities** through **Custom Modes**
-- **Orchestrate multiple AI agents** for complex workflows
-- **Optimize costs** through intelligent model routing
+- Communicate in natural language
+- Read and write files directly in your workspace
+- Run terminal commands
+- Automate browser actions
+- Integrate with any OpenAI-compatible or custom API/model
+- Adapt its “personality” and capabilities through **Custom Modes**
 
-Whether you're seeking a flexible coding partner, a system architect, or specialized roles like a QA engineer or product manager, darbot-coder can help you build software more efficiently through intelligent agent coordination.
+Whether you’re seeking a flexible coding partner, a system architect, or specialized roles like a QA engineer or product manager, Darbot Code can help you build software more efficiently.
 
 Check out the [CHANGELOG](CHANGELOG.md) for detailed updates and fixes.
 
@@ -105,14 +132,6 @@ Make darbot-coder work your way with:
 
 ---
 
-## 🙏 **Attribution & Inspiration**
-
-**darbot-coder is a derivative work based on open-source AI coding tools**, building upon excellent foundations in AI-assisted coding. We are deeply grateful to the open-source community for their foundational work that made this orchestration platform possible.
-
-**darbot-coder** creates an AI agent orchestration platform that embodies the **darbotian philosophy**: *"Proficiency and determination through ethical results driven outcomes."*
-
----
-
 ## Local Setup & Development
 
 1. **Clone** the repo:
@@ -186,6 +205,9 @@ We use [changesets](https://github.com/changesets/changesets) for versioning and
 **Please note** that Darbot Code, Inc does **not** make any representations or warranties regarding any code, models, or other tools provided or made available in connection with Darbot Code, any associated third-party tools, or any resulting outputs. You assume **all risks** associated with the use of any such tools or outputs; such tools are provided on an **"AS IS"** and **"AS AVAILABLE"** basis. Such risks may include, without limitation, intellectual property infringement, cyber vulnerabilities or attacks, bias, inaccuracies, errors, defects, viruses, downtime, property loss or damage, and/or personal injury. You are solely responsible for your use of any such tools or outputs (including, without limitation, the legality, appropriateness, and results thereof).
 
 ---
+                                                                                                                                                                                         |
+
+<!-- END CONTRIBUTORS SECTION -->
 
 ## License
 
@@ -193,4 +215,4 @@ We use [changesets](https://github.com/changesets/changesets) for versioning and
 
 ---
 
-**Enjoy darbot-coder!** Whether you keep it on a short leash or let it roam autonomously, we can't wait to see what you build. If you have questions or feature ideas, drop by our community. Happy coding!
+**Enjoy DR-Coder!** Whether you keep it on a short leash or let it roam autonomously, we can’t wait to see what you build. If you have questions or feature ideas, drop by our [Reddit community](https://www.reddit.com/r/RooCode/) or [Discord](https://discord.gg/roocode). Happy coding!
