@@ -1394,10 +1394,8 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 								</div>
 								<VSCodeRadioGroup
 									value={newModeSource}
-									onChange={(e: Event | React.FormEvent<HTMLElement>) => {
-										const target = ((e as CustomEvent)?.detail?.target ||
-											(e.target as HTMLInputElement)) as HTMLInputElement
-										setNewModeSource(target.value as ModeSource)
+									onChange={(value: string) => {
+										setNewModeSource(value as ModeSource)
 									}}>
 									<VSCodeRadio value="global">
 										{t("prompts:createModeDialog.saveLocation.global.label")}

@@ -18,7 +18,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	listApiConfigMeta: any[]
 	maxOpenTabsContext: number
 	maxWorkspaceFiles: number
-	showIgnoredFiles?: boolean
+	showDarbotIgnoredFiles?: boolean
 	maxReadFileLine?: number
 	maxConcurrentFileReads?: number
 	profileThresholds?: Record<string, number>
@@ -27,7 +27,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "autoCondenseContextPercent"
 		| "maxOpenTabsContext"
 		| "maxWorkspaceFiles"
-		| "showIgnoredFiles"
+		| "showDarbotIgnoredFiles"
 		| "maxReadFileLine"
 		| "maxConcurrentFileReads"
 		| "profileThresholds"
@@ -40,7 +40,7 @@ export const ContextManagementSettings = ({
 	listApiConfigMeta,
 	maxOpenTabsContext,
 	maxWorkspaceFiles,
-	showIgnoredFiles,
+	showDarbotIgnoredFiles,
 	setCachedStateField,
 	maxReadFileLine,
 	maxConcurrentFileReads,
@@ -149,8 +149,8 @@ export const ContextManagementSettings = ({
 
 				<div>
 					<VSCodeCheckbox
-						checked={showIgnoredFiles}
-						onChange={(e: any) => setCachedStateField("showIgnoredFiles", e.target.checked)}
+						checked={showDarbotIgnoredFiles}
+						onChange={(e: any) => setCachedStateField("showDarbotIgnoredFiles", e.target.checked)}
 						data-testid="show-darbotignored-files-checkbox">
 						<label className="block font-medium mb-1">
 							{t("settings:contextManagement.darbotignore.label")}
