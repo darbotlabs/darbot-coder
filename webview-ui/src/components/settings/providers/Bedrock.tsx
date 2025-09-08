@@ -39,7 +39,7 @@ export const Bedrock = ({ apiConfiguration, setApiConfigurationField, selectedMo
 		<>
 			<VSCodeRadioGroup
 				value={apiConfiguration?.awsUseProfile ? "profile" : "credentials"}
-				onChange={(value) => handleInputChange("awsUseProfile", () => value === "profile")("")}>
+				onChange={handleInputChange("awsUseProfile", (value) => value === "profile")}>
 				<VSCodeRadio value="credentials">{t("settings:providers.awsCredentials")}</VSCodeRadio>
 				<VSCodeRadio value="profile">{t("settings:providers.awsProfile")}</VSCodeRadio>
 			</VSCodeRadioGroup>
