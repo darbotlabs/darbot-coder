@@ -46,7 +46,7 @@ describe("ContextManagementSettings", () => {
 		listApiConfigMeta: [],
 		maxOpenTabsContext: 20,
 		maxWorkspaceFiles: 200,
-		showIgnoredFiles: false,
+		showDarbotIgnoredFiles: false,
 		setCachedStateField: vitest.fn(),
 		profileThresholds: {},
 	}
@@ -67,8 +67,8 @@ describe("ContextManagementSettings", () => {
 		expect(workspaceFilesSlider).toBeInTheDocument()
 
 		// Show .darbotignore'd files
-		const showIgnoredFilesCheckbox = screen.getByTestId("show-darbotignored-files-checkbox")
-		expect(showIgnoredFilesCheckbox).toBeInTheDocument()
+		const showDarbotIgnoredFilesCheckbox = screen.getByTestId("show-darbotignored-files-checkbox")
+		expect(showDarbotIgnoredFilesCheckbox).toBeInTheDocument()
 		expect(screen.getByTestId("show-darbotignored-files-checkbox")).not.toBeChecked()
 	})
 
@@ -116,7 +116,7 @@ describe("ContextManagementSettings", () => {
 		const checkbox = screen.getByTestId("show-darbotignored-files-checkbox")
 		fireEvent.click(checkbox)
 
-		expect(defaultProps.setCachedStateField).toHaveBeenCalledWith("showIgnoredFiles", true)
+		expect(defaultProps.setCachedStateField).toHaveBeenCalledWith("showDarbotIgnoredFiles", true)
 	})
 
 	it("renders max read file line controls", () => {
@@ -309,7 +309,7 @@ describe("ContextManagementSettings", () => {
 		it("handles undefined optional props gracefully", () => {
 			const propsWithUndefined = {
 				...defaultProps,
-				showIgnoredFiles: undefined,
+				showDarbotIgnoredFiles: undefined,
 				maxReadFileLine: undefined,
 			}
 

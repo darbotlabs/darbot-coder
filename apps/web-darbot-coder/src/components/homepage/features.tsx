@@ -85,10 +85,6 @@ export function Features() {
 		visible: {
 			opacity: 1,
 			y: 0,
-			transition: {
-				duration: 0.6,
-				ease: [0.21, 0.45, 0.27, 0.9],
-			},
 		},
 	}
 
@@ -98,10 +94,6 @@ export function Features() {
 		},
 		visible: {
 			opacity: 1,
-			transition: {
-				duration: 1.2,
-				ease: "easeOut",
-			},
 		},
 	}
 
@@ -125,7 +117,7 @@ export function Features() {
 						viewport={{ once: true }}
 						transition={{
 							duration: 0.6,
-							ease: [0.21, 0.45, 0.27, 0.9],
+							ease: "easeInOut",
 						}}>
 						<h2 className="bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
 							Powerful features for modern developers.

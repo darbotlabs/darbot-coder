@@ -87,7 +87,7 @@ export default defineConfig(({ mode }) => {
 			alias: {
 				"@": resolve(__dirname, "./src"),
 				"@src": resolve(__dirname, "./src"),
-				"@darbot": resolve(__dirname, "./src/shared"),
+				"@darbot": resolve(__dirname, "../src/shared"),
 			},
 		},
 		build: {

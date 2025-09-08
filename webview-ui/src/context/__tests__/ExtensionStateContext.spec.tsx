@@ -7,18 +7,18 @@ import { ExtensionState } from "@darbot/ExtensionMessage"
 import { ExtensionStateContextProvider, useExtensionState, mergeExtensionState } from "../ExtensionStateContext"
 
 const TestComponent = () => {
-	const { allowedCommands, setAllowedCommands, soundEnabled, showIgnoredFiles, setshowIgnoredFiles } =
+	const { allowedCommands, setAllowedCommands, soundEnabled, showDarbotIgnoredFiles, setShowDarbotIgnoredFiles } =
 		useExtensionState()
 
 	return (
 		<div>
 			<div data-testid="allowed-commands">{JSON.stringify(allowedCommands)}</div>
 			<div data-testid="sound-enabled">{JSON.stringify(soundEnabled)}</div>
-			<div data-testid="show-darbotignored-files">{JSON.stringify(showIgnoredFiles)}</div>
+			<div data-testid="show-darbotignored-files">{JSON.stringify(showDarbotIgnoredFiles)}</div>
 			<button data-testid="update-button" onClick={() => setAllowedCommands(["npm install", "git status"])}>
 				Update Commands
 			</button>
-			<button data-testid="toggle-darbotignore-button" onClick={() => setshowIgnoredFiles(!showIgnoredFiles)}>
+			<button data-testid="toggle-darbotignore-button" onClick={() => setShowDarbotIgnoredFiles(!showDarbotIgnoredFiles)}>
 				Update Commands
 			</button>
 		</div>
@@ -64,7 +64,7 @@ describe("ExtensionStateContext", () => {
 		expect(JSON.parse(screen.getByTestId("sound-enabled").textContent!)).toBe(false)
 	})
 
-	it("initializes with showIgnoredFiles set to true", () => {
+	it("initializes with showDarbotIgnoredFiles set to true", () => {
 		render(
 			<ExtensionStateContextProvider>
 				<TestComponent />
@@ -74,7 +74,7 @@ describe("ExtensionStateContext", () => {
 		expect(JSON.parse(screen.getByTestId("show-darbotignored-files").textContent!)).toBe(true)
 	})
 
-	it("updates showIgnoredFiles through setshowIgnoredFiles", () => {
+	it("updates showDarbotIgnoredFiles through setShowDarbotIgnoredFiles", () => {
 		render(
 			<ExtensionStateContextProvider>
 				<TestComponent />
@@ -198,7 +198,7 @@ describe("mergeExtensionState", () => {
 			maxWorkspaceFiles: 100,
 			apiConfiguration: { providerId: "openrouter" } as ProviderSettings,
 			telemetrySetting: "unset",
-			showIgnoredFiles: true,
+			showDarbotIgnoredFiles: true,
 			renderContext: "sidebar",
 			maxReadFileLine: 500,
 			cloudUserInfo: null,

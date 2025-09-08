@@ -1,14 +1,11 @@
 import React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 
 import { Providers } from "@/components/providers"
 
 import Shell from "./shell"
 
 import "./globals.css"
-
-const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
 	title: "Darbot Coder – Your AI-Powered Dev Team in VS Code",
@@ -51,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 					href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css"
 				/>
 			</head>
-			<body className={inter.className}>
+			<body className="font-sans">
 				<div itemScope itemType="https://schema.org/WebSite">
 					<link itemProp="url" href="https://github.com/DarbotLabs/darbot-coder" />
 					<meta itemProp="name" content="darbot-coder" />
