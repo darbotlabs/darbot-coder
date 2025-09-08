@@ -18,12 +18,12 @@ import fs from "fs/promises"
  *
  * @example Usage:
  * ```typescript
- * const globalDir = getGlobalRooDirectory()
+ * const globalDir = getGlobalDarbotDirectory()
  * // Returns: "/Users/john/.darbot" (on macOS/Linux)
  * // Returns: "C:\\Users\\john\\.darbot" (on Windows)
  * ```
  */
-export function getGlobalRooDirectory(): string {
+export function getGlobalDarbotDirectory(): string {
 	const homeDir = os.homedir()
 	return path.join(homeDir, ".darbot")
 }
@@ -36,10 +36,10 @@ export function getGlobalRooDirectory(): string {
  *
  * @example
  * ```typescript
- * const projectDir = getProjectRooDirectoryForCwd('/Users/john/my-project')
+ * const projectDir = getProjectDarbotDirectoryForCwd('/Users/john/my-project')
  * // Returns: "/Users/john/my-project/.darbot"
  *
- * const windowsProjectDir = getProjectRooDirectoryForCwd('C:\\Users\\john\\my-project')
+ * const windowsProjectDir = getProjectDarbotDirectoryForCwd('C:\\Users\\john\\my-project')
  * // Returns: "C:\\Users\\john\\my-project\\.darbot"
  * ```
  *
@@ -57,7 +57,7 @@ export function getGlobalRooDirectory(): string {
  * └── package.json
  * ```
  */
-export function getProjectRooDirectoryForCwd(cwd: string): string {
+export function getProjectDarbotDirectoryForCwd(cwd: string): string {
 	return path.join(cwd, ".darbot")
 }
 
@@ -120,7 +120,7 @@ export async function readFileIfExists(filePath: string): Promise<string | null>
  * @example
  * ```typescript
  * // For a project at /Users/john/my-project
- * const directories = getRooDirectoriesForCwd('/Users/john/my-project')
+ * const directories = getDarbotDirectoriesForCwd('/Users/john/my-project')
  * // Returns:
  * // [
  * //   '/Users/john/.darbot',           // Global directory
@@ -144,14 +144,14 @@ export async function readFileIfExists(filePath: string): Promise<string | null>
  *         └── index.ts
  * ```
  */
-export function getRooDirectoriesForCwd(cwd: string): string[] {
+export function getDarbotDirectoriesForCwd(cwd: string): string[] {
 	const directories: string[] = []
 
 	// Add global directory first
-	directories.push(getGlobalRooDirectory())
+	directories.push(getGlobalDarbotDirectory())
 
 	// Add project-local directory second
-	directories.push(getProjectRooDirectoryForCwd(cwd))
+	directories.push(getProjectDarbotDirectoryForCwd(cwd))
 
 	return directories
 }
@@ -215,8 +215,8 @@ export async function loadConfiguration(
 	project: string | null
 	merged: string
 }> {
-	const globalDir = getGlobalRooDirectory()
-	const projectDir = getProjectRooDirectoryForCwd(cwd)
+	const globalDir = getGlobalDarbotDirectory()
+	const projectDir = getProjectDarbotDirectoryForCwd(cwd)
 
 	const globalFilePath = path.join(globalDir, relativePath)
 	const projectFilePath = path.join(projectDir, relativePath)
@@ -249,4 +249,4 @@ export async function loadConfiguration(
 }
 
 // Export with backward compatibility alias
-export const loadRooConfiguration: typeof loadConfiguration = loadConfiguration
+export const loadDarbotConfiguration: typeof loadConfiguration = loadConfiguration

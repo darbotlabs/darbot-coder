@@ -490,7 +490,7 @@ describe("ChatTextArea", () => {
 		})
 
 		describe("prompt history navigation", () => {
-			const mockClineMessages = [
+			const mockDarbotMessages = [
 				{ type: "say", say: "user_feedback", text: "First prompt", ts: 1000 },
 				{ type: "say", say: "user_feedback", text: "Second prompt", ts: 2000 },
 				{ type: "say", say: "user_feedback", text: "Third prompt", ts: 3000 },
@@ -504,7 +504,7 @@ describe("ChatTextArea", () => {
 						apiProvider: "anthropic",
 					},
 					taskHistory: [],
-					clineMessages: mockClineMessages,
+					darbotMessages: mockDarbotMessages,
 					cwd: "/test/workspace",
 				})
 			})
@@ -644,7 +644,7 @@ describe("ChatTextArea", () => {
 			})
 
 			it("should filter history by current workspace", () => {
-				const mixedClineMessages = [
+				const mixedDarbotMessages = [
 					{ type: "say", say: "user_feedback", text: "Workspace 1 prompt", ts: 1000 },
 					{ type: "say", say: "user_feedback", text: "Other workspace prompt", ts: 2000 },
 					{ type: "say", say: "user_feedback", text: "Workspace 1 prompt 2", ts: 3000 },
@@ -657,7 +657,7 @@ describe("ChatTextArea", () => {
 						apiProvider: "anthropic",
 					},
 					taskHistory: [],
-					clineMessages: mixedClineMessages,
+					darbotMessages: mixedDarbotMessages,
 					cwd: "/test/workspace",
 				})
 
@@ -685,7 +685,7 @@ describe("ChatTextArea", () => {
 						apiProvider: "anthropic",
 					},
 					taskHistory: [],
-					clineMessages: [],
+					darbotMessages: [],
 					cwd: "/test/workspace",
 				})
 
@@ -702,7 +702,7 @@ describe("ChatTextArea", () => {
 			})
 
 			it("should ignore empty or whitespace-only messages", () => {
-				const clineMessagesWithEmpty = [
+				const darbotMessagesWithEmpty = [
 					{ type: "say", say: "user_feedback", text: "Valid prompt", ts: 1000 },
 					{ type: "say", say: "user_feedback", text: "", ts: 2000 },
 					{ type: "say", say: "user_feedback", text: "   ", ts: 3000 },
@@ -716,7 +716,7 @@ describe("ChatTextArea", () => {
 						apiProvider: "anthropic",
 					},
 					taskHistory: [],
-					clineMessages: clineMessagesWithEmpty,
+					darbotMessages: darbotMessagesWithEmpty,
 					cwd: "/test/workspace",
 				})
 
@@ -750,7 +750,7 @@ describe("ChatTextArea", () => {
 						apiProvider: "anthropic",
 					},
 					taskHistory: mockTaskHistory,
-					clineMessages: [], // No conversation messages
+					darbotMessages: [], // No conversation messages
 					cwd: "/test/workspace",
 				})
 
@@ -787,7 +787,7 @@ describe("ChatTextArea", () => {
 						{ task: "Task 1", workspace: "/test/workspace" },
 						{ task: "Task 2", workspace: "/test/workspace" },
 					],
-					clineMessages: [],
+					darbotMessages: [],
 					cwd: "/test/workspace",
 				})
 
@@ -807,7 +807,7 @@ describe("ChatTextArea", () => {
 						apiProvider: "anthropic",
 					},
 					taskHistory: [],
-					clineMessages: [
+					darbotMessages: [
 						{ type: "say", say: "user_feedback", text: "Message 1", ts: 1000 },
 						{ type: "say", say: "user_feedback", text: "Message 2", ts: 2000 },
 					],

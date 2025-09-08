@@ -12,7 +12,7 @@ import { Task } from "../task/Task"
 import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag, ToolResponse } from "../../shared/tools"
 import { formatResponse } from "../prompts/responses"
 import { unescapeHtmlEntities } from "../../utils/text-normalization"
-import { ExitCodeDetails, RooTerminalCallbacks, RooTerminalProcess } from "../../integrations/terminal/types"
+import { ExitCodeDetails, DarbotTerminalCallbacks, DarbotTerminalProcess } from "../../integrations/terminal/types"
 import { TerminalRegistry } from "../../integrations/terminal/TerminalRegistry"
 import { Terminal } from "../../integrations/terminal/Terminal"
 import { Package } from "../../shared/package"
@@ -21,7 +21,7 @@ import { t } from "../../i18n"
 class ShellIntegrationError extends Error {}
 
 export async function executeCommandTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -33,25 +33,25 @@ export async function executeCommandTool(
 
 	try {
 		if (block.partial) {
-			await cline.ask("command", removeClosingTag("command", command), block.partial).catch(() => {})
+			await darbot.ask("command", removeClosingTag("command", command), block.partial).catch(() => {})
 			return
 		} else {
 			if (!command) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("execute_command")
-				pushToolResult(await cline.sayAndCreateMissingParamError("execute_command", "command"))
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("execute_command")
+				pushToolResult(await darbot.sayAndCreateMissingParamError("execute_command", "command"))
 				return
 			}
 
-			const ignoredFileAttemptedToAccess = cline.darbotIgnoreController?.validateCommand(command)
+			const ignoredFileAttemptedToAccess = darbot.darbotIgnoreController?.validateCommand(command)
 
 			if (ignoredFileAttemptedToAccess) {
-				await cline.say("rooignore_error", ignoredFileAttemptedToAccess)
+				await darbot.say("darbotignore_error", ignoredFileAttemptedToAccess)
 				pushToolResult(formatResponse.toolError(formatResponse.darbotIgnoreError(ignoredFileAttemptedToAccess)))
 				return
 			}
 
-			cline.consecutiveMistakeCount = 0
+			darbot.consecutiveMistakeCount = 0
 
 			command = unescapeHtmlEntities(command) // Unescape HTML entities.
 			const didApprove = await askApproval("command", command)
@@ -60,14 +60,14 @@ export async function executeCommandTool(
 				return
 			}
 
-			const executionId = cline.lastMessageTs?.toString() ?? Date.now().toString()
-			const clineProvider = await cline.providerRef.deref()
-			const clineProviderState = await clineProvider?.getState()
+			const executionId = darbot.lastMessageTs?.toString() ?? Date.now().toString()
+			const darbotProvider = await darbot.providerRef.deref()
+			const darbotProviderState = await darbotProvider?.getState()
 			const {
 				terminalOutputLineLimit = 500,
 				terminalOutputCharacterLimit = DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
 				terminalShellIntegrationDisabled = false,
-			} = clineProviderState ?? {}
+			} = darbotProviderState ?? {}
 
 			// Get command execution timeout from VSCode configuration (in seconds)
 			const commandExecutionTimeoutSeconds = vscode.workspace
@@ -96,26 +96,26 @@ export async function executeCommandTool(
 			}
 
 			try {
-				const [rejected, result] = await executeCommand(cline, options)
+				const [rejected, result] = await executeCommand(darbot, options)
 
 				if (rejected) {
-					cline.didRejectTool = true
+					darbot.didRejectTool = true
 				}
 
 				pushToolResult(result)
 			} catch (error: unknown) {
 				const status: CommandExecutionStatus = { executionId, status: "fallback" }
-				clineProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
-				await cline.say("shell_integration_warning")
+				darbotProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
+				await darbot.say("shell_integration_warning")
 
 				if (error instanceof ShellIntegrationError) {
-					const [rejected, result] = await executeCommand(cline, {
+					const [rejected, result] = await executeCommand(darbot, {
 						...options,
 						terminalShellIntegrationDisabled: true,
 					})
 
 					if (rejected) {
-						cline.didRejectTool = true
+						darbot.didRejectTool = true
 					}
 
 					pushToolResult(result)
@@ -143,7 +143,7 @@ export type ExecuteCommandOptions = {
 }
 
 export async function executeCommand(
-	cline: Task,
+	darbot: Task,
 	{
 		executionId,
 		command,
@@ -159,11 +159,11 @@ export async function executeCommand(
 	let workingDir: string
 
 	if (!customCwd) {
-		workingDir = cline.cwd
+		workingDir = darbot.cwd
 	} else if (path.isAbsolute(customCwd)) {
 		workingDir = customCwd
 	} else {
-		workingDir = path.resolve(cline.cwd, customCwd)
+		workingDir = path.resolve(darbot.cwd, customCwd)
 	}
 
 	try {
@@ -180,11 +180,11 @@ export async function executeCommand(
 	let shellIntegrationError: string | undefined
 
 	const terminalProvider = terminalShellIntegrationDisabled ? "execa" : "vscode"
-	const clineProvider = await cline.providerRef.deref()
+	const darbotProvider = await darbot.providerRef.deref()
 
 	let accumulatedOutput = ""
-	const callbacks: RooTerminalCallbacks = {
-		onLine: async (lines: string, process: RooTerminalProcess) => {
+	const callbacks: DarbotTerminalCallbacks = {
+		onLine: async (lines: string, process: DarbotTerminalProcess) => {
 			accumulatedOutput += lines
 			const compressedOutput = Terminal.compressTerminalOutput(
 				accumulatedOutput,
@@ -192,14 +192,14 @@ export async function executeCommand(
 				terminalOutputCharacterLimit,
 			)
 			const status: CommandExecutionStatus = { executionId, status: "output", output: compressedOutput }
-			clineProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
+			darbotProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
 
 			if (runInBackground) {
 				return
 			}
 
 			try {
-				const { response, text, images } = await cline.ask("command_output", "")
+				const { response, text, images } = await darbot.ask("command_output", "")
 				runInBackground = true
 
 				if (response === "messageResponse") {
@@ -214,29 +214,29 @@ export async function executeCommand(
 				terminalOutputLineLimit,
 				terminalOutputCharacterLimit,
 			)
-			cline.say("command_output", result)
+			darbot.say("command_output", result)
 			completed = true
 		},
 		onShellExecutionStarted: (pid: number | undefined) => {
 			console.log(`[executeCommand] onShellExecutionStarted: ${pid}`)
 			const status: CommandExecutionStatus = { executionId, status: "started", pid, command }
-			clineProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
+			darbotProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
 		},
 		onShellExecutionComplete: (details: ExitCodeDetails) => {
 			const status: CommandExecutionStatus = { executionId, status: "exited", exitCode: details.exitCode }
-			clineProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
+			darbotProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
 			exitDetails = details
 		},
 	}
 
 	if (terminalProvider === "vscode") {
 		callbacks.onNoShellIntegration = async (error: string) => {
-			TelemetryService.instance.captureShellIntegrationError(cline.taskId)
+			TelemetryService.instance.captureShellIntegrationError(darbot.taskId)
 			shellIntegrationError = error
 		}
 	}
 
-	const terminal = await TerminalRegistry.getOrCreateTerminal(workingDir, !!customCwd, cline.taskId, terminalProvider)
+	const terminal = await TerminalRegistry.getOrCreateTerminal(workingDir, !!customCwd, darbot.taskId, terminalProvider)
 
 	if (terminal instanceof Terminal) {
 		terminal.terminal.show(true)
@@ -248,7 +248,7 @@ export async function executeCommand(
 	}
 
 	const process = terminal.runCommand(command, callbacks)
-	cline.terminalProcess = process
+	darbot.terminalProcess = process
 
 	// Implement command execution timeout (skip if timeout is 0)
 	if (commandExecutionTimeout > 0) {
@@ -259,8 +259,8 @@ export async function executeCommand(
 			timeoutId = setTimeout(() => {
 				isTimedOut = true
 				// Try to abort the process
-				if (cline.terminalProcess) {
-					cline.terminalProcess.abort()
+				if (darbot.terminalProcess) {
+					darbot.terminalProcess.abort()
 				}
 				reject(new Error(`Command execution timed out after ${commandExecutionTimeout}ms`))
 			}, commandExecutionTimeout)
@@ -272,15 +272,15 @@ export async function executeCommand(
 			if (isTimedOut) {
 				// Handle timeout case
 				const status: CommandExecutionStatus = { executionId, status: "timeout" }
-				clineProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
+				darbotProvider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
 
 				// Add visual feedback for timeout
-				await cline.say(
+				await darbot.say(
 					"error",
 					t("common:errors:command_timeout", { seconds: commandExecutionTimeoutSeconds }),
 				)
 
-				cline.terminalProcess = undefined
+				darbot.terminalProcess = undefined
 
 				return [
 					false,
@@ -292,14 +292,14 @@ export async function executeCommand(
 			if (timeoutId) {
 				clearTimeout(timeoutId)
 			}
-			cline.terminalProcess = undefined
+			darbot.terminalProcess = undefined
 		}
 	} else {
 		// No timeout - just wait for the process to complete
 		try {
 			await process
 		} finally {
-			cline.terminalProcess = undefined
+			darbot.terminalProcess = undefined
 		}
 	}
 
@@ -316,7 +316,7 @@ export async function executeCommand(
 
 	if (message) {
 		const { text, images } = message
-		await cline.say("user_feedback", text, images)
+		await darbot.say("user_feedback", text, images)
 
 		return [
 			true,

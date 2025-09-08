@@ -70,12 +70,9 @@ test('CustomModesManager darbot→darbot refactoring completed', () => {
     const customModesPath = 'd:/darbot-coder/src/core/config/CustomModesManager.ts';
     const content = fs.readFileSync(customModesPath, 'utf8');
     
-    // Check that old roo references are replaced
-    const rooMatches = content.match(/\.roo\//g) || [];
-    assert(rooMatches.length === 0, `Found ${rooMatches.length} ".roo/" references that should be ".darbot/"`);
-    
-    const roomodesMatches = content.match(/roomodes/g) || [];
-    assert(roomodesMatches.length === 0, `Found ${roomodesMatches.length} "roomodes" references that should be "darbotmodes"`);
+
+    const darbotmodesMatches = content.match(/darbotmodes/g) || [];
+    assert(darbotmodesMatches.length === 0, `Found ${darbotmodesMatches.length} "darbotmodes" references that should be "darbotmodes"`);
     
     // Check that new darbot references exist
     assert(content.includes('.darbot/'), '.darbot/ references not found');

@@ -10,14 +10,14 @@ import {
 	type Language,
 	type ProviderSettings,
 	type GlobalState,
-	type ClineMessage,
+	type DarbotMessage,
 	TelemetryEventName,
 } from "@darbot-code/types"
 import { CloudService } from "@darbot-code/cloud"
 import { TelemetryService } from "@darbot-code/telemetry"
 import { type ApiMessage } from "../task-persistence/apiMessages"
 
-import { ClineProvider } from "./ClineProvider"
+import { DarbotProvider } from "./DarbotProvider"
 import { changeLanguage, t } from "../../i18n"
 import { Package } from "../../shared/package"
 import { RouterName, toRouterName, ModelRecord } from "../../shared/api"
@@ -56,7 +56,7 @@ import { MarketplaceManager, MarketplaceItemType } from "../../services/marketpl
 import { setPendingTodoList } from "../tools/updateTodoListTool"
 
 export const webviewMessageHandler = async (
-	provider: ClineProvider,
+	provider: DarbotProvider,
 	message: WebviewMessage,
 	marketplaceManager?: MarketplaceManager,
 ) => {
@@ -68,10 +68,10 @@ export const webviewMessageHandler = async (
 	/**
 	 * Shared utility to find message indices based on timestamp
 	 */
-	const findMessageIndices = (messageTs: number, currentCline: any) => {
+	const findMessageIndices = (messageTs: number, currentDarbot: any) => {
 		const timeCutoff = messageTs - 1000 // 1 second buffer before the message
-		const messageIndex = currentCline.clineMessages.findIndex((msg: ClineMessage) => msg.ts && msg.ts >= timeCutoff)
-		const apiConversationHistoryIndex = currentCline.apiConversationHistory.findIndex(
+		const messageIndex = currentDarbot.darbotMessages.findIndex((msg: DarbotMessage) => msg.ts && msg.ts >= timeCutoff)
+		const apiConversationHistoryIndex = currentDarbot.apiConversationHistory.findIndex(
 			(msg: ApiMessage) => msg.ts && msg.ts >= timeCutoff,
 		)
 		return { messageIndex, apiConversationHistoryIndex }
@@ -81,16 +81,16 @@ export const webviewMessageHandler = async (
 	 * Removes the target message and all subsequent messages
 	 */
 	const removeMessagesThisAndSubsequent = async (
-		currentCline: any,
+		currentDarbot: any,
 		messageIndex: number,
 		apiConversationHistoryIndex: number,
 	) => {
 		// Delete this message and all that follow
-		await currentCline.overwriteClineMessages(currentCline.clineMessages.slice(0, messageIndex))
+		await currentDarbot.overwriteDarbotMessages(currentDarbot.darbotMessages.slice(0, messageIndex))
 
 		if (apiConversationHistoryIndex !== -1) {
-			await currentCline.overwriteApiConversationHistory(
-				currentCline.apiConversationHistory.slice(0, apiConversationHistoryIndex),
+			await currentDarbot.overwriteApiConversationHistory(
+				currentDarbot.apiConversationHistory.slice(0, apiConversationHistoryIndex),
 			)
 		}
 	}
@@ -110,20 +110,20 @@ export const webviewMessageHandler = async (
 	 * Handles confirmed message deletion from webview dialog
 	 */
 	const handleDeleteMessageConfirm = async (messageTs: number): Promise<void> => {
-		// Only proceed if we have a current cline
-		if (provider.getCurrentCline()) {
-			const currentCline = provider.getCurrentCline()!
-			const { messageIndex, apiConversationHistoryIndex } = findMessageIndices(messageTs, currentCline)
+		// Only proceed if we have a current darbot
+		if (provider.getCurrentDarbot()) {
+			const currentDarbot = provider.getCurrentDarbot()!
+			const { messageIndex, apiConversationHistoryIndex } = findMessageIndices(messageTs, currentDarbot)
 
 			if (messageIndex !== -1) {
 				try {
-					const { historyItem } = await provider.getTaskWithId(currentCline.taskId)
+					const { historyItem } = await provider.getTaskWithId(currentDarbot.taskId)
 
 					// Delete this message and all subsequent messages
-					await removeMessagesThisAndSubsequent(currentCline, messageIndex, apiConversationHistoryIndex)
+					await removeMessagesThisAndSubsequent(currentDarbot, messageIndex, apiConversationHistoryIndex)
 
 					// Initialize with history item after deletion
-					await provider.initClineWithHistoryItem(historyItem)
+					await provider.initDarbotWithHistoryItem(historyItem)
 				} catch (error) {
 					console.error("Error in delete message:", error)
 					vscode.window.showErrorMessage(
@@ -155,17 +155,17 @@ export const webviewMessageHandler = async (
 		editedContent: string,
 		images?: string[],
 	): Promise<void> => {
-		// Only proceed if we have a current cline
-		if (provider.getCurrentCline()) {
-			const currentCline = provider.getCurrentCline()!
+		// Only proceed if we have a current darbot
+		if (provider.getCurrentDarbot()) {
+			const currentDarbot = provider.getCurrentDarbot()!
 
 			// Use findMessageIndices to find messages based on timestamp
-			const { messageIndex, apiConversationHistoryIndex } = findMessageIndices(messageTs, currentCline)
+			const { messageIndex, apiConversationHistoryIndex } = findMessageIndices(messageTs, currentDarbot)
 
 			if (messageIndex !== -1) {
 				try {
 					// Edit this message and delete subsequent
-					await removeMessagesThisAndSubsequent(currentCline, messageIndex, apiConversationHistoryIndex)
+					await removeMessagesThisAndSubsequent(currentDarbot, messageIndex, apiConversationHistoryIndex)
 
 					// Process the edited message as a regular user message
 					// This will add it to the conversation and trigger an AI response
@@ -284,10 +284,10 @@ export const webviewMessageHandler = async (
 			provider.isViewLaunched = true
 			break
 		case "newTask":
-			// Initializing new instance of Cline will make sure that any
+			// Initializing new instance of darbot will make sure that any
 			// agentically running promises in old instance don't affect our new
 			// task. This essentially creates a fresh slate for the new task.
-			await provider.initClineWithTask(message.text, message.images)
+			await provider.initDarbotWithTask(message.text, message.images)
 			break
 		case "customInstructions":
 			await provider.updateCustomInstructions(message.text)
@@ -341,7 +341,7 @@ export const webviewMessageHandler = async (
 			await provider.postStateToWebview()
 			break
 		case "askResponse":
-			provider.getCurrentCline()?.handleWebviewAskResponse(message.askResponse!, message.text, message.images)
+			provider.getCurrentDarbot()?.handleWebviewAskResponse(message.askResponse!, message.text, message.images)
 			break
 		case "autoCondenseContext":
 			await updateGlobalState("autoCondenseContext", message.bool)
@@ -353,13 +353,13 @@ export const webviewMessageHandler = async (
 			break
 		case "terminalOperation":
 			if (message.terminalOperation) {
-				provider.getCurrentCline()?.handleTerminalOperation(message.terminalOperation)
+				provider.getCurrentDarbot()?.handleTerminalOperation(message.terminalOperation)
 			}
 			break
 		case "clearTask":
 			// clear task resets the current session and allows for a new task to be started, if this session is a subtask - it allows the parent task to be resumed
 			// Check if the current task actually has a parent task
-			const currentTask = provider.getCurrentCline()
+			const currentTask = provider.getCurrentDarbot()
 			if (currentTask && currentTask.parentTask) {
 				await provider.finishSubTask(t("common:tasks.canceled"))
 			} else {
@@ -382,14 +382,14 @@ export const webviewMessageHandler = async (
 			})
 			break
 		case "exportCurrentTask":
-			const currentTaskId = provider.getCurrentCline()?.taskId
+			const currentTaskId = provider.getCurrentDarbot()?.taskId
 			if (currentTaskId) {
 				provider.exportTaskWithId(currentTaskId)
 			}
 			break
 		case "shareCurrentTask":
-			const shareTaskId = provider.getCurrentCline()?.taskId
-			const clineMessages = provider.getCurrentCline()?.clineMessages
+			const shareTaskId = provider.getCurrentDarbot()?.taskId
+			const darbotMessages = provider.getCurrentDarbot()?.darbotMessages
 			if (!shareTaskId) {
 				vscode.window.showErrorMessage(t("common:errors.share_no_active_task"))
 				break
@@ -397,7 +397,7 @@ export const webviewMessageHandler = async (
 
 			try {
 				const visibility = message.visibility || "organization"
-				const result = await CloudService.instance.shareTask(shareTaskId, visibility, clineMessages)
+				const result = await CloudService.instance.shareTask(shareTaskId, visibility, darbotMessages)
 
 				if (result.success && result.shareUrl) {
 					// Show success notification
@@ -695,7 +695,7 @@ export const webviewMessageHandler = async (
 			const result = checkoutDiffPayloadSchema.safeParse(message.payload)
 
 			if (result.success) {
-				await provider.getCurrentCline()?.checkpointDiff(result.data)
+				await provider.getCurrentDarbot()?.checkpointDiff(result.data)
 			}
 
 			break
@@ -706,13 +706,13 @@ export const webviewMessageHandler = async (
 				await provider.cancelTask()
 
 				try {
-					await pWaitFor(() => provider.getCurrentCline()?.isInitialized === true, { timeout: 3_000 })
+					await pWaitFor(() => provider.getCurrentDarbot()?.isInitialized === true, { timeout: 3_000 })
 				} catch (error) {
 					vscode.window.showErrorMessage(t("common:errors.checkpoint_timeout"))
 				}
 
 				try {
-					await provider.getCurrentCline()?.checkpointRestore(result.data)
+					await provider.getCurrentDarbot()?.checkpointRestore(result.data)
 				} catch (error) {
 					vscode.window.showErrorMessage(t("common:errors.checkpoint_failed"))
 				}
@@ -780,11 +780,11 @@ export const webviewMessageHandler = async (
 			}
 
 			const workspaceFolder = vscode.workspace.workspaceFolders[0]
-			const rooDir = path.join(workspaceFolder.uri.fsPath, ".darbot")
-			const mcpPath = path.join(rooDir, "mcp.json")
+			const darbotDir = path.join(workspaceFolder.uri.fsPath, ".darbot")
+			const mcpPath = path.join(darbotDir, "mcp.json")
 
 			try {
-				await fs.mkdir(rooDir, { recursive: true })
+				await fs.mkdir(darbotDir, { recursive: true })
 				const exists = await fileExistsAtPath(mcpPath)
 
 				if (!exists) {
@@ -1185,14 +1185,14 @@ export const webviewMessageHandler = async (
 			}
 			break
 		case "deleteMessage": {
-			if (provider.getCurrentCline() && typeof message.value === "number" && message.value) {
+			if (provider.getCurrentDarbot() && typeof message.value === "number" && message.value) {
 				await handleMessageModificationsOperation(message.value, "delete")
 			}
 			break
 		}
 		case "submitEditedMessage": {
 			if (
-				provider.getCurrentCline() &&
+				provider.getCurrentDarbot() &&
 				typeof message.value === "number" &&
 				message.value &&
 				message.editedMessageContent
@@ -1237,8 +1237,8 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("language", message.text as Language)
 			await provider.postStateToWebview()
 			break
-		case "showRooIgnoredFiles":
-			await updateGlobalState("showRooIgnoredFiles", message.bool ?? true)
+		case "showDarbotIgnoredFiles":
+			await updateGlobalState("showDarbotIgnoredFiles", message.bool ?? true)
 			await provider.postStateToWebview()
 			break
 		case "hasOpenedModeSelector":
@@ -1323,8 +1323,8 @@ export const webviewMessageHandler = async (
 					)
 
 					// Capture telemetry for prompt enhancement.
-					const currentCline = provider.getCurrentCline()
-					TelemetryService.instance.capturePromptEnhanced(currentCline?.taskId)
+					const currentDarbot = provider.getCurrentDarbot()
+					TelemetryService.instance.capturePromptEnhanced(currentDarbot?.taskId)
 
 					await provider.postMessageToWebview({ type: "enhancedPrompt", text: enhancedPrompt })
 				} catch (error) {
@@ -1923,7 +1923,7 @@ export const webviewMessageHandler = async (
 			provider.postMessageToWebview({ type: "action", action: "accountButtonClicked" })
 			break
 		}
-		case "rooCloudSignIn": {
+		case "darbotCloudSignIn": {
 			try {
 				TelemetryService.instance.captureEvent(TelemetryEventName.AUTHENTICATION_INITIATED)
 				await CloudService.instance.login()
@@ -1934,7 +1934,7 @@ export const webviewMessageHandler = async (
 
 			break
 		}
-		case "rooCloudSignOut": {
+		case "darbotCloudSignOut": {
 			try {
 				await CloudService.instance.logout()
 				await provider.postStateToWebview()

@@ -2,7 +2,7 @@ import { safeWriteJson } from "../../utils/safeWriteJson"
 import * as path from "path"
 import * as fs from "fs/promises"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { fileExistsAtPath } from "../../utils/fs"
 
@@ -17,7 +17,7 @@ export type ReadTaskMessagesOptions = {
 export async function readTaskMessages({
 	taskId,
 	globalStoragePath,
-}: ReadTaskMessagesOptions): Promise<ClineMessage[]> {
+}: ReadTaskMessagesOptions): Promise<DarbotMessage[]> {
 	const taskDir = await getTaskDirectoryPath(globalStoragePath, taskId)
 	const filePath = path.join(taskDir, GlobalFileNames.uiMessages)
 	const fileExists = await fileExistsAtPath(filePath)
@@ -30,7 +30,7 @@ export async function readTaskMessages({
 }
 
 export type SaveTaskMessagesOptions = {
-	messages: ClineMessage[]
+	messages: DarbotMessage[]
 	taskId: string
 	globalStoragePath: string
 }
@@ -40,3 +40,4 @@ export async function saveTaskMessages({ messages, taskId, globalStoragePath }: 
 	const filePath = path.join(taskDir, GlobalFileNames.uiMessages)
 	await safeWriteJson(filePath, messages)
 }
+

@@ -3,7 +3,7 @@ import { DeleteTaskDialog } from "./DeleteTaskDialog"
 import { BatchDeleteTaskDialog } from "./BatchDeleteTaskDialog"
 import { Virtuoso } from "react-virtuoso"
 
-import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField } from "../vscode-components"
 
 import {
 	Button,

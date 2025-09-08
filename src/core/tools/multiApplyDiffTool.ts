@@ -4,7 +4,7 @@ import fs from "fs/promises"
 import { TelemetryService } from "@darbot-code/telemetry"
 import { DEFAULT_WRITE_DELAY_MS } from "@darbot-code/types"
 
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { DarbotSayTool } from "../../shared/ExtensionMessage"
 import { getReadablePath } from "../../utils/path"
 import { Task } from "../task/Task"
 import { ToolUse, RemoveClosingTag, AskApproval, HandleError, PushToolResult } from "../../shared/tools"
@@ -51,7 +51,7 @@ interface ParsedXmlResult {
 }
 
 export async function applyDiffTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -59,7 +59,7 @@ export async function applyDiffTool(
 	removeClosingTag: RemoveClosingTag,
 ) {
 	// Check if MULTI_FILE_APPLY_DIFF experiment is enabled
-	const provider = cline.providerRef.deref()
+	const provider = darbot.providerRef.deref()
 	if (provider) {
 		const state = await provider.getState()
 		const isMultiFileApplyDiffEnabled = experiments.isEnabled(
@@ -69,7 +69,7 @@ export async function applyDiffTool(
 
 		// If experiment is disabled, use legacy tool
 		if (!isMultiFileApplyDiffEnabled) {
-			return applyDiffToolLegacy(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+			return applyDiffToolLegacy(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 		}
 	}
 
@@ -96,12 +96,12 @@ export async function applyDiffTool(
 			filePath = legacyPath
 		}
 
-		const sharedMessageProps: ClineSayTool = {
+		const sharedMessageProps: DarbotSayTool = {
 			tool: "appliedDiff",
-			path: getReadablePath(cline.cwd, filePath),
+			path: getReadablePath(darbot.cwd, filePath),
 		}
 		const partialMessage = JSON.stringify(sharedMessageProps)
-		await cline.ask("tool", partialMessage, block.partial).catch(() => {})
+		await darbot.ask("tool", partialMessage, block.partial).catch(() => {})
 		return
 	}
 
@@ -160,10 +160,10 @@ Expected structure:
 </args>
 
 Original error: ${errorMessage}`
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("apply_diff")
-			TelemetryService.instance.captureDiffApplicationError(cline.taskId, cline.consecutiveMistakeCount)
-			await cline.say("diff_error", `Failed to parse apply_diff XML: ${errorMessage}`)
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("apply_diff")
+			TelemetryService.instance.captureDiffApplicationError(darbot.taskId, darbot.consecutiveMistakeCount)
+			await darbot.say("diff_error", `Failed to parse apply_diff XML: ${errorMessage}`)
 			pushToolResult(detailedError)
 			return
 		}
@@ -181,9 +181,9 @@ Original error: ${errorMessage}`
 		}
 	} else {
 		// Neither new XML args nor old path/diff params are sufficient
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("apply_diff")
-		const errorMsg = await cline.sayAndCreateMissingParamError(
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("apply_diff")
+		const errorMsg = await darbot.sayAndCreateMissingParamError(
 			"apply_diff",
 			"args (or legacy 'path' and 'diff' parameters)",
 		)
@@ -193,10 +193,10 @@ Original error: ${errorMessage}`
 
 	// If no operations were extracted, bail out
 	if (Object.keys(operationsMap).length === 0) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("apply_diff")
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("apply_diff")
 		pushToolResult(
-			await cline.sayAndCreateMissingParamError(
+			await darbot.sayAndCreateMissingParamError(
 				"apply_diff",
 				usingLegacyParams
 					? "legacy 'path' and 'diff' (must be valid and non-empty)"
@@ -232,9 +232,9 @@ Original error: ${errorMessage}`
 			const { path: relPath, diff: diffItems } = operation
 
 			// Verify file access is allowed
-			const accessAllowed = cline.darbotIgnoreController?.validateAccess(relPath)
+			const accessAllowed = darbot.darbotIgnoreController?.validateAccess(relPath)
 			if (!accessAllowed) {
-				await cline.say("rooignore_error", relPath)
+				await darbot.say("darbotignore_error", relPath)
 				updateOperationResult(relPath, {
 					status: "blocked",
 					error: formatResponse.darbotIgnoreError(relPath),
@@ -243,10 +243,10 @@ Original error: ${errorMessage}`
 			}
 
 			// Check if file is write-protected
-			const isWriteProtected = cline.darbotProtectedController?.isWriteProtected(relPath) || false
+			const isWriteProtected = darbot.darbotProtectedController?.isWriteProtected(relPath) || false
 
 			// Verify file exists
-			const absolutePath = path.resolve(cline.cwd, relPath)
+			const absolutePath = path.resolve(darbot.cwd, relPath)
 			const fileExists = await fileExistsAtPath(absolutePath)
 			if (!fileExists) {
 				updateOperationResult(relPath, {
@@ -269,12 +269,12 @@ Original error: ${errorMessage}`
 		if (operationsToApprove.length > 1) {
 			// Check if any files are write-protected
 			const hasProtectedFiles = operationsToApprove.some(
-				(opResult) => cline.darbotProtectedController?.isWriteProtected(opResult.path) || false,
+				(opResult) => darbot.darbotProtectedController?.isWriteProtected(opResult.path) || false,
 			)
 
 			// Prepare batch diff data
 			const batchDiffs = operationsToApprove.map((opResult) => {
-				const readablePath = getReadablePath(cline.cwd, opResult.path)
+				const readablePath = getReadablePath(darbot.cwd, opResult.path)
 				const changeCount = opResult.diffItems?.length || 0
 				const changeText = changeCount === 1 ? "1 change" : `${changeCount} changes`
 
@@ -294,15 +294,15 @@ Original error: ${errorMessage}`
 				tool: "appliedDiff",
 				batchDiffs,
 				isProtected: hasProtectedFiles,
-			} satisfies ClineSayTool)
+			} satisfies DarbotSayTool)
 
-			const { response, text, images } = await cline.ask("tool", completeMessage, hasProtectedFiles)
+			const { response, text, images } = await darbot.ask("tool", completeMessage, hasProtectedFiles)
 
 			// Process batch response
 			if (response === "yesButtonClicked") {
 				// Approve all files
 				if (text) {
-					await cline.say("user_feedback", text, images)
+					await darbot.say("user_feedback", text, images)
 				}
 				operationsToApprove.forEach((opResult) => {
 					updateOperationResult(opResult.path, { status: "approved" })
@@ -310,9 +310,9 @@ Original error: ${errorMessage}`
 			} else if (response === "noButtonClicked") {
 				// Deny all files
 				if (text) {
-					await cline.say("user_feedback", text, images)
+					await darbot.say("user_feedback", text, images)
 				}
-				cline.didRejectTool = true
+				darbot.didRejectTool = true
 				operationsToApprove.forEach((opResult) => {
 					updateOperationResult(opResult.path, {
 						status: "denied",
@@ -343,7 +343,7 @@ Original error: ${errorMessage}`
 						})
 
 						if (hasAnyDenial) {
-							cline.didRejectTool = true
+							darbot.didRejectTool = true
 						}
 					} else {
 						// Legacy individual permissions format
@@ -366,13 +366,13 @@ Original error: ${errorMessage}`
 						})
 
 						if (hasAnyDenial) {
-							cline.didRejectTool = true
+							darbot.didRejectTool = true
 						}
 					}
 				} catch (error) {
 					// Fallback: if JSON parsing fails, deny all files
 					console.error("Failed to parse individual permissions:", error)
-					cline.didRejectTool = true
+					darbot.didRejectTool = true
 					operationsToApprove.forEach((opResult) => {
 						updateOperationResult(opResult.path, {
 							status: "denied",
@@ -412,7 +412,7 @@ Original error: ${errorMessage}`
 				let formattedError = ""
 
 				// Pre-process all diff items for HTML entity unescaping if needed
-				const processedDiffItems = !cline.api.getModel().id.includes("claude")
+				const processedDiffItems = !darbot.api.getModel().id.includes("claude")
 					? diffItems.map((item) => ({
 							...item,
 							content: item.content ? unescapeHtmlEntities(item.content) : item.content,
@@ -420,7 +420,7 @@ Original error: ${errorMessage}`
 					: diffItems
 
 				// Apply all diffs at once with the array-based method
-				const diffResult = (await cline.diffStrategy?.applyDiff(originalContent, processedDiffItems)) ?? {
+				const diffResult = (await darbot.diffStrategy?.applyDiff(originalContent, processedDiffItems)) ?? {
 					success: false,
 					error: "No diff strategy available - please ensure a valid diff strategy is configured",
 				}
@@ -429,11 +429,11 @@ Original error: ${errorMessage}`
 				originalContent = null
 
 				if (!diffResult.success) {
-					cline.consecutiveMistakeCount++
-					const currentCount = (cline.consecutiveMistakeCountForApplyDiff.get(relPath) || 0) + 1
-					cline.consecutiveMistakeCountForApplyDiff.set(relPath, currentCount)
+					darbot.consecutiveMistakeCount++
+					const currentCount = (darbot.consecutiveMistakeCountForApplyDiff.get(relPath) || 0) + 1
+					darbot.consecutiveMistakeCountForApplyDiff.set(relPath, currentCount)
 
-					TelemetryService.instance.captureDiffApplicationError(cline.taskId, currentCount)
+					TelemetryService.instance.captureDiffApplicationError(darbot.taskId, currentCount)
 
 					if (diffResult.failParts && diffResult.failParts.length > 0) {
 						for (let i = 0; i < diffResult.failParts.length; i++) {
@@ -483,41 +483,41 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 				// If no diffs were successfully applied, continue to next file
 				if (successCount === 0) {
 					if (formattedError) {
-						const currentCount = cline.consecutiveMistakeCountForApplyDiff.get(relPath) || 0
+						const currentCount = darbot.consecutiveMistakeCountForApplyDiff.get(relPath) || 0
 						if (currentCount >= 2) {
-							await cline.say("diff_error", formattedError)
+							await darbot.say("diff_error", formattedError)
 						}
-						cline.recordToolError("apply_diff", formattedError)
+						darbot.recordToolError("apply_diff", formattedError)
 						results.push(formattedError)
 
 						// For single file operations, we need to send a complete message to stop the spinner
 						if (operationsToApprove.length === 1) {
-							const sharedMessageProps: ClineSayTool = {
+							const sharedMessageProps: DarbotSayTool = {
 								tool: "appliedDiff",
-								path: getReadablePath(cline.cwd, relPath),
+								path: getReadablePath(darbot.cwd, relPath),
 								diff: diffItems.map((item) => item.content).join("\n\n"),
 							}
 							// Send a complete message (partial: false) to update the UI and stop the spinner
-							await cline.ask("tool", JSON.stringify(sharedMessageProps), false).catch(() => {})
+							await darbot.ask("tool", JSON.stringify(sharedMessageProps), false).catch(() => {})
 						}
 					}
 					continue
 				}
 
-				cline.consecutiveMistakeCount = 0
-				cline.consecutiveMistakeCountForApplyDiff.delete(relPath)
+				darbot.consecutiveMistakeCount = 0
+				darbot.consecutiveMistakeCountForApplyDiff.delete(relPath)
 
 				// Show diff view before asking for approval (only for single file or after batch approval)
-				cline.diffViewProvider.editType = "modify"
-				await cline.diffViewProvider.open(relPath)
-				await cline.diffViewProvider.update(originalContent!, true)
-				cline.diffViewProvider.scrollToFirstDiff()
+				darbot.diffViewProvider.editType = "modify"
+				await darbot.diffViewProvider.open(relPath)
+				await darbot.diffViewProvider.update(originalContent!, true)
+				darbot.diffViewProvider.scrollToFirstDiff()
 
 				// For batch operations, we've already gotten approval
-				const isWriteProtected = cline.darbotProtectedController?.isWriteProtected(relPath) || false
-				const sharedMessageProps: ClineSayTool = {
+				const isWriteProtected = darbot.darbotProtectedController?.isWriteProtected(relPath) || false
+				const sharedMessageProps: DarbotSayTool = {
 					tool: "appliedDiff",
-					path: getReadablePath(cline.cwd, relPath),
+					path: getReadablePath(darbot.cwd, relPath),
 					isProtected: isWriteProtected,
 				}
 
@@ -528,12 +528,12 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 					const operationMessage = JSON.stringify({
 						...sharedMessageProps,
 						diff: diffContents,
-					} satisfies ClineSayTool)
+					} satisfies DarbotSayTool)
 
 					let toolProgressStatus
 
-					if (cline.diffStrategy && cline.diffStrategy.getProgressStatus) {
-						toolProgressStatus = cline.diffStrategy.getProgressStatus(
+					if (darbot.diffStrategy && darbot.diffStrategy.getProgressStatus) {
+						toolProgressStatus = darbot.diffStrategy.getProgressStatus(
 							{
 								...block,
 								params: { ...block.params, diff: diffContents },
@@ -543,28 +543,28 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 					}
 
 					// Check if file is write-protected
-					const isWriteProtected = cline.darbotProtectedController?.isWriteProtected(relPath) || false
+					const isWriteProtected = darbot.darbotProtectedController?.isWriteProtected(relPath) || false
 					didApprove = await askApproval("tool", operationMessage, toolProgressStatus, isWriteProtected)
 				}
 
 				if (!didApprove) {
-					await cline.diffViewProvider.revertChanges()
+					await darbot.diffViewProvider.revertChanges()
 					results.push(`Changes to ${relPath} were not approved by user`)
 					continue
 				}
 
 				// Call saveChanges to update the DiffViewProvider properties
-				const provider = cline.providerRef.deref()
+				const provider = darbot.providerRef.deref()
 				const state = await provider?.getState()
 				const diagnosticsEnabled = state?.diagnosticsEnabled ?? true
 				const writeDelayMs = state?.writeDelayMs ?? DEFAULT_WRITE_DELAY_MS
-				await cline.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
+				await darbot.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
 
 				// Track file edit operation
-				await cline.fileContextTracker.trackFileContext(relPath, "roo_edited" as RecordSource)
+				await darbot.fileContextTracker.trackFileContext(relPath, "darbot_edited" as RecordSource)
 
 				// Used to determine if we should wait for busy terminal to update before sending api request
-				cline.didEditFile = true
+				darbot.didEditFile = true
 				let partFailHint = ""
 
 				if (successCount < diffItems.length) {
@@ -572,7 +572,7 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 				}
 
 				// Get the formatted response message
-				const message = await cline.diffViewProvider.pushToolWriteResult(cline, cline.cwd, !fileExists)
+				const message = await darbot.diffViewProvider.pushToolWriteResult(darbot, darbot.cwd, !fileExists)
 
 				if (partFailHint) {
 					results.push(partFailHint + "\n" + message)
@@ -580,7 +580,7 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 					results.push(message)
 				}
 
-				await cline.diffViewProvider.reset()
+				await darbot.diffViewProvider.reset()
 			} catch (error) {
 				const errorMsg = error instanceof Error ? error.message : String(error)
 				updateOperationResult(relPath, {
@@ -598,7 +598,7 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 
 		// Report all diff errors at once if any
 		if (allDiffErrors.length > 0) {
-			await cline.say("diff_error", allDiffErrors.join("\n"))
+			await darbot.say("diff_error", allDiffErrors.join("\n"))
 		}
 
 		// Push the final result combining all operation results
@@ -606,7 +606,8 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 		return
 	} catch (error) {
 		await handleError("applying diff", error)
-		await cline.diffViewProvider.reset()
+		await darbot.diffViewProvider.reset()
 		return
 	}
 }
+

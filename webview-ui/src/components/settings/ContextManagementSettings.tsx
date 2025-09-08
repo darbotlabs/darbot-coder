@@ -1,7 +1,7 @@
 import { HTMLAttributes } from "react"
 import React from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
-import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox } from "../vscode-components"
 import { Database, FoldVertical } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -18,7 +18,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	listApiConfigMeta: any[]
 	maxOpenTabsContext: number
 	maxWorkspaceFiles: number
-	showRooIgnoredFiles?: boolean
+	showIgnoredFiles?: boolean
 	maxReadFileLine?: number
 	maxConcurrentFileReads?: number
 	profileThresholds?: Record<string, number>
@@ -27,7 +27,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "autoCondenseContextPercent"
 		| "maxOpenTabsContext"
 		| "maxWorkspaceFiles"
-		| "showRooIgnoredFiles"
+		| "showIgnoredFiles"
 		| "maxReadFileLine"
 		| "maxConcurrentFileReads"
 		| "profileThresholds"
@@ -40,7 +40,7 @@ export const ContextManagementSettings = ({
 	listApiConfigMeta,
 	maxOpenTabsContext,
 	maxWorkspaceFiles,
-	showRooIgnoredFiles,
+	showIgnoredFiles,
 	setCachedStateField,
 	maxReadFileLine,
 	maxConcurrentFileReads,
@@ -149,15 +149,15 @@ export const ContextManagementSettings = ({
 
 				<div>
 					<VSCodeCheckbox
-						checked={showRooIgnoredFiles}
-						onChange={(e: any) => setCachedStateField("showRooIgnoredFiles", e.target.checked)}
-						data-testid="show-rooignored-files-checkbox">
+						checked={showIgnoredFiles}
+						onChange={(e: any) => setCachedStateField("showIgnoredFiles", e.target.checked)}
+						data-testid="show-darbotignored-files-checkbox">
 						<label className="block font-medium mb-1">
-							{t("settings:contextManagement.rooignore.label")}
+							{t("settings:contextManagement.darbotignore.label")}
 						</label>
 					</VSCodeCheckbox>
 					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
-						{t("settings:contextManagement.rooignore.description")}
+						{t("settings:contextManagement.darbotignore.description")}
 					</div>
 				</div>
 

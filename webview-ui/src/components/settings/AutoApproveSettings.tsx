@@ -2,7 +2,7 @@ import { HTMLAttributes, useState } from "react"
 import { X } from "lucide-react"
 
 import { useAppTranslation } from "@/i18n/TranslationContext"
-import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox } from "../vscode-components"
 import { vscode } from "@/utils/vscode"
 import { Button, Input, Slider, StandardTooltip } from "@/components/ui"
 

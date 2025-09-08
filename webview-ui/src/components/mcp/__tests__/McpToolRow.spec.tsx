@@ -25,7 +25,7 @@ vi.mock("@src/utils/vscode", () => ({
 	},
 }))
 
-vi.mock("@vscode/webview-ui-toolkit/react", () => ({
+vi.mock("darbot-webview-ui/react", () => ({
 	VSCodeCheckbox: function MockVSCodeCheckbox({
 		children,
 		checked,

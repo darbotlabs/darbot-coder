@@ -18,13 +18,13 @@
 ### ✅ CustomModesManager Integration
 - **Orchestration Methods**: `getAgentSuggestion()` and `getOrchestrationCapabilities()`
 - **Import Integration**: OrchestrationEngine properly imported and initialized
-- **roo→darbot Refactoring**: All references updated (.roo → .darbot, roomodes → darbotmodes)
+- **darbot Refactoring**: All references updated (darbotmodes → darbotmodes)
 - **Backward Compatibility**: Maintained while adding new functionality
 
 ### ✅ darbot-coder Identity Migration
 - **package.json**: Successfully updated to "darbot-coder"
 - **Configuration Service**: darbot-config with getDarbotPath() function
-- **Directory Structure**: .darbot/ instead of .roo/ paths
+- **Directory Structure**: .darbot/ paths
 
 ### ✅ Quality Assurance
 - **Directory Structure**: Proper orchestration folder organization

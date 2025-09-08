@@ -1,7 +1,7 @@
 // npx vitest run src/__tests__/CloudService.test.ts
 
 import * as vscode from "vscode"
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { CloudService } from "../CloudService"
 import { WebAuthService } from "../auth/WebAuthService"
@@ -384,7 +384,7 @@ describe("CloudService", () => {
 		})
 	})
 
-	describe("shareTask with ClineMessage retry logic", () => {
+	describe("shareTask with DarbotMessage retry logic", () => {
 		let cloudService: CloudService
 
 		beforeEach(async () => {
@@ -403,7 +403,7 @@ describe("CloudService", () => {
 		it("should call shareTask without retry when successful", async () => {
 			const taskId = "test-task-id"
 			const visibility = "organization"
-			const clineMessages: ClineMessage[] = [
+			const darbotMessages: DarbotMessage[] = [
 				{
 					ts: Date.now(),
 					type: "say",
@@ -415,7 +415,7 @@ describe("CloudService", () => {
 			const expectedResult = { success: true, shareUrl: "https://example.com/share/123" }
 			mockShareService.shareTask.mockResolvedValue(expectedResult)
 
-			const result = await cloudService.shareTask(taskId, visibility, clineMessages)
+			const result = await cloudService.shareTask(taskId, visibility, darbotMessages)
 
 			expect(mockShareService.shareTask).toHaveBeenCalledTimes(1)
 			expect(mockShareService.shareTask).toHaveBeenCalledWith(taskId, visibility)
@@ -426,7 +426,7 @@ describe("CloudService", () => {
 		it("should retry with backfill when TaskNotFoundError occurs", async () => {
 			const taskId = "test-task-id"
 			const visibility = "organization"
-			const clineMessages: ClineMessage[] = [
+			const darbotMessages: DarbotMessage[] = [
 				{
 					ts: Date.now(),
 					type: "say",
@@ -442,17 +442,17 @@ describe("CloudService", () => {
 				.mockRejectedValueOnce(new TaskNotFoundError(taskId))
 				.mockResolvedValueOnce(expectedResult)
 
-			const result = await cloudService.shareTask(taskId, visibility, clineMessages)
+			const result = await cloudService.shareTask(taskId, visibility, darbotMessages)
 
 			expect(mockShareService.shareTask).toHaveBeenCalledTimes(2)
 			expect(mockShareService.shareTask).toHaveBeenNthCalledWith(1, taskId, visibility)
 			expect(mockShareService.shareTask).toHaveBeenNthCalledWith(2, taskId, visibility)
 			expect(mockTelemetryClient.backfillMessages).toHaveBeenCalledTimes(1)
-			expect(mockTelemetryClient.backfillMessages).toHaveBeenCalledWith(clineMessages, taskId)
+			expect(mockTelemetryClient.backfillMessages).toHaveBeenCalledWith(darbotMessages, taskId)
 			expect(result).toEqual(expectedResult)
 		})
 
-		it("should not retry when TaskNotFoundError occurs but no clineMessages provided", async () => {
+		it("should not retry when TaskNotFoundError occurs but no darbotMessages provided", async () => {
 			const taskId = "test-task-id"
 			const visibility = "organization"
 
@@ -468,7 +468,7 @@ describe("CloudService", () => {
 		it("should not retry when non-TaskNotFoundError occurs", async () => {
 			const taskId = "test-task-id"
 			const visibility = "organization"
-			const clineMessages: ClineMessage[] = [
+			const darbotMessages: DarbotMessage[] = [
 				{
 					ts: Date.now(),
 					type: "say",
@@ -480,7 +480,7 @@ describe("CloudService", () => {
 			const genericError = new Error("Some other error")
 			mockShareService.shareTask.mockRejectedValue(genericError)
 
-			await expect(cloudService.shareTask(taskId, visibility, clineMessages)).rejects.toThrow(genericError)
+			await expect(cloudService.shareTask(taskId, visibility, darbotMessages)).rejects.toThrow(genericError)
 
 			expect(mockShareService.shareTask).toHaveBeenCalledTimes(1)
 			expect(mockTelemetryClient.backfillMessages).not.toHaveBeenCalled()

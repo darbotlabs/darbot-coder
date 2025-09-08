@@ -3,12 +3,12 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import * as vscode from "vscode"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { waitFor, sleep } from "../utils"
 import { setDefaultSuiteTimeout } from "../test-utils"
 
-suite("Roo Code insert_content Tool", function () {
+suite("darbot-coder insert_content Tool", function () {
 	setDefaultSuiteTimeout(this)
 
 	let workspaceDir: string
@@ -105,7 +105,7 @@ function goodbye() {
 				// Small delay to ensure clean state
 				await sleep(100)
 			})
-			const messages: ClineMessage[] = []
+			const messages: DarbotMessage[] = []
 			const testFile = testFiles.simpleText
 			const insertContent = "New first line"
 			const expectedContent = `${insertContent}
@@ -116,7 +116,7 @@ ${testFile.content}`
 			let insertContentExecuted = false
 
 			// Listen for messages
-			const messageHandler = ({ message }: { message: ClineMessage }) => {
+			const messageHandler = ({ message }: { message: DarbotMessage }) => {
 				messages.push(message)
 
 				// Log important messages for debugging
@@ -246,7 +246,7 @@ Assume the file exists and you can modify it directly.`,
 
 	test("Should insert content at the end of a file (line 0)", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		const testFile = testFiles.simpleText
 		const insertContent = "New last line"
 		const expectedContent = `${testFile.content}
@@ -257,7 +257,7 @@ ${insertContent}`
 		let insertContentExecuted = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Log important messages for debugging
@@ -346,7 +346,7 @@ Assume the file exists and you can modify it directly.`,
 			// Verify tool was executed
 			test("Should insert multiline content into a JavaScript file", async function () {
 				const api = globalThis.api
-				const messages: ClineMessage[] = []
+				const messages: DarbotMessage[] = []
 				const testFile = testFiles.jsFile
 				const insertContent = `// New import statements
 import { utils } from './utils'
@@ -359,7 +359,7 @@ ${testFile.content}`
 				let insertContentExecuted = false
 
 				// Listen for messages
-				const messageHandler = ({ message }: { message: ClineMessage }) => {
+				const messageHandler = ({ message }: { message: DarbotMessage }) => {
 					messages.push(message)
 
 					// Log important messages for debugging
@@ -446,7 +446,7 @@ Assume the file exists and you can modify it directly.`,
 
 					test("Should insert content into an empty file", async function () {
 						const api = globalThis.api
-						const messages: ClineMessage[] = []
+						const messages: DarbotMessage[] = []
 						const testFile = testFiles.emptyFile
 						const insertContent = `# My New File
 This is the first line of content
@@ -458,7 +458,7 @@ And this is the second line`
 						let insertContentExecuted = false
 
 						// Listen for messages
-						const messageHandler = ({ message }: { message: ClineMessage }) => {
+						const messageHandler = ({ message }: { message: DarbotMessage }) => {
 							messages.push(message)
 
 							// Log important messages for debugging
@@ -626,3 +626,4 @@ The file is currently empty. Assume the file exists and you can modify it direct
 	})
 	// Tests will be added here one by one
 })
+

@@ -3,14 +3,14 @@ import { askFollowupQuestionTool } from "../askFollowupQuestionTool"
 import { ToolUse } from "../../../shared/tools"
 
 describe("askFollowupQuestionTool", () => {
-	let mockCline: any
+	let mockDarbot: any
 	let mockPushToolResult: any
 	let toolResult: any
 
 	beforeEach(() => {
 		vi.clearAllMocks()
 
-		mockCline = {
+		mockDarbot = {
 			ask: vi.fn().mockResolvedValue({ text: "Test response" }),
 			say: vi.fn().mockResolvedValue(undefined),
 			consecutiveMistakeCount: 0,
@@ -33,7 +33,7 @@ describe("askFollowupQuestionTool", () => {
 		}
 
 		await askFollowupQuestionTool(
-			mockCline,
+			mockDarbot,
 			block,
 			vi.fn(),
 			vi.fn(),
@@ -41,7 +41,7 @@ describe("askFollowupQuestionTool", () => {
 			vi.fn((tag, content) => content),
 		)
 
-		expect(mockCline.ask).toHaveBeenCalledWith(
+		expect(mockDarbot.ask).toHaveBeenCalledWith(
 			"followup",
 			expect.stringContaining('"suggest":[{"answer":"Option 1"},{"answer":"Option 2"}]'),
 			false,
@@ -60,7 +60,7 @@ describe("askFollowupQuestionTool", () => {
 		}
 
 		await askFollowupQuestionTool(
-			mockCline,
+			mockDarbot,
 			block,
 			vi.fn(),
 			vi.fn(),
@@ -68,7 +68,7 @@ describe("askFollowupQuestionTool", () => {
 			vi.fn((tag, content) => content),
 		)
 
-		expect(mockCline.ask).toHaveBeenCalledWith(
+		expect(mockDarbot.ask).toHaveBeenCalledWith(
 			"followup",
 			expect.stringContaining(
 				'"suggest":[{"answer":"Write code","mode":"code"},{"answer":"Debug issue","mode":"debug"}]',
@@ -89,7 +89,7 @@ describe("askFollowupQuestionTool", () => {
 		}
 
 		await askFollowupQuestionTool(
-			mockCline,
+			mockDarbot,
 			block,
 			vi.fn(),
 			vi.fn(),
@@ -97,7 +97,7 @@ describe("askFollowupQuestionTool", () => {
 			vi.fn((tag, content) => content),
 		)
 
-		expect(mockCline.ask).toHaveBeenCalledWith(
+		expect(mockDarbot.ask).toHaveBeenCalledWith(
 			"followup",
 			expect.stringContaining(
 				'"suggest":[{"answer":"Regular option"},{"answer":"Plan architecture","mode":"architect"}]',

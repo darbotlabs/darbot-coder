@@ -1,6 +1,6 @@
 {
 	"name": "@darbot-code/build",
-	"description": "ESBuild utilities for Roo Code.",
+	"description": "ESBuild utilities for darbot-coder.",
 	"private": true,
 	"type": "module",
 	"main": "./dist/index.js",

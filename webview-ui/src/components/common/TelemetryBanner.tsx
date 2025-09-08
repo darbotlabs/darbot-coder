@@ -1,5 +1,5 @@
 import { memo, useState } from "react"
-import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton, VSCodeLink } from "../vscode-components"
 import styled from "styled-components"
 import { Trans } from "react-i18next"
 
@@ -57,7 +57,7 @@ const TelemetryBanner = () => {
 					<Trans
 						i18nKey="welcome:telemetry.anonymousTelemetry"
 						components={{
-							privacyLink: <VSCodeLink href="https://roocode.com/privacy" />,
+							privacyLink: <VSCodeLink href="https://github.com/DarbotLabs/darbot-coder/blob/main/docs/privacy.md" />,
 						}}
 					/>
 					<div className="mt-1">

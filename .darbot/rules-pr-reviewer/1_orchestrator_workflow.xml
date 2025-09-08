@@ -32,7 +32,7 @@
       <command>
         gh pr view [PR_NUMBER] --repo [owner]/[repo] --json number,title,author,state,body,url,headRefName,baseRefName,files,additions,deletions,changedFiles
       </command>
-      <save_to>.roo/temp/pr-[PR_NUMBER]/pr-metadata.json</save_to>
+      <save_to>.darbot/temp/pr-[PR_NUMBER]/pr-metadata.json</save_to>
     </step>
 
     <step number="3">
@@ -43,7 +43,7 @@
       <command>
         gh issue view [issue_number] --repo [owner]/[repo] --json number,title,body,author,state
       </command>
-      <save_to>.roo/temp/pr-[PR_NUMBER]/linked-issue.json</save_to>
+      <save_to>.darbot/temp/pr-[PR_NUMBER]/linked-issue.json</save_to>
     </step>
 
     <step number="4">
@@ -55,7 +55,7 @@
         <command>gh pr view [PR_NUMBER] --repo [owner]/[repo] --json comments --jq '.comments'</command>
         <command>gh pr view [PR_NUMBER] --repo [owner]/[repo] --json reviews --jq '.reviews'</command>
       </commands>
-      <save_to>.roo/temp/pr-[PR_NUMBER]/existing-feedback.json</save_to>
+      <save_to>.darbot/temp/pr-[PR_NUMBER]/existing-feedback.json</save_to>
     </step>
 
     <step number="5">
@@ -80,7 +80,7 @@
           - Verifying test organization
           - Checking file/directory structure consistency
         </focus_areas>
-        <output>.roo/temp/pr-[PR_NUMBER]/pattern-analysis.md</output>
+        <output>.darbot/temp/pr-[PR_NUMBER]/pattern-analysis.md</output>
       </delegation>
     </step>
 
@@ -98,7 +98,7 @@
           - Potential circular dependencies
           - Overall architectural consistency
         </focus_areas>
-        <output>.roo/temp/pr-[PR_NUMBER]/architecture-review.md</output>
+        <output>.darbot/temp/pr-[PR_NUMBER]/architecture-review.md</output>
       </delegation>
     </step>
 
@@ -116,7 +116,7 @@
           - Mock usage patterns
           - Edge case coverage
         </focus_areas>
-        <output>.roo/temp/pr-[PR_NUMBER]/test-analysis.md</output>
+        <output>.darbot/temp/pr-[PR_NUMBER]/test-analysis.md</output>
       </delegation>
     </step>
   </delegated_analysis>
@@ -128,7 +128,7 @@
         Collect all delegated analysis results and create comprehensive review.
       </description>
       <actions>
-        - Read all analysis files from .roo/temp/pr-[PR_NUMBER]/
+        - Read all analysis files from .darbot/temp/pr-[PR_NUMBER]/
         - Identify critical issues vs suggestions
         - Check against existing comments to avoid redundancy
         - Prioritize findings by impact
@@ -140,7 +140,7 @@
       <description>
         Generate comprehensive review report with all findings.
       </description>
-      <output>.roo/temp/pr-[PR_NUMBER]/final-review.md</output>
+      <output>.darbot/temp/pr-[PR_NUMBER]/final-review.md</output>
       <sections>
         - Executive Summary
         - Critical Issues (must fix)
@@ -175,7 +175,7 @@
         If user approves and not called by another mode, post review using GitHub CLI.
       </description>
       <command>
-        gh pr comment [PR_NUMBER] --repo [owner]/[repo] --body-file .roo/temp/pr-[PR_NUMBER]/final-review.md
+        gh pr comment [PR_NUMBER] --repo [owner]/[repo] --body-file .darbot/temp/pr-[PR_NUMBER]/final-review.md
       </command>
     </step>
   </completion>

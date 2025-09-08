@@ -30,16 +30,11 @@ export function getGlobalDarbotDirectory(): string {
 
 /**
  * Gets the global .darbot directory path (alias for getGlobalDarbotDirectory)
- * Provides backward compatibility with roo-config
+ * Provides backward compatibility with darbot-config
  */
 export function getDarbotPath(): string {
 	return getGlobalDarbotDirectory()
 }
-
-/**
- * Legacy alias for backward compatibility
- */
-export const getRooPath = getDarbotPath
 
 /**
  * Gets the project-local .darbot directory path for a given cwd
@@ -263,9 +258,3 @@ export async function loadConfiguration(
 
 // Export with backward compatibility alias
 export const loadDarbotConfiguration: typeof loadConfiguration = loadConfiguration
-
-// Legacy aliases for backward compatibility
-export const getGlobalRooDirectory = getGlobalDarbotDirectory
-export const getProjectRooDirectoryForCwd = getProjectDarbotDirectoryForCwd
-export const getRooDirectoriesForCwd = getDarbotDirectoriesForCwd
-export const loadRooConfiguration = loadConfiguration

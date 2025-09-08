@@ -4,7 +4,7 @@ import type {
 	CloudUserInfo,
 	TelemetryEvent,
 	OrganizationAllowList,
-	ClineMessage,
+	DarbotMessage,
 	ShareVisibility,
 } from "@darbot-code/types"
 import { TelemetryService } from "@darbot-code/telemetry"
@@ -46,7 +46,7 @@ export class CloudService {
 		}
 
 		try {
-			const cloudToken = process.env.ROO_CODE_CLOUD_TOKEN
+			const cloudToken = process.env.DARBOT_CODER_CLOUD_TOKEN
 			if (cloudToken && cloudToken.length > 0) {
 				this.authService = new StaticTokenAuthService(this.context, cloudToken, this.log)
 			} else {
@@ -62,7 +62,7 @@ export class CloudService {
 			this.authService.on("user-info", this.authListener)
 
 			// Check for static settings environment variable
-			const staticOrgSettings = process.env.ROO_CODE_CLOUD_ORG_SETTINGS
+			const staticOrgSettings = process.env.DARBOT_CODER_CLOUD_ORG_SETTINGS
 			if (staticOrgSettings && staticOrgSettings.length > 0) {
 				this.settingsService = new StaticSettingsService(staticOrgSettings, this.log)
 			} else {
@@ -186,16 +186,16 @@ export class CloudService {
 	public async shareTask(
 		taskId: string,
 		visibility: ShareVisibility = "organization",
-		clineMessages?: ClineMessage[],
+		darbotMessages?: DarbotMessage[],
 	) {
 		this.ensureInitialized()
 
 		try {
 			return await this.shareService!.shareTask(taskId, visibility)
 		} catch (error) {
-			if (error instanceof TaskNotFoundError && clineMessages) {
+			if (error instanceof TaskNotFoundError && darbotMessages) {
 				// Backfill messages and retry
-				await this.telemetryClient!.backfillMessages(clineMessages, taskId)
+				await this.telemetryClient!.backfillMessages(darbotMessages, taskId)
 				return await this.shareService!.shareTask(taskId, visibility)
 			}
 			throw error
@@ -266,3 +266,4 @@ export class CloudService {
 		return !!this._instance?.isAuthenticated()
 	}
 }
+

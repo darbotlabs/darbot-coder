@@ -1,8 +1,8 @@
 import {
 	TelemetryEventName,
 	type TelemetryEvent,
-	rooCodeTelemetryEventSchema,
-	type ClineMessage,
+	darbotCodeTelemetryEventSchema,
+	type DarbotMessage,
 } from "@darbot-code/types"
 import { BaseTelemetryClient } from "@darbot-code/telemetry"
 
@@ -67,7 +67,7 @@ export class TelemetryClient extends BaseTelemetryClient {
 			console.info(`[TelemetryClient#capture] ${JSON.stringify(payload)}`)
 		}
 
-		const result = rooCodeTelemetryEventSchema.safeParse(payload)
+		const result = darbotCodeTelemetryEventSchema.safeParse(payload)
 
 		if (!result.success) {
 			console.error(
@@ -84,7 +84,7 @@ export class TelemetryClient extends BaseTelemetryClient {
 		}
 	}
 
-	public async backfillMessages(messages: ClineMessage[], taskId: string): Promise<void> {
+	public async backfillMessages(messages: DarbotMessage[], taskId: string): Promise<void> {
 		if (!this.authService.isAuthenticated()) {
 			if (this.debug) {
 				console.info(`[TelemetryClient#backfillMessages] Skipping: Not authenticated`)
@@ -167,3 +167,4 @@ export class TelemetryClient extends BaseTelemetryClient {
 
 	public override async shutdown() {}
 }
+

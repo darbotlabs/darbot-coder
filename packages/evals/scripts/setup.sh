@@ -106,8 +106,8 @@ check_docker_services() {
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "⚠️ Only macOS is currently supported."
-  echo "The Roo Code evals system can also be run with Docker on any platform."
-  echo "See https://github.com/RooCodeInc/Roo-Code/blob/main/packages/evals/README.md for instructions."
+  echo "The Darbot Code evals system can also be run with Docker on any platform."
+  echo "See https://github.com/DarbotFramework/darbot-coder/blob/main/packages/evals/README.md for instructions."
   exit 1
 fi
 
@@ -336,7 +336,7 @@ echo "✅ Done"
 
 if [[ ! -d "../../../evals" ]]; then
   echo -n "🔗 Cloning evals repository... "
-  git clone https://github.com/RooCodeInc/Roo-Code-Evals.git ../../../evals || exit 1
+  git clone https://github.com/DarbotFramework/darbot-coder-evals.git ../../../evals || exit 1
   echo "✅ Done"
 else
   echo -n "🔄 Updating evals repository... "

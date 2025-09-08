@@ -1,17 +1,17 @@
 import * as assert from "assert"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { waitUntilCompleted } from "./utils"
 import { setDefaultSuiteTimeout } from "./test-utils"
 
-suite("Roo Code Task", function () {
+suite("darbot-coder Task", function () {
 	setDefaultSuiteTimeout(this)
 
 	test("Should handle prompt and response correctly", async () => {
 		const api = globalThis.api
 
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 
 		api.on("message", ({ message }) => {
 			if (message.type === "say" && message.partial === false) {
@@ -28,9 +28,10 @@ suite("Roo Code Task", function () {
 
 		assert.ok(
 			!!messages.find(
-				({ say, text }) => (say === "completion_result" || say === "text") && text?.includes("My name is Roo"),
+				({ say, text }) => (say === "completion_result" || say === "text") && text?.includes("My name is darbot"),
 			),
-			`Completion should include "My name is Roo"`,
+			`Completion should include "My name is darbot"`,
 		)
 	})
 })
+

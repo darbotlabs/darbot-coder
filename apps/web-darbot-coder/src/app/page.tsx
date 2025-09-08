@@ -50,7 +50,7 @@ export default async function Home() {
 										href="https://marketplace.visualstudio.com/items?itemName=DarbotLabs.darbot-coder"
 										target="_blank"
 										className="flex w-full items-center justify-center">
-										Install Roo Code
+										Install Darbot Coder
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											className="ml-2 h-4 w-4"
@@ -66,7 +66,7 @@ export default async function Home() {
 								</Button>
 								<Button variant="outline" size="lg" className="w-full sm:w-auto">
 									<a
-										href="https://docs.roocode.com"
+										href="https://github.com/DarbotLabs/darbot-coder/blob/main/docs"
 										target="_blank"
 										className="flex w-full items-center justify-center">
 										View Documentation

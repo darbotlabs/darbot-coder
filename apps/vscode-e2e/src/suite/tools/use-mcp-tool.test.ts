@@ -4,12 +4,12 @@ import * as path from "path"
 import * as os from "os"
 import * as vscode from "vscode"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { waitFor, sleep } from "../utils"
 import { setDefaultSuiteTimeout } from "../test-utils"
 
-suite.skip("Roo Code use_mcp_tool Tool", function () {
+suite.skip("darbot-coder use_mcp_tool Tool", function () {
 	setDefaultSuiteTimeout(this)
 
 	let tempDir: string
@@ -21,7 +21,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 
 	// Create a temporary directory and test files
 	suiteSetup(async () => {
-		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "roo-test-mcp-"))
+		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "darbot-test-mcp-"))
 
 		// Create test files in VSCode workspace directory
 		const workspaceDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || tempDir
@@ -30,16 +30,16 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 		testFiles = {
 			simple: path.join(workspaceDir, `mcp-test-${Date.now()}.txt`),
 			testData: path.join(workspaceDir, `mcp-data-${Date.now()}.json`),
-			mcpConfig: path.join(workspaceDir, ".roo", "mcp.json"),
+			mcpConfig: path.join(workspaceDir, ".darbot", "mcp.json"),
 		}
 
 		// Create initial test files
 		await fs.writeFile(testFiles.simple, "Initial content for MCP test")
 		await fs.writeFile(testFiles.testData, JSON.stringify({ test: "data", value: 42 }, null, 2))
 
-		// Create .roo directory and MCP configuration file
-		const rooDir = path.join(workspaceDir, ".roo")
-		await fs.mkdir(rooDir, { recursive: true })
+		// Create .darbot directory and MCP configuration file
+		const darbotDir = path.join(workspaceDir, ".darbot")
+		await fs.mkdir(darbotDir, { recursive: true })
 
 		const mcpConfig = {
 			mcpServers: {
@@ -74,11 +74,11 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 			}
 		}
 
-		// Clean up .roo directory
+		// Clean up .darbot directory
 		const workspaceDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || tempDir
-		const rooDir = path.join(workspaceDir, ".roo")
+		const darbotDir = path.join(workspaceDir, ".darbot")
 		try {
-			await fs.rm(rooDir, { recursive: true, force: true })
+			await fs.rm(darbotDir, { recursive: true, force: true })
 		} catch {
 			// Directory might not exist
 		}
@@ -114,7 +114,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 
 	test("Should request MCP filesystem read_file tool and complete successfully", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskStarted = false
 		let _taskCompleted = false
 		let mcpToolRequested = false
@@ -124,7 +124,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 		let errorOccurred: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for MCP tool request
@@ -185,7 +185,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 			}
 		}
 		api.on("taskCompleted", taskCompletedHandler)
-		await sleep(2000) // Wait for Roo Code to fully initialize
+		await sleep(2000) // Wait for darbot-coder to fully initialize
 
 		// Trigger MCP server detection by opening and modifying the file
 		console.log("Triggering MCP server detection by modifying the config file...")
@@ -194,7 +194,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 			const document = await vscode.workspace.openTextDocument(mcpConfigUri)
 			const editor = await vscode.window.showTextDocument(document)
 
-			// Make a small modification to trigger the save event, without this Roo Code won't load the MCP server
+			// Make a small modification to trigger the save event, without this darbot-coder won't load the MCP server
 			const edit = new vscode.WorkspaceEdit()
 			const currentContent = document.getText()
 			const modifiedContent = currentContent.replace(
@@ -292,7 +292,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 
 	test("Should request MCP filesystem write_file tool and complete successfully", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let _taskCompleted = false
 		let mcpToolRequested = false
 		let mcpToolName: string | null = null
@@ -301,7 +301,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 		let errorOccurred: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for MCP tool request
@@ -420,7 +420,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 
 	test("Should request MCP filesystem list_directory tool and complete successfully", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let _taskCompleted = false
 		let mcpToolRequested = false
 		let mcpToolName: string | null = null
@@ -429,7 +429,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 		let errorOccurred: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for MCP tool request
@@ -515,12 +515,12 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 				responseText.includes("mcp-test-") || responseText.includes(path.basename(testFiles.simple))
 			const hasDataFile =
 				responseText.includes("mcp-data-") || responseText.includes(path.basename(testFiles.testData))
-			const hasRooDir = responseText.includes(".roo")
+			const hasDarbotDir = responseText.includes(".darbot")
 
-			// At least one of our test files or the .roo directory should be present
+			// At least one of our test files or the .darbot directory should be present
 			assert.ok(
-				hasTestFile || hasDataFile || hasRooDir,
-				`MCP server response should contain our test files or .roo directory. Expected to find: '${path.basename(testFiles.simple)}', '${path.basename(testFiles.testData)}', or '.roo'. Got: ${responseText.substring(0, 200)}...`,
+				hasTestFile || hasDataFile || hasDarbotDir,
+				`MCP server response should contain our test files or .darbot directory. Expected to find: '${path.basename(testFiles.simple)}', '${path.basename(testFiles.testData)}', or '.darbot'. Got: ${responseText.substring(0, 200)}...`,
 			)
 
 			// Check for typical directory listing indicators
@@ -559,7 +559,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 
 	test.skip("Should request MCP filesystem directory_tree tool and complete successfully", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let _taskCompleted = false
 		let mcpToolRequested = false
 		let mcpToolName: string | null = null
@@ -568,7 +568,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 		let errorOccurred: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for MCP tool request
@@ -661,7 +661,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 			const hasTestFiles =
 				responseText.includes("mcp-test-") ||
 				responseText.includes("mcp-data-") ||
-				responseText.includes(".roo") ||
+				responseText.includes(".darbot") ||
 				responseText.includes(".txt") ||
 				responseText.includes(".json") ||
 				responseText.length > 10 // At least some content indicating directory structure
@@ -700,14 +700,14 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 		// Skipped: This test requires interactive approval for non-whitelisted MCP servers
 		// which cannot be automated in the test environment
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let _taskCompleted = false
 		let _mcpToolRequested = false
 		let _errorHandled = false
 		let attemptCompletionCalled = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for MCP tool request
@@ -769,7 +769,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 
 	test.skip("Should validate MCP request message format and complete successfully", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let _taskCompleted = false
 		let mcpToolRequested = false
 		let validMessageFormat = false
@@ -779,7 +779,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 		let errorOccurred: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for MCP tool request and validate format
@@ -787,7 +787,7 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 				mcpToolRequested = true
 				console.log("MCP tool request:", message.text?.substring(0, 200))
 
-				// Validate the message format matches ClineAskUseMcpServer interface
+				// Validate the message format matches DarbotAskUseMcpServer interface
 				if (message.text) {
 					try {
 						const mcpRequest = JSON.parse(message.text)
@@ -926,3 +926,4 @@ suite.skip("Roo Code use_mcp_tool Tool", function () {
 		}
 	})
 })
+

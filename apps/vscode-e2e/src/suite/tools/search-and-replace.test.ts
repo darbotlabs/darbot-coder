@@ -3,12 +3,12 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import * as vscode from "vscode"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { waitFor, sleep } from "../utils"
 import { setDefaultSuiteTimeout } from "../test-utils"
 
-suite("Roo Code search_and_replace Tool", function () {
+suite("darbot-coder search_and_replace Tool", function () {
 	setDefaultSuiteTimeout(this)
 
 	let workspaceDir: string
@@ -137,7 +137,7 @@ Final content`,
 
 	test("Should perform simple text replacement", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		const testFile = testFiles.simpleReplace
 		const expectedContent = "Hello Universe\nThis is a test file\nWith multiple lines\nHello again"
 		let taskStarted = false
@@ -146,7 +146,7 @@ Final content`,
 		let searchReplaceExecuted = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Log important messages for debugging
@@ -257,7 +257,7 @@ Assume the file exists and you can modify it directly.`,
 
 	test("Should perform regex pattern replacement", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		const testFile = testFiles.regexReplace
 		const expectedContent = `function newFunction() {
 	console.log("new implementation")
@@ -274,7 +274,7 @@ function anotherNewFunction() {
 		let searchReplaceExecuted = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Log important messages for debugging
@@ -386,7 +386,7 @@ Use the search_and_replace tool twice - once for each replacement.`,
 
 	test("Should replace multiple matches in file", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		const testFile = testFiles.multipleMatches
 		const expectedContent = `DONE: Fix this bug
 This is some content
@@ -400,7 +400,7 @@ Final content`
 		let searchReplaceExecuted = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Log important messages for debugging
@@ -511,7 +511,7 @@ Assume the file exists and you can modify it directly.`,
 
 	test("Should handle case when no matches are found", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		const testFile = testFiles.noMatches
 		const expectedContent = testFile.content // Should remain unchanged
 		let taskStarted = false
@@ -520,7 +520,7 @@ Assume the file exists and you can modify it directly.`,
 		let searchReplaceExecuted = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Log important messages for debugging
@@ -629,3 +629,4 @@ Assume the file exists and you can modify it directly.`,
 		}
 	})
 })
+

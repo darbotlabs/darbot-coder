@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 import { TerminalActionId, TerminalActionPromptType } from "@darbot-code/types"
 
 import { getTerminalCommand } from "../utils/commands"
-import { ClineProvider } from "../core/webview/ClineProvider"
+import { DarbotProvider } from "../core/webview/DarbotProvider"
 import { Terminal } from "../integrations/terminal/Terminal"
 import { t } from "../i18n"
 
@@ -31,7 +31,7 @@ const registerTerminalAction = (
 				return
 			}
 
-			await ClineProvider.handleTerminalAction(command, promptType, {
+			await DarbotProvider.handleTerminalAction(command, promptType, {
 				terminalContent: content,
 			})
 		}),

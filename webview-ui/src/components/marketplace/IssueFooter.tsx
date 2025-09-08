@@ -1,13 +1,13 @@
 import React from "react"
 import { Trans } from "react-i18next"
-import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeLink } from "../vscode-components"
 
 export const IssueFooter: React.FC = () => {
 	return (
 		<div className="text-xs text-vscode-descriptionForeground p-3">
 			<Trans i18nKey="marketplace:footer.issueText">
 				<VSCodeLink
-					href="https://github.com/DarbotCoderInc/Roo-Code/issues/new?template=marketplace.yml"
+					href="https://github.com/DarbotFramework/darbot-coder/issues/new?template=marketplace.yml"
 					style={{ display: "inline", fontSize: "inherit" }}>
 					Open a GitHub issue
 				</VSCodeLink>

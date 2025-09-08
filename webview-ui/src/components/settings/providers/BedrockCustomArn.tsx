@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField } from "../../vscode-components"
 
 import type { ProviderSettings } from "@darbot-code/types"
 

@@ -43,7 +43,7 @@
         <description>View the failed logs.</description>
         <tool_use>
 <execute_command>
-<command>gh run view [run_id] --repo RooCodeInc/Roo-Code --log-failed</command>
+<command>gh run view [run_id] --repo DarbotLabs/darbot-coder --log-failed</command>
 </execute_command>
         </tool_use>
         <analysis>Find the specific error message causing the test to fail.</analysis>
@@ -53,7 +53,7 @@
         <description>Check out the pull request branch.</description>
         <tool_use>
           <execute_command>
-            <command>gh pr checkout 4365 --repo RooCodeInc/Roo-Code --force</command>
+            <command>gh pr checkout 4365 --repo DarbotLabs/darbot-coder --force</command>
           </execute_command>
         </tool_use>
         <analysis>The PR branch is now ready for local edits.</analysis>
@@ -76,7 +76,7 @@
        <description>After pushing the changes, monitor PR checks in real-time.</description>
        <tool_use>
          <execute_command>
-           <command>gh pr checks 4365 --repo RooCodeInc/Roo-Code --watch</command>
+           <command>gh pr checks 4365 --repo DarbotLabs/darbot-coder --watch</command>
          </execute_command>
        </tool_use>
        <analysis>Monitor checks continuously until all complete. The --watch flag provides real-time updates as check statuses change.</analysis>
@@ -96,7 +96,7 @@
     </scenario>
     
     <user_request>
-      Fix PR #1234 in RooCodeInc/Roo-Code - the reviewer asked to change button text and there are some failing tests.
+      Fix PR #1234 in DarbotLabs/darbot-coder - the reviewer asked to change button text and there are some failing tests.
     </user_request>
 
     <workflow>
@@ -104,7 +104,7 @@
         <description>Get PR details and analyze changes.</description>
         <tool_use>
 <execute_command>
-<command>gh pr view 1234 --repo RooCodeInc/Roo-Code --json number,title,author,state,body,url,headRefName,baseRefName,files,additions,deletions,changedFiles,comments,reviews</command>
+<command>gh pr view 1234 --repo DarbotLabs/darbot-coder --json number,title,author,state,body,url,headRefName,baseRefName,files,additions,deletions,changedFiles,comments,reviews</command>
 </execute_command>
         </tool_use>
         <expected_outcome>Identify the files changed and review feedback requiring UI text modifications.</expected_outcome>
@@ -114,7 +114,7 @@
         <description>Check out PR and apply the requested changes.</description>
         <tool_use>
 <execute_command>
-<command>gh pr checkout 1234 --repo RooCodeInc/Roo-Code --force</command>
+<command>gh pr checkout 1234 --repo DarbotLabs/darbot-coder --force</command>
 </execute_command>
         </tool_use>
         <analysis>Make the requested button text changes in the UI components.</analysis>
@@ -165,7 +165,7 @@ Ensure consistency across all language files and maintain the same context and t
         <description>Check if PR is from a fork and push to correct remote.</description>
         <tool_use>
 <execute_command>
-<command>gh pr view 1234 --repo RooCodeInc/Roo-Code --json isCrossRepository,headRepositoryOwner,headRefName</command>
+<command>gh pr view 1234 --repo DarbotLabs/darbot-coder --json isCrossRepository,headRepositoryOwner,headRefName</command>
 </execute_command>
         </tool_use>
         <analysis>Determine if this is a cross-repository PR to know which remote to push to.</analysis>
@@ -185,7 +185,7 @@ Ensure consistency across all language files and maintain the same context and t
         <description>Monitor CI status in real-time.</description>
         <tool_use>
 <execute_command>
-<command>gh pr checks 1234 --repo RooCodeInc/Roo-Code --watch</command>
+<command>gh pr checks 1234 --repo DarbotLabs/darbot-coder --watch</command>
 </execute_command>
         </tool_use>
         <analysis>Watch CI checks continuously until all tests pass. The --watch flag provides automatic updates as check statuses change.</analysis>

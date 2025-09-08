@@ -76,7 +76,7 @@ export async function createRun({ suite, exercises = [], systemPrompt, timeout, 
 			stdio: ["ignore", "pipe", "pipe"],
 		})
 
-		const logStream = fs.createWriteStream("/tmp/roo-code-evals.log", { flags: "a" })
+		const logStream = fs.createWriteStream("/tmp/darbot-code-evals.log", { flags: "a" })
 
 		if (childProcess.stdout) {
 			childProcess.stdout.pipe(logStream)

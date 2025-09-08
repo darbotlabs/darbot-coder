@@ -3,7 +3,7 @@ import { useAppTranslation } from "@/i18n/TranslationContext"
 import { Trans } from "react-i18next"
 import { Info, Download, Upload, TriangleAlert } from "lucide-react"
 
-import { VSCodeCheckbox, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox, VSCodeLink } from "../vscode-components"
 
 import { Package } from "@darbot/package"
 import { TelemetrySetting } from "@darbot/TelemetrySetting"
@@ -51,7 +51,7 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 						<Trans
 							i18nKey="settings:footer.telemetry.description"
 							components={{
-								privacyLink: <VSCodeLink href="https://roocode.com/privacy" />,
+								privacyLink: <VSCodeLink href="https://github.com/DarbotLabs/darbot-coder/blob/main/docs/privacy.md" />,
 							}}
 						/>
 					</p>
@@ -61,9 +61,8 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 					<Trans
 						i18nKey="settings:footer.feedback"
 						components={{
-							githubLink: <VSCodeLink href="https://github.com/DarbotCoderInc/Roo-Code" />,
+							githubLink: <VSCodeLink href="https://github.com/DarbotLabs/darbot-coder" />,
 							redditLink: <VSCodeLink href="https://reddit.com/r/DarbotCoder" />,
-							discordLink: <VSCodeLink href="https://discord.gg/roocode" />,
 						}}
 					/>
 				</div>

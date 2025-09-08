@@ -17,7 +17,7 @@ vi.mock("@/components/ui", () => ({
 	),
 }))
 
-vi.mock("@vscode/webview-ui-toolkit/react", () => ({
+vi.mock("darbot-webview-ui/react", () => ({
 	VSCodeCheckbox: ({ children, onChange, checked, ...props }: any) => (
 		<label>
 			<input

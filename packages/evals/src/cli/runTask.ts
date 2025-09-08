@@ -146,13 +146,13 @@ export const runTask = async ({ run, task, publish, logger }: RunTaskOptions) =>
 	const prompt = fs.readFileSync(path.resolve(EVALS_REPO_PATH, `prompts/${language}.md`), "utf-8")
 	const workspacePath = path.resolve(EVALS_REPO_PATH, language, exercise)
 	const ipcSocketPath = path.resolve(os.tmpdir(), `evals-${run.id}-${task.id}.sock`)
-	const env = { ROO_CODE_IPC_SOCKET_PATH: ipcSocketPath }
+	const env = { DARBOT_CODER_IPC_SOCKET_PATH: ipcSocketPath }
 	const controller = new AbortController()
 	const cancelSignal = controller.signal
 	const containerized = isDockerContainer()
 
 	const codeCommand = containerized
-		? `xvfb-run --auto-servernum --server-num=1 code --wait --log trace --disable-workspace-trust --disable-gpu --disable-lcd-text --no-sandbox --user-data-dir /roo/.vscode --password-store="basic" -n ${workspacePath}`
+		? `xvfb-run --auto-servernum --server-num=1 code --wait --log trace --disable-workspace-trust --disable-gpu --disable-lcd-text --no-sandbox --user-data-dir /darbot/.vscode --password-store="basic" -n ${workspacePath}`
 		: `code --disable-workspace-trust -n ${workspacePath}`
 
 	logger.info(codeCommand)
@@ -195,7 +195,7 @@ export const runTask = async ({ run, task, publish, logger }: RunTaskOptions) =>
 	let taskAbortedAt: number | undefined
 	let taskTimedOut: boolean = false
 	let taskMetricsId: number | undefined
-	let rooTaskId: string | undefined
+	let darbotTaskId: string | undefined
 	let isClientDisconnected = false
 
 	const ignoreEvents: Record<"broadcast" | "log", DarbotCodeEventName[]> = {
@@ -237,7 +237,7 @@ export const runTask = async ({ run, task, publish, logger }: RunTaskOptions) =>
 
 			taskStartedAt = Date.now()
 			taskMetricsId = taskMetrics.id
-			rooTaskId = payload[0]
+			darbotTaskId = payload[0]
 		}
 
 		if (eventName === DarbotCodeEventName.TaskToolFailed) {
@@ -306,9 +306,9 @@ export const runTask = async ({ run, task, publish, logger }: RunTaskOptions) =>
 		taskTimedOut = true
 		logger.error("time limit reached")
 
-		if (rooTaskId && !isClientDisconnected) {
+		if (darbotTaskId && !isClientDisconnected) {
 			logger.info("cancelling task")
-			client.sendCommand({ commandName: TaskCommandName.CancelTask, data: rooTaskId })
+			client.sendCommand({ commandName: TaskCommandName.CancelTask, data: darbotTaskId })
 			await new Promise((resolve) => setTimeout(resolve, 5_000)) // Allow some time for the task to cancel.
 		}
 
@@ -325,9 +325,9 @@ export const runTask = async ({ run, task, publish, logger }: RunTaskOptions) =>
 	logger.info("setting task finished at")
 	await updateTask(task.id, { finishedAt: new Date() })
 
-	if (rooTaskId && !isClientDisconnected) {
+	if (darbotTaskId && !isClientDisconnected) {
 		logger.info("closing task")
-		client.sendCommand({ commandName: TaskCommandName.CloseTask, data: rooTaskId })
+		client.sendCommand({ commandName: TaskCommandName.CloseTask, data: darbotTaskId })
 		await new Promise((resolve) => setTimeout(resolve, 2_000)) // Allow some time for the window to close.
 	}
 

@@ -1,4 +1,4 @@
-import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox } from "../vscode-components"
 import { useEffect, useState } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { useDebounce } from "react-use"

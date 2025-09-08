@@ -59,14 +59,14 @@ describe("CloudService Integration - Settings Service Selection", () => {
 
 	afterEach(() => {
 		CloudService.resetInstance()
-		delete process.env.ROO_CODE_CLOUD_ORG_SETTINGS
-		delete process.env.ROO_CODE_CLOUD_TOKEN
+		delete process.env.DARBOT_CODER_CLOUD_ORG_SETTINGS
+		delete process.env.DARBOT_CODER_CLOUD_TOKEN
 	})
 
 	it("should use CloudSettingsService when no environment variable is set", async () => {
 		// Ensure no environment variables are set
-		delete process.env.ROO_CODE_CLOUD_ORG_SETTINGS
-		delete process.env.ROO_CODE_CLOUD_TOKEN
+		delete process.env.DARBOT_CODER_CLOUD_ORG_SETTINGS
+		delete process.env.DARBOT_CODER_CLOUD_TOKEN
 
 		const cloudService = await CloudService.createInstance(mockContext)
 
@@ -75,7 +75,7 @@ describe("CloudService Integration - Settings Service Selection", () => {
 		expect(settingsService).toBeInstanceOf(CloudSettingsService)
 	})
 
-	it("should use StaticSettingsService when ROO_CODE_CLOUD_ORG_SETTINGS is set", async () => {
+	it("should use StaticSettingsService when DARBOT_CODER_CLOUD_ORG_SETTINGS is set", async () => {
 		const validSettings = {
 			version: 1,
 			cloudSettings: {
@@ -93,7 +93,7 @@ describe("CloudService Integration - Settings Service Selection", () => {
 		}
 
 		// Set the environment variable
-		process.env.ROO_CODE_CLOUD_ORG_SETTINGS = Buffer.from(JSON.stringify(validSettings)).toString("base64")
+		process.env.DARBOT_CODER_CLOUD_ORG_SETTINGS = Buffer.from(JSON.stringify(validSettings)).toString("base64")
 
 		const cloudService = await CloudService.createInstance(mockContext)
 
@@ -105,9 +105,9 @@ describe("CloudService Integration - Settings Service Selection", () => {
 		expect(cloudService.getAllowList()).toEqual(validSettings.allowList)
 	})
 
-	it("should throw error when ROO_CODE_CLOUD_ORG_SETTINGS contains invalid data", async () => {
+	it("should throw error when DARBOT_CODER_CLOUD_ORG_SETTINGS contains invalid data", async () => {
 		// Set invalid environment variable
-		process.env.ROO_CODE_CLOUD_ORG_SETTINGS = "invalid-base64-data"
+		process.env.DARBOT_CODER_CLOUD_ORG_SETTINGS = "invalid-base64-data"
 
 		await expect(CloudService.createInstance(mockContext)).rejects.toThrow("Failed to initialize CloudService")
 	})
@@ -130,8 +130,8 @@ describe("CloudService Integration - Settings Service Selection", () => {
 		}
 
 		// Set both environment variables
-		process.env.ROO_CODE_CLOUD_TOKEN = "test-token"
-		process.env.ROO_CODE_CLOUD_ORG_SETTINGS = Buffer.from(JSON.stringify(validSettings)).toString("base64")
+		process.env.DARBOT_CODER_CLOUD_TOKEN = "test-token"
+		process.env.DARBOT_CODER_CLOUD_ORG_SETTINGS = Buffer.from(JSON.stringify(validSettings)).toString("base64")
 
 		const cloudService = await CloudService.createInstance(mockContext)
 

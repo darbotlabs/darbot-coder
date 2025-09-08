@@ -9,7 +9,7 @@ Based on comprehensive analysis of the DR-Coder codebase, this document proposes
 The codebase analysis revealed that DR-Coder is much more sophisticated than initially apparent:
 
 ### **Existing Orchestration Capabilities**
-- ✅ **Multi-agent workflows**: `.roo/rules-pr-reviewer/1_orchestrator_workflow.xml` shows sophisticated task delegation
+- ✅ **Multi-agent workflows**: `.darbot/rules-pr-reviewer/1_orchestrator_workflow.xml` shows sophisticated task delegation
 - ✅ **Agent specialization**: 10+ specialized modes with role-based permissions
 - ✅ **Tool orchestration**: 20+ integrated tools (file ops, terminal, browser, MCP)
 - ✅ **Event-driven architecture**: `Task.ts` uses EventEmitter for real-time coordination
@@ -342,10 +342,10 @@ export class WorkflowTemplateEngine {
   private templates: Map<string, WorkflowTemplate> = new Map()
   
   /**
-   * Load workflow templates from .roo/templates/
+   * Load workflow templates from .darbot/templates/
    */
   async loadTemplates(): Promise<void> {
-    const templateDir = path.join(getWorkspacePath(), '.roo', 'templates')
+    const templateDir = path.join(getWorkspacePath(), '.darbot', 'templates')
     
     if (await fileExistsAtPath(templateDir)) {
       const templateFiles = await fs.readdir(templateDir)
@@ -399,9 +399,9 @@ export class WorkflowTemplateEngine {
 ```
 
 #### **4.2 Workflow Templates**
-**Directory**: `.roo/templates/`
+**Directory**: `.darbot/templates/`
 
-**Feature Development Template** (`.roo/templates/feature-development.xml`):
+**Feature Development Template** (`.darbot/templates/feature-development.xml`):
 ```xml
 <workflow_template name="feature_development">
   <description>Complete feature development with architecture, implementation, testing, and documentation</description>
@@ -537,7 +537,7 @@ export class ModelRouter {
 ## 🔄 **Integration with Existing DR-Coder Architecture**
 
 ### **Enhanced Mode Configuration**
-The orchestration system builds on the existing `.roomodes` system:
+The orchestration system builds on the existing `.darbotmodes` system:
 
 ```yaml
 customModes:

@@ -10,7 +10,7 @@ import { vscode } from "@src/utils/vscode"
 import ChatView, { ChatViewProps } from "../ChatView"
 
 // Define minimal types needed for testing
-interface ClineMessage {
+interface DarbotMessage {
 	type: "say" | "ask"
 	say?: string
 	ask?: string
@@ -21,7 +21,7 @@ interface ClineMessage {
 
 interface ExtensionState {
 	version: string
-	clineMessages: ClineMessage[]
+	darbotMessages: DarbotMessage[]
 	taskHistory: any[]
 	shouldShowAnnouncement: boolean
 	allowedCommands: string[]
@@ -46,13 +46,13 @@ vi.mock("use-sound", () => ({
 
 // Mock components that use ESM dependencies
 vi.mock("../BrowserSessionRow", () => ({
-	default: function MockBrowserSessionRow({ messages }: { messages: ClineMessage[] }) {
+	default: function MockBrowserSessionRow({ messages }: { messages: DarbotMessage[] }) {
 		return <div data-testid="browser-session">{JSON.stringify(messages)}</div>
 	},
 }))
 
 vi.mock("../ChatRow", () => ({
-	default: function MockChatRow({ message }: { message: ClineMessage }) {
+	default: function MockChatRow({ message }: { message: DarbotMessage }) {
 		return <div data-testid="chat-row">{JSON.stringify(message)}</div>
 	},
 }))
@@ -140,7 +140,7 @@ vi.mock("../ChatTextArea", () => {
 })
 
 // Mock VSCode components
-vi.mock("@vscode/webview-ui-toolkit/react", () => ({
+vi.mock("darbot-webview-ui/react", () => ({
 	VSCodeButton: function MockVSCodeButton({
 		children,
 		onClick,
@@ -186,7 +186,7 @@ const mockPostMessage = (state: Partial<ExtensionState>) => {
 			type: "state",
 			state: {
 				version: "1.0.0",
-				clineMessages: [],
+				darbotMessages: [],
 				taskHistory: [],
 				shouldShowAnnouncement: false,
 				allowedCommands: [],
@@ -230,7 +230,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowWrite: true,
 			alwaysAllowExecute: true,
 			allowedCommands: ["npm test"],
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -268,7 +268,7 @@ describe("ChatView - Auto Approval Tests", () => {
 				alwaysAllowWrite: true,
 				alwaysAllowExecute: true,
 				allowedCommands: ["npm test"],
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -300,7 +300,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowBrowser: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -314,7 +314,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowBrowser: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -347,7 +347,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowReadOnly: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -361,7 +361,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowReadOnly: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -396,7 +396,7 @@ describe("ChatView - Auto Approval Tests", () => {
 				autoApprovalEnabled: true,
 				alwaysAllowWrite: true,
 				writeDelayMs: 0,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -411,7 +411,7 @@ describe("ChatView - Auto Approval Tests", () => {
 				autoApprovalEnabled: true,
 				alwaysAllowWrite: true,
 				writeDelayMs: 0,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -444,7 +444,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			mockPostMessage({
 				autoApprovalEnabled: true,
 				alwaysAllowWrite: true,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -458,7 +458,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			mockPostMessage({
 				autoApprovalEnabled: true,
 				alwaysAllowWrite: true,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -491,7 +491,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			autoApprovalEnabled: true,
 			alwaysAllowExecute: true,
 			allowedCommands: ["npm test"],
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -506,7 +506,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			autoApprovalEnabled: true,
 			alwaysAllowExecute: true,
 			allowedCommands: ["npm test"],
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -540,7 +540,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			autoApprovalEnabled: true,
 			alwaysAllowExecute: true,
 			allowedCommands: ["npm test"],
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -555,7 +555,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			autoApprovalEnabled: true,
 			alwaysAllowExecute: true,
 			allowedCommands: ["npm test"],
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -604,7 +604,7 @@ describe("ChatView - Auto Approval Tests", () => {
 					autoApprovalEnabled: true,
 					alwaysAllowExecute: true,
 					allowedCommands: ["npm test", "npm run build", "echo", "Select-String"],
-					clineMessages: [
+					darbotMessages: [
 						{
 							type: "say",
 							say: "task",
@@ -619,7 +619,7 @@ describe("ChatView - Auto Approval Tests", () => {
 					autoApprovalEnabled: true,
 					alwaysAllowExecute: true,
 					allowedCommands: ["npm test", "npm run build", "echo", "Select-String"],
-					clineMessages: [
+					darbotMessages: [
 						{
 							type: "say",
 							say: "task",
@@ -669,7 +669,7 @@ describe("ChatView - Auto Approval Tests", () => {
 				mockPostMessage({
 					alwaysAllowExecute: true,
 					allowedCommands: ["npm test", "Select-String"],
-					clineMessages: [
+					darbotMessages: [
 						{
 							type: "say",
 							say: "task",
@@ -684,7 +684,7 @@ describe("ChatView - Auto Approval Tests", () => {
 					autoApprovalEnabled: true,
 					alwaysAllowExecute: true,
 					allowedCommands: ["npm test", "Select-String"],
-					clineMessages: [
+					darbotMessages: [
 						{
 							type: "say",
 							say: "task",
@@ -734,7 +734,7 @@ describe("ChatView - Auto Approval Tests", () => {
 					autoApprovalEnabled: true,
 					alwaysAllowExecute: true,
 					allowedCommands: ["npm test", "Select-String"],
-					clineMessages: [
+					darbotMessages: [
 						{
 							type: "say",
 							say: "task",
@@ -748,7 +748,7 @@ describe("ChatView - Auto Approval Tests", () => {
 					autoApprovalEnabled: true,
 					alwaysAllowExecute: true,
 					allowedCommands: ["npm test", "Select-String"],
-					clineMessages: [
+					darbotMessages: [
 						{
 							type: "say",
 							say: "task",
@@ -781,7 +781,7 @@ describe("ChatView - Auto Approval Tests", () => {
 					autoApprovalEnabled: true,
 					alwaysAllowExecute: true,
 					allowedCommands: ["npm test", "Select-String"],
-					clineMessages: [
+					darbotMessages: [
 						{
 							type: "say",
 							say: "task",
@@ -795,7 +795,7 @@ describe("ChatView - Auto Approval Tests", () => {
 					autoApprovalEnabled: true,
 					alwaysAllowExecute: true,
 					allowedCommands: ["npm test", "Select-String"],
-					clineMessages: [
+					darbotMessages: [
 						{
 							type: "say",
 							say: "task",
@@ -834,7 +834,7 @@ describe("ChatView - Sound Playing Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowBrowser: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -855,7 +855,7 @@ describe("ChatView - Sound Playing Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowBrowser: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -883,7 +883,7 @@ describe("ChatView - Sound Playing Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowBrowser: false,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -904,7 +904,7 @@ describe("ChatView - Sound Playing Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowBrowser: false,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -932,7 +932,7 @@ describe("ChatView - Sound Playing Tests", () => {
 
 		// First hydrate state with initial task and streaming
 		mockPostMessage({
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -951,7 +951,7 @@ describe("ChatView - Sound Playing Tests", () => {
 
 		// Then send the completion result message (streaming finished)
 		mockPostMessage({
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -979,7 +979,7 @@ describe("ChatView - Sound Playing Tests", () => {
 
 		// First hydrate state with initial task and streaming
 		mockPostMessage({
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -998,7 +998,7 @@ describe("ChatView - Sound Playing Tests", () => {
 
 		// Then send the api failure message (streaming finished)
 		mockPostMessage({
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -1027,7 +1027,7 @@ describe("ChatView - Sound Playing Tests", () => {
 
 		// Send resume_task message
 		mockPostMessage({
-			clineMessages: [
+			darbotMessages: [
 				{ type: "say", say: "task", ts: Date.now() - 2000, text: "Initial task" },
 				{ type: "ask", ask: "resume_task", ts: Date.now(), text: "Resume task", partial: false },
 			],
@@ -1043,7 +1043,7 @@ describe("ChatView - Sound Playing Tests", () => {
 
 		// Send resume_completed_task message
 		mockPostMessage({
-			clineMessages: [
+			darbotMessages: [
 				{ type: "say", say: "task", ts: Date.now() - 2000, text: "Initial task" },
 				{ type: "ask", ask: "resume_completed_task", ts: Date.now(), text: "Resume completed", partial: false },
 			],
@@ -1070,7 +1070,7 @@ describe("ChatView - Focus Grabbing Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowBrowser: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -1099,7 +1099,7 @@ describe("ChatView - Focus Grabbing Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowBrowser: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -1123,7 +1123,7 @@ describe("ChatView - Focus Grabbing Tests", () => {
 		mockPostMessage({
 			autoApprovalEnabled: true,
 			alwaysAllowBrowser: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "ask",
 					ask: "followup",
@@ -1170,7 +1170,7 @@ describe("ChatView - Version Indicator Tests", () => {
 
 		// First hydrate state
 		mockPostMessage({
-			clineMessages: [],
+			darbotMessages: [],
 		})
 
 		// Check that version indicator is displayed
@@ -1190,7 +1190,7 @@ describe("ChatView - Version Indicator Tests", () => {
 
 		// First hydrate state
 		mockPostMessage({
-			clineMessages: [],
+			darbotMessages: [],
 		})
 
 		// Find version indicator
@@ -1213,7 +1213,7 @@ describe("ChatView - Version Indicator Tests", () => {
 
 		// First hydrate state
 		mockPostMessage({
-			clineMessages: [],
+			darbotMessages: [],
 		})
 
 		// Check styling classes - the VersionIndicator component receives className prop
@@ -1234,7 +1234,7 @@ describe("ChatView - Version Indicator Tests", () => {
 
 		// First hydrate state
 		mockPostMessage({
-			clineMessages: [],
+			darbotMessages: [],
 		})
 
 		// Check accessibility
@@ -1251,7 +1251,7 @@ describe("ChatView - Version Indicator Tests", () => {
 
 		// Hydrate state with an active task - any message in the array makes task truthy
 		mockPostMessage({
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -1274,7 +1274,7 @@ describe("ChatView - Version Indicator Tests", () => {
 
 		// First, hydrate with no messages (welcome screen)
 		mockPostMessage({
-			clineMessages: [],
+			darbotMessages: [],
 		})
 
 		// Version indicator should be present
@@ -1286,7 +1286,7 @@ describe("ChatView - Version Indicator Tests", () => {
 
 		// Now add a task - any message makes task truthy
 		mockPostMessage({
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",

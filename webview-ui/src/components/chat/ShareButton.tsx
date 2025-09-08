@@ -99,7 +99,7 @@ export const ShareButton = ({ item, disabled = false }: ShareButtonProps) => {
 
 		// Mark that authentication was initiated from this button
 		initiatedAuthFromThisButtonRef.current = true
-		vscode.postMessage({ type: "rooCloudSignIn" })
+		vscode.postMessage({ type: "darbotCloudSignIn" })
 		setShareDropdownOpen(false)
 		setConnectModalOpen(false)
 	}

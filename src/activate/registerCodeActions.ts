@@ -4,7 +4,7 @@ import { CodeActionId, CodeActionName } from "@darbot-code/types"
 
 import { getCodeActionCommand } from "../utils/commands"
 import { EditorUtils } from "../integrations/editor/EditorUtils"
-import { ClineProvider } from "../core/webview/ClineProvider"
+import { DarbotProvider } from "../core/webview/DarbotProvider"
 
 export const registerCodeActions = (context: vscode.ExtensionContext) => {
 	registerCodeAction(context, "explainCode", "EXPLAIN")
@@ -47,7 +47,7 @@ const registerCodeAction = (context: vscode.ExtensionContext, command: CodeActio
 				...(userInput ? { userInput } : {}),
 			}
 
-			await ClineProvider.handleCodeAction(command, promptType, params)
+			await DarbotProvider.handleCodeAction(command, promptType, params)
 		}),
 	)
 }

@@ -36,12 +36,12 @@ vi.mock("vscode", () => ({
 
 // Mock config
 vi.mock("../Config", () => ({
-	getDarbotCodeApiUrl: () => "https://app.roocode.com",
+	getDarbotCodeApiUrl: () => "https://app.darbotcode.com",
 }))
 
 // Mock utils
 vi.mock("../utils", () => ({
-	getUserAgent: () => "Roo-Code 1.0.0",
+	getUserAgent: () => "Darbot-Coder 1.0.0",
 }))
 
 describe("ShareService", () => {
@@ -72,7 +72,7 @@ describe("ShareService", () => {
 		it("should share task with organization visibility and copy to clipboard", async () => {
 			const mockResponseData = {
 				success: true,
-				shareUrl: "https://app.roocode.com/share/abc123",
+				shareUrl: "https://app.darbotcode.com/share/abc123",
 			}
 
 			;(mockAuthService.getSessionToken as any).mockReturnValue("session-token")
@@ -84,24 +84,24 @@ describe("ShareService", () => {
 			const result = await shareService.shareTask("task-123", "organization")
 
 			expect(result.success).toBe(true)
-			expect(result.shareUrl).toBe("https://app.roocode.com/share/abc123")
-			expect(mockFetch).toHaveBeenCalledWith("https://app.roocode.com/api/extension/share", {
+			expect(result.shareUrl).toBe("https://app.darbotcode.com/share/abc123")
+			expect(mockFetch).toHaveBeenCalledWith("https://app.darbotcode.com/api/extension/share", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: "Bearer session-token",
-					"User-Agent": "Roo-Code 1.0.0",
+					"User-Agent": "Darbot-Coder 1.0.0",
 				},
 				body: JSON.stringify({ taskId: "task-123", visibility: "organization" }),
 				signal: expect.any(AbortSignal),
 			})
-			expect(vscode.env.clipboard.writeText).toHaveBeenCalledWith("https://app.roocode.com/share/abc123")
+			expect(vscode.env.clipboard.writeText).toHaveBeenCalledWith("https://app.darbotcode.com/share/abc123")
 		})
 
 		it("should share task with public visibility", async () => {
 			const mockResponseData = {
 				success: true,
-				shareUrl: "https://app.roocode.com/share/abc123",
+				shareUrl: "https://app.darbotcode.com/share/abc123",
 			}
 
 			;(mockAuthService.getSessionToken as any).mockReturnValue("session-token")
@@ -113,12 +113,12 @@ describe("ShareService", () => {
 			const result = await shareService.shareTask("task-123", "public")
 
 			expect(result.success).toBe(true)
-			expect(mockFetch).toHaveBeenCalledWith("https://app.roocode.com/api/extension/share", {
+			expect(mockFetch).toHaveBeenCalledWith("https://app.darbotcode.com/api/extension/share", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: "Bearer session-token",
-					"User-Agent": "Roo-Code 1.0.0",
+					"User-Agent": "Darbot-Coder 1.0.0",
 				},
 				body: JSON.stringify({ taskId: "task-123", visibility: "public" }),
 				signal: expect.any(AbortSignal),
@@ -128,7 +128,7 @@ describe("ShareService", () => {
 		it("should default to organization visibility when not specified", async () => {
 			const mockResponseData = {
 				success: true,
-				shareUrl: "https://app.roocode.com/share/abc123",
+				shareUrl: "https://app.darbotcode.com/share/abc123",
 			}
 
 			;(mockAuthService.getSessionToken as any).mockReturnValue("session-token")
@@ -140,12 +140,12 @@ describe("ShareService", () => {
 			const result = await shareService.shareTask("task-123")
 
 			expect(result.success).toBe(true)
-			expect(mockFetch).toHaveBeenCalledWith("https://app.roocode.com/api/extension/share", {
+			expect(mockFetch).toHaveBeenCalledWith("https://app.darbotcode.com/api/extension/share", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: "Bearer session-token",
-					"User-Agent": "Roo-Code 1.0.0",
+					"User-Agent": "Darbot-Coder 1.0.0",
 				},
 				body: JSON.stringify({ taskId: "task-123", visibility: "organization" }),
 				signal: expect.any(AbortSignal),

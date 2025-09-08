@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react"
 import { useEvent } from "react-use"
-import { VSCodeTextField, VSCodeRadioGroup, VSCodeRadio } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField, VSCodeRadioGroup, VSCodeRadio } from "../../vscode-components"
 
 import type { ProviderSettings } from "@darbot-code/types"
 

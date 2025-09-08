@@ -7,7 +7,7 @@ import {
 	VSCodePanels,
 	VSCodePanelTab,
 	VSCodePanelView,
-} from "@vscode/webview-ui-toolkit/react"
+} from "../vscode-components"
 
 import { McpServer } from "@darbot/mcp"
 
@@ -66,7 +66,7 @@ const McpView = ({ onDone }: McpViewProps) => {
 					}}>
 					<Trans i18nKey="mcp:description">
 						<VSCodeLink
-							href={buildDocLink("features/mcp/using-mcp-in-roo", "mcp_settings")}
+							href={buildDocLink("features/mcp/using-mcp-in-darbot", "mcp_settings")}
 							style={{ display: "inline" }}>
 							Learn More
 						</VSCodeLink>
@@ -95,7 +95,7 @@ const McpView = ({ onDone }: McpViewProps) => {
 								<Trans i18nKey="mcp:enableServerCreation.description">
 									<VSCodeLink
 										href={buildDocLink(
-											"features/mcp/using-mcp-in-roo#how-to-use-roo-to-create-an-mcp-server",
+											"features/mcp/using-mcp-in-darbot#how-to-use-darbot-to-create-an-mcp-server",
 											"mcp_server_creation",
 										)}
 										style={{ display: "inline" }}>
@@ -183,7 +183,7 @@ const McpView = ({ onDone }: McpViewProps) => {
 							}}>
 							<VSCodeLink
 								href={buildDocLink(
-									"features/mcp/using-mcp-in-roo#editing-mcp-settings-files",
+									"features/mcp/using-mcp-in-darbot#editing-mcp-settings-files",
 									"mcp_edit_settings",
 								)}
 								style={{ display: "inline" }}>

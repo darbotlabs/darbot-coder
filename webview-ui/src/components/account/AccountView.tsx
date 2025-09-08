@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton } from "../vscode-components"
 
 import type { CloudUserInfo } from "@darbot-code/types"
 import { TelemetryEventName } from "@darbot-code/types"
@@ -19,7 +19,7 @@ export const AccountView = ({ userInfo, isAuthenticated, cloudApiUrl, onDone }: 
 	const { t } = useAppTranslation()
 	const wasAuthenticatedRef = useRef(false)
 
-	const rooLogoUri = (window as any).IMAGES_BASE_URI + "/roo-logo.svg"
+	const darbotLogoUri = (window as any).IMAGES_BASE_URI + "/darbot-logo.svg"
 
 	// Track authentication state changes to detect successful logout
 	useEffect(() => {
@@ -35,19 +35,19 @@ export const AccountView = ({ userInfo, isAuthenticated, cloudApiUrl, onDone }: 
 	const handleConnectClick = () => {
 		// Send telemetry for account connect action
 		telemetryClient.capture(TelemetryEventName.ACCOUNT_CONNECT_CLICKED)
-		vscode.postMessage({ type: "rooCloudSignIn" })
+		vscode.postMessage({ type: "darbotCloudSignIn" })
 	}
 
 	const handleLogoutClick = () => {
 		// Send telemetry for account logout action
 		telemetryClient.capture(TelemetryEventName.ACCOUNT_LOGOUT_CLICKED)
-		vscode.postMessage({ type: "rooCloudSignOut" })
+		vscode.postMessage({ type: "darbotCloudSignOut" })
 	}
 
 	const handleVisitCloudWebsite = () => {
 		// Send telemetry for cloud website visit
 		telemetryClient.capture(TelemetryEventName.ACCOUNT_CONNECT_CLICKED)
-		const cloudUrl = cloudApiUrl || "https://app.roocode.com"
+		const cloudUrl = cloudApiUrl || "https://github.com/DarbotLabs/darbot-coder"
 		vscode.postMessage({ type: "openExternal", url: cloudUrl })
 	}
 
@@ -112,14 +112,14 @@ export const AccountView = ({ userInfo, isAuthenticated, cloudApiUrl, onDone }: 
 							<div
 								className="w-12 h-12 bg-vscode-foreground"
 								style={{
-									WebkitMaskImage: `url('${rooLogoUri}')`,
+									WebkitMaskImage: `url('${darbotLogoUri}')`,
 									WebkitMaskRepeat: "no-repeat",
 									WebkitMaskSize: "contain",
-									maskImage: `url('${rooLogoUri}')`,
+									maskImage: `url('${darbotLogoUri}')`,
 									maskRepeat: "no-repeat",
 									maskSize: "contain",
 								}}>
-								<img src={rooLogoUri} alt="Roo logo" className="w-12 h-12 opacity-0" />
+								<img src={darbotLogoUri} alt="Darbot logo" className="w-12 h-12 opacity-0" />
 							</div>
 						</div>
 					</div>

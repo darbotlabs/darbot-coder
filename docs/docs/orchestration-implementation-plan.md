@@ -342,10 +342,10 @@ export class WorkflowTemplateEngine {
   private templates: Map<string, WorkflowTemplate> = new Map()
   
   /**
-   * Load workflow templates from .roo/templates/
+   * Load workflow templates from .darbot/templates/
    */
   async loadTemplates(): Promise<void> {
-    const templateDir = path.join(getWorkspacePath(), '.roo', 'templates')
+    const templateDir = path.join(getWorkspacePath(), '.darbot', 'templates')
     
     if (await fileExistsAtPath(templateDir)) {
       const templateFiles = await fs.readdir(templateDir)
@@ -399,9 +399,9 @@ export class WorkflowTemplateEngine {
 ```
 
 #### **4.2 Workflow Templates**
-**Directory**: `.roo/templates/`
+**Directory**: `.darbot/templates/`
 
-**Feature Development Template** (`.roo/templates/feature-development.xml`):
+**Feature Development Template** (`.darbot/templates/feature-development.xml`):
 ```xml
 <workflow_template name="feature_development">
   <description>Complete feature development with architecture, implementation, testing, and documentation</description>
@@ -534,10 +534,10 @@ export class ModelRouter {
 }
 ```
 
-## 🔄 **Integration with Existing DR-Coder Architecture**
+## 🔄 **Integration with Existing darbot-coder Architecture**
 
 ### **Enhanced Mode Configuration**
-The orchestration system builds on the existing `.roomodes` system:
+The orchestration system builds on the existing `.darbotmodes` system:
 
 ```yaml
 customModes:
@@ -585,7 +585,7 @@ toolGroups:
 ### **Developer Experience**
 - **Zero-configuration** orchestration
 - **Transparent delegation** with progress tracking
-- **Seamless integration** with existing DR-Coder workflows
+- **Seamless integration** with existing darbot-coder workflows
 
 ## 🚀 **Implementation Timeline**
 

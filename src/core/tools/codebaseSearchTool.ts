@@ -9,7 +9,7 @@ import { AskApproval, HandleError, PushToolResult, RemoveClosingTag, ToolUse } f
 import path from "path"
 
 export async function codebaseSearchTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -20,7 +20,7 @@ export async function codebaseSearchTool(
 	const workspacePath = getWorkspacePath()
 
 	if (!workspacePath) {
-		// This case should ideally not happen if Cline is initialized correctly
+		// This case should ideally not happen if darbot is initialized correctly
 		await handleError(toolName, new Error("Could not determine workspace path."))
 		return
 	}
@@ -44,13 +44,13 @@ export async function codebaseSearchTool(
 	}
 
 	if (block.partial) {
-		await cline.ask("tool", JSON.stringify(sharedMessageProps), block.partial).catch(() => {})
+		await darbot.ask("tool", JSON.stringify(sharedMessageProps), block.partial).catch(() => {})
 		return
 	}
 
 	if (!query) {
-		cline.consecutiveMistakeCount++
-		pushToolResult(await cline.sayAndCreateMissingParamError(toolName, "query"))
+		darbot.consecutiveMistakeCount++
+		pushToolResult(await darbot.sayAndCreateMissingParamError(toolName, "query"))
 		return
 	}
 
@@ -60,11 +60,11 @@ export async function codebaseSearchTool(
 		return
 	}
 
-	cline.consecutiveMistakeCount = 0
+	darbot.consecutiveMistakeCount = 0
 
 	// --- Core Logic ---
 	try {
-		const context = cline.providerRef.deref()?.context
+		const context = darbot.providerRef.deref()?.context
 		if (!context) {
 			throw new Error("Extension context is not available.")
 		}
@@ -121,7 +121,7 @@ export async function codebaseSearchTool(
 
 		// Send results to UI
 		const payload = { tool: "codebaseSearch", content: jsonResult }
-		await cline.say("codebase_search_result", JSON.stringify(payload))
+		await darbot.say("codebase_search_result", JSON.stringify(payload))
 
 		// Push results to AI
 		const output = `Query: ${query}

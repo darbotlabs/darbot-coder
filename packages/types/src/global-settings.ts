@@ -88,7 +88,7 @@ export const globalSettingsSchema = z.object({
 
 	maxOpenTabsContext: z.number().optional(),
 	maxWorkspaceFiles: z.number().optional(),
-	showRooIgnoredFiles: z.boolean().optional(),
+	showDarbotIgnoredFiles: z.boolean().optional(),
 	maxReadFileLine: z.number().optional(),
 
 	terminalOutputLineLimit: z.number().optional(),
@@ -141,7 +141,7 @@ export const GLOBAL_SETTINGS_KEYS = globalSettingsSchema.keyof().options
  * DarbotCodeSettings
  */
 
-export const rooCodeSettingsSchema = providerSettingsSchema.merge(globalSettingsSchema)
+export const darbotCodeSettingsSchema = providerSettingsSchema.merge(globalSettingsSchema)
 
 export type DarbotCodeSettings = GlobalSettings & ProviderSettings
 
@@ -257,7 +257,7 @@ export const EVALS_SETTINGS: DarbotCodeSettings = {
 	rateLimitSeconds: 0,
 	maxOpenTabsContext: 20,
 	maxWorkspaceFiles: 200,
-	showRooIgnoredFiles: true,
+	showDarbotIgnoredFiles: true,
 	maxReadFileLine: -1, // -1 to enable full file reading.
 
 	language: "en",

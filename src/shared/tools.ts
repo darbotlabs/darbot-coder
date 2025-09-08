@@ -1,11 +1,11 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 
-import type { ClineAsk, ToolProgressStatus, ToolGroup, ToolName } from "@darbot-code/types"
+import type { DarbotAsk, ToolProgressStatus, ToolGroup, ToolName } from "@darbot-code/types"
 
 export type ToolResponse = string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam>
 
 export type AskApproval = (
-	type: ClineAsk,
+	type: DarbotAsk,
 	partialMessage?: string,
 	progressStatus?: ToolProgressStatus,
 	forceApproval?: boolean,
@@ -282,3 +282,4 @@ export interface DiffStrategy {
 
 	getProgressStatus?(toolUse: ToolUse, result?: any): ToolProgressStatus
 }
+

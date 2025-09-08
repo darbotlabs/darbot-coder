@@ -1,6 +1,6 @@
 "use server"
 
-import { getModelId, rooCodeSettingsSchema } from "@darbot-code/types"
+import { getModelId, darbotCodeSettingsSchema } from "@darbot-code/types"
 import { getRuns, getLanguageScores } from "@darbot-code/evals"
 
 import { formatScore } from "@/lib"
@@ -10,10 +10,10 @@ export async function getEvalRuns() {
 
 	const runs = (await getRuns())
 		.filter((run) => !!run.taskMetrics)
-		.filter(({ settings }) => rooCodeSettingsSchema.safeParse(settings).success)
+		.filter(({ settings }) => darbotCodeSettingsSchema.safeParse(settings).success)
 		.sort((a, b) => b.passed - a.passed)
 		.map((run) => {
-			const settings = rooCodeSettingsSchema.parse(run.settings)
+			const settings = darbotCodeSettingsSchema.parse(run.settings)
 
 			return {
 				...run,

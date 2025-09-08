@@ -206,18 +206,18 @@
     <workflow name="complete_pr_fetch">
       <description>Fetch all PR data for analysis</description>
       <steps>
-        <step>gh pr view 123 --repo owner/repo --json number,title,author,state,body,url,headRefName,baseRefName,files,additions,deletions,changedFiles > .roo/temp/pr-123/metadata.json</step>
-        <step>gh pr view 123 --repo owner/repo --json comments > .roo/temp/pr-123/comments.json</step>
-        <step>gh pr view 123 --repo owner/repo --json reviews > .roo/temp/pr-123/reviews.json</step>
-        <step>gh pr diff 123 --repo owner/repo > .roo/temp/pr-123/pr.diff</step>
+        <step>gh pr view 123 --repo owner/repo --json number,title,author,state,body,url,headRefName,baseRefName,files,additions,deletions,changedFiles > .darbot/temp/pr-123/metadata.json</step>
+        <step>gh pr view 123 --repo owner/repo --json comments > .darbot/temp/pr-123/comments.json</step>
+        <step>gh pr view 123 --repo owner/repo --json reviews > .darbot/temp/pr-123/reviews.json</step>
+        <step>gh pr diff 123 --repo owner/repo > .darbot/temp/pr-123/pr.diff</step>
       </steps>
     </workflow>
 
     <workflow name="post_review">
       <description>Post a comprehensive review</description>
       <steps>
-        <step>Create review content in .roo/temp/pr-123/review.md</step>
-        <step>gh pr review 123 --repo owner/repo --comment --body-file .roo/temp/pr-123/review.md</step>
+        <step>Create review content in .darbot/temp/pr-123/review.md</step>
+        <step>gh pr review 123 --repo owner/repo --comment --body-file .darbot/temp/pr-123/review.md</step>
       </steps>
     </workflow>
   </example_workflows>

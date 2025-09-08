@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react"
-import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField } from "../../vscode-components"
 
 import { type ProviderSettings, type OrganizationAllowList, requestyDefaultModelId } from "@darbot-code/types"
 

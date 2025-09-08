@@ -10,7 +10,7 @@ vi.mock("../applyDiffTool", () => ({
 import { applyDiffToolLegacy } from "../applyDiffTool"
 
 describe("applyDiffTool experiment routing", () => {
-	let mockCline: any
+	let mockDarbot: any
 	let mockBlock: any
 	let mockAskApproval: any
 	let mockHandleError: any
@@ -25,7 +25,7 @@ describe("applyDiffTool experiment routing", () => {
 			getState: vi.fn(),
 		}
 
-		mockCline = {
+		mockDarbot = {
 			providerRef: {
 				deref: vi.fn().mockReturnValue(mockProvider),
 			},
@@ -67,7 +67,7 @@ describe("applyDiffTool experiment routing", () => {
 		;(applyDiffToolLegacy as any).mockResolvedValue(undefined)
 
 		await applyDiffTool(
-			mockCline,
+			mockDarbot,
 			mockBlock,
 			mockAskApproval,
 			mockHandleError,
@@ -76,7 +76,7 @@ describe("applyDiffTool experiment routing", () => {
 		)
 
 		expect(applyDiffToolLegacy).toHaveBeenCalledWith(
-			mockCline,
+			mockDarbot,
 			mockBlock,
 			mockAskApproval,
 			mockHandleError,
@@ -92,7 +92,7 @@ describe("applyDiffTool experiment routing", () => {
 		;(applyDiffToolLegacy as any).mockResolvedValue(undefined)
 
 		await applyDiffTool(
-			mockCline,
+			mockDarbot,
 			mockBlock,
 			mockAskApproval,
 			mockHandleError,
@@ -101,7 +101,7 @@ describe("applyDiffTool experiment routing", () => {
 		)
 
 		expect(applyDiffToolLegacy).toHaveBeenCalledWith(
-			mockCline,
+			mockDarbot,
 			mockBlock,
 			mockAskApproval,
 			mockHandleError,
@@ -120,7 +120,7 @@ describe("applyDiffTool experiment routing", () => {
 		// Mock the new tool behavior - it should continue with the new implementation
 		// Since we're not mocking the entire function, we'll just verify it doesn't call legacy
 		await applyDiffTool(
-			mockCline,
+			mockDarbot,
 			mockBlock,
 			mockAskApproval,
 			mockHandleError,
@@ -132,10 +132,10 @@ describe("applyDiffTool experiment routing", () => {
 	})
 
 	it("should use new tool when provider is not available", async () => {
-		mockCline.providerRef.deref.mockReturnValue(null)
+		mockDarbot.providerRef.deref.mockReturnValue(null)
 
 		await applyDiffTool(
-			mockCline,
+			mockDarbot,
 			mockBlock,
 			mockAskApproval,
 			mockHandleError,

@@ -1,8 +1,8 @@
 import { z } from "zod"
 
-import { clineMessageSchema, tokenUsageSchema } from "./message.js"
+import { darbotMessageSchema, tokenUsageSchema } from "./message.js"
 import { toolNamesSchema, toolUsageSchema } from "./tool.js"
-import { rooCodeSettingsSchema } from "./global-settings.js"
+import { darbotCodeSettingsSchema } from "./global-settings.js"
 
 /**
  * isSubtaskSchema
@@ -33,12 +33,12 @@ export enum DarbotCodeEventName {
 	EvalFail = "evalFail",
 }
 
-export const rooCodeEventsSchema = z.object({
+export const darbotCodeEventsSchema = z.object({
 	[DarbotCodeEventName.Message]: z.tuple([
 		z.object({
 			taskId: z.string(),
 			action: z.union([z.literal("created"), z.literal("updated")]),
-			message: clineMessageSchema,
+			message: darbotMessageSchema,
 		}),
 	]),
 	[DarbotCodeEventName.TaskCreated]: z.tuple([z.string()]),
@@ -54,7 +54,7 @@ export const rooCodeEventsSchema = z.object({
 	[DarbotCodeEventName.TaskToolFailed]: z.tuple([z.string(), toolNamesSchema, z.string()]),
 })
 
-export type DarbotCodeEvents = z.infer<typeof rooCodeEventsSchema>
+export type DarbotCodeEvents = z.infer<typeof darbotCodeEventsSchema>
 
 /**
  * Ack
@@ -82,7 +82,7 @@ export const taskCommandSchema = z.discriminatedUnion("commandName", [
 	z.object({
 		commandName: z.literal(TaskCommandName.StartNewTask),
 		data: z.object({
-			configuration: rooCodeSettingsSchema,
+			configuration: darbotCodeSettingsSchema,
 			text: z.string(),
 			images: z.array(z.string()).optional(),
 			newTab: z.boolean().optional(),
@@ -107,62 +107,62 @@ export type TaskCommand = z.infer<typeof taskCommandSchema>
 export const taskEventSchema = z.discriminatedUnion("eventName", [
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.Message),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.Message],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.Message],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskCreated),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskCreated],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskCreated],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskStarted),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskStarted],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskStarted],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskModeSwitched),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskModeSwitched],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskModeSwitched],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskPaused),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskPaused],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskPaused],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskUnpaused),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskUnpaused],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskUnpaused],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskAskResponded),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskAskResponded],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskAskResponded],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskAborted),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskAborted],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskAborted],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskSpawned),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskSpawned],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskSpawned],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskCompleted),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskCompleted],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskCompleted],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskTokenUsageUpdated),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskTokenUsageUpdated],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskTokenUsageUpdated],
 		taskId: z.number().optional(),
 	}),
 	z.object({
 		eventName: z.literal(DarbotCodeEventName.TaskToolFailed),
-		payload: rooCodeEventsSchema.shape[DarbotCodeEventName.TaskToolFailed],
+		payload: darbotCodeEventsSchema.shape[DarbotCodeEventName.TaskToolFailed],
 		taskId: z.number().optional(),
 	}),
 	z.object({
@@ -240,3 +240,4 @@ export type IpcServerEvents = {
 	[IpcMessageType.TaskCommand]: [clientId: string, data: TaskCommand]
 	[IpcMessageType.TaskEvent]: [relayClientId: string | undefined, data: TaskEvent]
 }
+

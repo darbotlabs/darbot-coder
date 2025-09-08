@@ -12,7 +12,7 @@ import { marketplaceItemSchema } from "@darbot-code/types"
 
 import { Mode } from "./modes"
 
-export type ClineAskResponse = "yesButtonClicked" | "noButtonClicked" | "messageResponse" | "objectResponse"
+export type DarbotAskResponse = "yesButtonClicked" | "noButtonClicked" | "messageResponse" | "objectResponse"
 
 export type PromptMode = Mode | "enhance"
 
@@ -155,7 +155,7 @@ export interface WebviewMessage {
 		| "browserToolEnabled"
 		| "codebaseIndexEnabled"
 		| "telemetrySetting"
-		| "showRooIgnoredFiles"
+		| "showDarbotIgnoredFiles"
 		| "testBrowserConnection"
 		| "browserConnectionResult"
 		| "remoteBrowserEnabled"
@@ -167,8 +167,8 @@ export interface WebviewMessage {
 		| "setHistoryPreviewCollapsed"
 		| "hasOpenedModeSelector"
 		| "accountButtonClicked"
-		| "rooCloudSignIn"
-		| "rooCloudSignOut"
+		| "darbotCloudSignIn"
+		| "darbotCloudSignOut"
 		| "condenseTaskContextRequest"
 		| "requestIndexingStatus"
 		| "startIndexing"
@@ -204,7 +204,7 @@ export interface WebviewMessage {
 	disabled?: boolean
 	context?: string
 	dataUri?: string
-	askResponse?: ClineAskResponse
+	askResponse?: DarbotAskResponse
 	apiConfiguration?: ProviderSettings
 	images?: string[]
 	bool?: boolean

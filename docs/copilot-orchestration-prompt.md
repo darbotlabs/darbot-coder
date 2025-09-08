@@ -68,7 +68,7 @@ darbot-coder (formerly DR-Coder) provides an excellent foundation for AI orchest
 **Existing Infrastructure (80% Complete):**
 1. Custom Modes System: Specialized AI personas (.darbotmodes)
 2. Tool Architecture: 20+ specialized tools for file ops, commands, browser automation
-3. Task Management: Hierarchical task orchestration via clineStack
+3. Task Management: Hierarchical task orchestration via darbotStack
 4. Multi-LLM Support: Provider switching and configuration per mode
 5. MCP Integration: External tool expansion capabilities
 
@@ -119,15 +119,15 @@ These documents will give any AI agent (including future sessions with me) compl
 **Repository Location**: ${DARBOT_CODER_ROOT}
 
 **Key Files to Examine**:
-- `.roomodes` - Current mode definitions
+- `.darbotmodes` - Current mode definitions
 - `src/core/task/Task.ts` - Main task coordination
 - `src/core/config/CustomModesManager.ts` - Mode management
-- `.roo/` - Existing workflow XML files
+- `.darbot/` - Existing workflow XML files
 - `src/core/` - Core architecture modules
 
 **Current Capabilities Discovered**:
 - ✅ XML-based workflow system with delegation
-- ✅ Multi-agent task coordination (see `.roo/rules-pr-reviewer/1_orchestrator_workflow.xml`)
+- ✅ Multi-agent task coordination (see `.darbot/rules-pr-reviewer/1_orchestrator_workflow.xml`)
 - ✅ Event-driven task architecture
 - ✅ Tool orchestration framework
 - ✅ Task persistence and checkpointing

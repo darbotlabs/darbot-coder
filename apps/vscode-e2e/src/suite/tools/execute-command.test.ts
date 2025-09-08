@@ -3,12 +3,12 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import * as vscode from "vscode"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { waitFor, sleep, waitUntilCompleted } from "../utils"
 import { setDefaultSuiteTimeout } from "../test-utils"
 
-suite("Roo Code execute_command Tool", function () {
+suite("darbot-coder execute_command Tool", function () {
 	setDefaultSuiteTimeout(this)
 
 	let workspaceDir: string
@@ -122,7 +122,7 @@ suite("Roo Code execute_command Tool", function () {
 		let commandExecuted = ""
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			// Log important messages for debugging
 			if (message.type === "say" && message.say === "error") {
 				errorOccurred = message.text || "Unknown error"
@@ -227,7 +227,7 @@ Then use the attempt_completion tool to complete the task. Do not suggest any co
 		await fs.mkdir(subDir, { recursive: true })
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			if (message.type === "say" && message.say === "error") {
 				errorOccurred = message.text || "Unknown error"
 				console.error("Error:", message.text)
@@ -343,7 +343,7 @@ Avoid at all costs suggesting a command when using the attempt_completion tool`,
 		const commandsExecuted: string[] = []
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			if (message.type === "say" && message.say === "error") {
 				errorOccurred = message.text || "Unknown error"
 				console.error("Error:", message.text)
@@ -456,7 +456,7 @@ After both commands are executed, use the attempt_completion tool to complete th
 		let commandExecuted = ""
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			if (message.type === "say" && message.say === "error") {
 				errorOccurred = message.text || "Unknown error"
 				console.error("Error:", message.text)
@@ -556,3 +556,4 @@ Avoid at all costs suggesting a command when using the attempt_completion tool`,
 		}
 	})
 })
+

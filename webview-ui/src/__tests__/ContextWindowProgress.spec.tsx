@@ -11,7 +11,7 @@ vi.mock("@/utils/format", () => ({
 }))
 
 // Mock VSCodeBadge component for all tests
-vi.mock("@vscode/webview-ui-toolkit/react", () => ({
+vi.mock("../components/vscode-components", () => ({
 	VSCodeBadge: ({ children }: { children: React.ReactNode }) => <div data-testid="vscode-badge">{children}</div>,
 }))
 

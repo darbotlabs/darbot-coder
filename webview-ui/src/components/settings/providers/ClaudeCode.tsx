@@ -1,5 +1,5 @@
 import React from "react"
-import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField } from "../../vscode-components"
 import { type ProviderSettings } from "@darbot-code/types"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { Slider } from "@src/components/ui"

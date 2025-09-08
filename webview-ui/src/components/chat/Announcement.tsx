@@ -1,6 +1,6 @@
 import { useState, memo } from "react"
 import { Trans } from "react-i18next"
-import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeLink } from "../vscode-components"
 
 import { Package } from "@darbot/package"
 
@@ -12,7 +12,7 @@ interface AnnouncementProps {
 }
 
 /**
- * You must update the `latestAnnouncementId` in ClineProvider for new
+ * You must update the `latestAnnouncementId` in DarbotProvider for new
  * announcements to show to users. This new id will be compared with what's in
  * state for the 'last announcement shown', and if it's different then the
  * announcement will render. As soon as an announcement is shown, the id will be
@@ -84,8 +84,8 @@ const Announcement = ({ hideAnnouncement }: AnnouncementProps) => {
 						</li>
 					</ul>
 					<Trans
-						i18nKey="chat:announcement.detailsDiscussLinks"
-						components={{ discordLink: <DiscordLink />, redditLink: <RedditLink /> }}
+						i18nKey="chat:announcement.detailsGitHubLinks"
+						components={{ gitHubLink: <GitHubLink /> }}
 					/>
 				</div>
 			</DialogContent>
@@ -93,31 +93,17 @@ const Announcement = ({ hideAnnouncement }: AnnouncementProps) => {
 	)
 }
 
-const DiscordLink = () => (
+const GitHubLink = () => (
 	<VSCodeLink
-		href="https://discord.gg/roocode"
+		href="https://github.com/DarbotLabs/darbot-coder"
 		onClick={(e) => {
 			e.preventDefault()
 			window.postMessage(
-				{ type: "action", action: "openExternal", data: { url: "https://discord.gg/roocode" } },
+				{ type: "action", action: "openExternal", data: { url: "https://github.com/DarbotLabs/darbot-coder" } },
 				"*",
 			)
 		}}>
-		Discord
-	</VSCodeLink>
-)
-
-const RedditLink = () => (
-	<VSCodeLink
-		href="https://reddit.com/r/DarbotCoder"
-		onClick={(e) => {
-			e.preventDefault()
-			window.postMessage(
-				{ type: "action", action: "openExternal", data: { url: "https://reddit.com/r/DarbotCoder" } },
-				"*",
-			)
-		}}>
-		Reddit
+		GitHub
 	</VSCodeLink>
 )
 

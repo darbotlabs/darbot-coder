@@ -1,6 +1,6 @@
 import { HTMLAttributes } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
-import { VSCodeCheckbox, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox, VSCodeLink } from "../vscode-components"
 import { GitBranch } from "lucide-react"
 import { Trans } from "react-i18next"
 import { buildDocLink } from "@src/utils/docLinks"

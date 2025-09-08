@@ -37,24 +37,24 @@ import { executeCommandTool } from "../executeCommandTool"
 beforeEach(() => {
 	// Reset the mock implementation for executeCommandTool
 	// @ts-expect-error - TypeScript doesn't like this pattern
-	executeCommandTool.mockImplementation(async (cline, block, askApproval, handleError, pushToolResult) => {
+	executeCommandTool.mockImplementation(async (darbot, block, askApproval, handleError, pushToolResult) => {
 		if (!block.params.command) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("execute_command")
-			const errorMessage = await cline.sayAndCreateMissingParamError("execute_command", "command")
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("execute_command")
+			const errorMessage = await darbot.sayAndCreateMissingParamError("execute_command", "command")
 			pushToolResult(errorMessage)
 			return
 		}
 
-		const ignoredFileAttemptedToAccess = cline.darbotIgnoreController?.validateCommand(block.params.command)
+		const ignoredFileAttemptedToAccess = darbot.darbotIgnoreController?.validateCommand(block.params.command)
 		if (ignoredFileAttemptedToAccess) {
-			await cline.say("rooignore_error", ignoredFileAttemptedToAccess)
+			await darbot.say("darbotignore_error", ignoredFileAttemptedToAccess)
 			// Call the mocked formatResponse functions with the correct arguments
-			const mockRooIgnoreError = "RooIgnore error"
-			;(formatResponse.darbotIgnoreError as any).mockReturnValue(mockRooIgnoreError)
+			const mockDarbotIgnoreError = "DarbotIgnore error"
+			;(formatResponse.darbotIgnoreError as any).mockReturnValue(mockDarbotIgnoreError)
 			;(formatResponse.toolError as any).mockReturnValue("Tool error")
 			formatResponse.darbotIgnoreError(ignoredFileAttemptedToAccess)
-			formatResponse.toolError(mockRooIgnoreError)
+			formatResponse.toolError(mockDarbotIgnoreError)
 			pushToolResult("Tool error")
 			return
 		}
@@ -67,10 +67,10 @@ beforeEach(() => {
 		// Get the custom working directory if provided
 		const customCwd = block.params.cwd
 
-		const [userRejected, result] = await mockExecuteCommand(cline, block.params.command, customCwd)
+		const [userRejected, result] = await mockExecuteCommand(darbot, block.params.command, customCwd)
 
 		if (userRejected) {
-			cline.didRejectTool = true
+			darbot.didRejectTool = true
 		}
 
 		pushToolResult(result)
@@ -79,7 +79,7 @@ beforeEach(() => {
 
 describe("executeCommandTool", () => {
 	// Setup common test variables
-	let mockCline: any & { consecutiveMistakeCount: number; didRejectTool: boolean }
+	let mockDarbot: any & { consecutiveMistakeCount: number; didRejectTool: boolean }
 	let mockAskApproval: any
 	let mockHandleError: any
 	let mockPushToolResult: any
@@ -91,13 +91,13 @@ describe("executeCommandTool", () => {
 		vitest.clearAllMocks()
 
 		// Create mock implementations with eslint directives to handle the type issues
-		mockCline = {
+		mockDarbot = {
 			ask: vitest.fn().mockResolvedValue(undefined),
 			say: vitest.fn().mockResolvedValue(undefined),
 			sayAndCreateMissingParamError: vitest.fn().mockResolvedValue("Missing parameter error"),
 			consecutiveMistakeCount: 0,
 			didRejectTool: false,
-			rooIgnoreController: {
+			darbotIgnoreController: {
 				validateCommand: vitest.fn().mockReturnValue(null),
 			},
 			recordToolUsage: vitest.fn().mockReturnValue({} as ToolUsage),
@@ -159,7 +159,7 @@ describe("executeCommandTool", () => {
 
 			// Execute
 			await executeCommandTool(
-				mockCline as unknown as Task,
+				mockDarbot as unknown as Task,
 				mockToolUse,
 				mockAskApproval as unknown as AskApproval,
 				mockHandleError as unknown as HandleError,
@@ -180,7 +180,7 @@ describe("executeCommandTool", () => {
 
 			// Execute
 			await executeCommandTool(
-				mockCline as unknown as Task,
+				mockDarbot as unknown as Task,
 				mockToolUse,
 				mockAskApproval as unknown as AskApproval,
 				mockHandleError as unknown as HandleError,
@@ -203,7 +203,7 @@ describe("executeCommandTool", () => {
 
 			// Execute
 			await executeCommandTool(
-				mockCline as unknown as Task,
+				mockDarbot as unknown as Task,
 				mockToolUse,
 				mockAskApproval as unknown as AskApproval,
 				mockHandleError as unknown as HandleError,
@@ -212,8 +212,8 @@ describe("executeCommandTool", () => {
 			)
 
 			// Verify
-			expect(mockCline.consecutiveMistakeCount).toBe(1)
-			expect(mockCline.sayAndCreateMissingParamError).toHaveBeenCalledWith("execute_command", "command")
+			expect(mockDarbot.consecutiveMistakeCount).toBe(1)
+			expect(mockDarbot.sayAndCreateMissingParamError).toHaveBeenCalledWith("execute_command", "command")
 			expect(mockPushToolResult).toHaveBeenCalledWith("Missing parameter error")
 			expect(mockAskApproval).not.toHaveBeenCalled()
 			expect(mockExecuteCommand).not.toHaveBeenCalled()
@@ -226,7 +226,7 @@ describe("executeCommandTool", () => {
 
 			// Execute
 			await executeCommandTool(
-				mockCline as unknown as Task,
+				mockDarbot as unknown as Task,
 				mockToolUse,
 				mockAskApproval as unknown as AskApproval,
 				mockHandleError as unknown as HandleError,
@@ -240,22 +240,22 @@ describe("executeCommandTool", () => {
 			expect(mockPushToolResult).not.toHaveBeenCalled()
 		})
 
-		it("should handle rooignore validation failures", async () => {
+		it("should handle darbotignore validation failures", async () => {
 			// Setup
 			mockToolUse.params.command = "cat .env"
 			// Override the validateCommand mock to return a filename
 			const validateCommandMock = vitest.fn().mockReturnValue(".env")
-			mockCline.darbotIgnoreController = {
+			mockDarbot.darbotIgnoreController = {
 				validateCommand: validateCommandMock,
 			}
 
-			const mockRooIgnoreError = "RooIgnore error"
-			;(formatResponse.darbotIgnoreError as any).mockReturnValue(mockRooIgnoreError)
+			const mockDarbotIgnoreError = "DarbotIgnore error"
+			;(formatResponse.darbotIgnoreError as any).mockReturnValue(mockDarbotIgnoreError)
 			;(formatResponse.toolError as any).mockReturnValue("Tool error")
 
 			// Execute
 			await executeCommandTool(
-				mockCline as unknown as Task,
+				mockDarbot as unknown as Task,
 				mockToolUse,
 				mockAskApproval as unknown as AskApproval,
 				mockHandleError as unknown as HandleError,
@@ -265,9 +265,9 @@ describe("executeCommandTool", () => {
 
 			// Verify
 			expect(validateCommandMock).toHaveBeenCalledWith("cat .env")
-			expect(mockCline.say).toHaveBeenCalledWith("rooignore_error", ".env")
+			expect(mockDarbot.say).toHaveBeenCalledWith("darbotignore_error", ".env")
 			expect(formatResponse.darbotIgnoreError).toHaveBeenCalledWith(".env")
-			expect(formatResponse.toolError).toHaveBeenCalledWith(mockRooIgnoreError)
+			expect(formatResponse.toolError).toHaveBeenCalledWith(mockDarbotIgnoreError)
 			expect(mockPushToolResult).toHaveBeenCalled()
 			expect(mockAskApproval).not.toHaveBeenCalled()
 			expect(mockExecuteCommand).not.toHaveBeenCalled()

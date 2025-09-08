@@ -177,7 +177,7 @@ import { AuthModule } from './auth/auth.module';
 // Configure in app module
 @Module({
   imports: [
-    AuthModule.forRoot({
+    AuthModule.forDarbot({
       jwtSecret: process.env.JWT_SECRET,
       jwtExpiration: '15m',
       refreshExpiration: '7d'

@@ -48,8 +48,8 @@ const addLineNumbersMock = vi.fn().mockImplementation((text, startLine = 1) => {
 const extractTextFromFileMock = vi.fn()
 const getSupportedBinaryFormatsMock = vi.fn(() => [".pdf", ".docx", ".ipynb"])
 
-vi.mock("../../ignore/RooIgnoreController", () => ({
-	RooIgnoreController: class {
+vi.mock("../../ignore/DarbotIgnoreController", () => ({
+	DarbotIgnoreController: class {
 		initialize() {
 			return Promise.resolve()
 		}
@@ -80,7 +80,7 @@ describe("read_file tool with maxReadFileLine setting", () => {
 	const mockedIsBinaryFile = vi.mocked(isBinaryFile)
 	const mockedPathResolve = vi.mocked(path.resolve)
 
-	const mockCline: any = {}
+	const mockDarbot: any = {}
 	let mockProvider: any
 	let toolResult: ToolResponse | undefined
 
@@ -107,25 +107,25 @@ describe("read_file tool with maxReadFileLine setting", () => {
 			deref: vi.fn().mockReturnThis(),
 		}
 
-		mockCline.cwd = "/"
-		mockCline.task = "Test"
-		mockCline.providerRef = mockProvider
-		mockCline.darbotIgnoreController = {
+		mockDarbot.cwd = "/"
+		mockDarbot.task = "Test"
+		mockDarbot.providerRef = mockProvider
+		mockDarbot.darbotIgnoreController = {
 			validateAccess: vi.fn().mockReturnValue(true),
 		}
-		mockCline.say = vi.fn().mockResolvedValue(undefined)
-		mockCline.ask = vi.fn().mockResolvedValue({ response: "yesButtonClicked" })
-		mockCline.presentAssistantMessage = vi.fn()
-		mockCline.handleError = vi.fn().mockResolvedValue(undefined)
-		mockCline.pushToolResult = vi.fn()
-		mockCline.removeClosingTag = vi.fn((tag, content) => content)
+		mockDarbot.say = vi.fn().mockResolvedValue(undefined)
+		mockDarbot.ask = vi.fn().mockResolvedValue({ response: "yesButtonClicked" })
+		mockDarbot.presentAssistantMessage = vi.fn()
+		mockDarbot.handleError = vi.fn().mockResolvedValue(undefined)
+		mockDarbot.pushToolResult = vi.fn()
+		mockDarbot.removeClosingTag = vi.fn((tag, content) => content)
 
-		mockCline.fileContextTracker = {
+		mockDarbot.fileContextTracker = {
 			trackFileContext: vi.fn().mockResolvedValue(undefined),
 		}
 
-		mockCline.recordToolUsage = vi.fn().mockReturnValue(undefined)
-		mockCline.recordToolError = vi.fn().mockReturnValue(undefined)
+		mockDarbot.recordToolUsage = vi.fn().mockReturnValue(undefined)
+		mockDarbot.recordToolError = vi.fn().mockReturnValue(undefined)
 
 		toolResult = undefined
 	})
@@ -170,9 +170,9 @@ describe("read_file tool with maxReadFileLine setting", () => {
 		}
 
 		await readFileTool(
-			mockCline,
+			mockDarbot,
 			toolUse,
-			mockCline.ask,
+			mockDarbot.ask,
 			vi.fn(),
 			(result: ToolResponse) => {
 				toolResult = result
@@ -206,7 +206,7 @@ describe("read_file tool with maxReadFileLine setting", () => {
 
 			// Verify the empty line snippet for full read was passed to the approval message
 			// Look at the parameters passed to the 'ask' method in the approval message
-			const askCall = mockCline.ask.mock.calls[0]
+			const askCall = mockDarbot.ask.mock.calls[0]
 			const completeMessage = JSON.parse(askCall[1])
 
 			// Verify the reason (lineSnippet) is empty or undefined for full read
@@ -341,7 +341,7 @@ describe("read_file tool XML output structure", () => {
 	const mockedIsBinaryFile = vi.mocked(isBinaryFile)
 	const mockedPathResolve = vi.mocked(path.resolve)
 
-	const mockCline: any = {}
+	const mockDarbot: any = {}
 	let mockProvider: any
 	let toolResult: ToolResponse | undefined
 
@@ -364,24 +364,24 @@ describe("read_file tool XML output structure", () => {
 			deref: vi.fn().mockReturnThis(),
 		}
 
-		mockCline.cwd = "/"
-		mockCline.task = "Test"
-		mockCline.providerRef = mockProvider
-		mockCline.darbotIgnoreController = {
+		mockDarbot.cwd = "/"
+		mockDarbot.task = "Test"
+		mockDarbot.providerRef = mockProvider
+		mockDarbot.darbotIgnoreController = {
 			validateAccess: vi.fn().mockReturnValue(true),
 		}
-		mockCline.say = vi.fn().mockResolvedValue(undefined)
-		mockCline.ask = vi.fn().mockResolvedValue({ response: "yesButtonClicked" })
-		mockCline.presentAssistantMessage = vi.fn()
-		mockCline.sayAndCreateMissingParamError = vi.fn().mockResolvedValue("Missing required parameter")
+		mockDarbot.say = vi.fn().mockResolvedValue(undefined)
+		mockDarbot.ask = vi.fn().mockResolvedValue({ response: "yesButtonClicked" })
+		mockDarbot.presentAssistantMessage = vi.fn()
+		mockDarbot.sayAndCreateMissingParamError = vi.fn().mockResolvedValue("Missing required parameter")
 
-		mockCline.fileContextTracker = {
+		mockDarbot.fileContextTracker = {
 			trackFileContext: vi.fn().mockResolvedValue(undefined),
 		}
 
-		mockCline.recordToolUsage = vi.fn().mockReturnValue(undefined)
-		mockCline.recordToolError = vi.fn().mockReturnValue(undefined)
-		mockCline.didRejectTool = false
+		mockDarbot.recordToolUsage = vi.fn().mockReturnValue(undefined)
+		mockDarbot.recordToolError = vi.fn().mockReturnValue(undefined)
+		mockDarbot.didRejectTool = false
 
 		toolResult = undefined
 	})
@@ -406,7 +406,7 @@ describe("read_file tool XML output structure", () => {
 		mockProvider.getState.mockResolvedValue({ maxReadFileLine })
 		mockedCountFileLines.mockResolvedValue(totalLines)
 		mockedIsBinaryFile.mockResolvedValue(isBinary)
-		mockCline.darbotIgnoreController.validateAccess = vi.fn().mockReturnValue(validateAccess)
+		mockDarbot.darbotIgnoreController.validateAccess = vi.fn().mockReturnValue(validateAccess)
 
 		let argsContent = `<file><path>${testFilePath}</path></file>`
 
@@ -420,9 +420,9 @@ describe("read_file tool XML output structure", () => {
 
 		// Execute the tool
 		await readFileTool(
-			mockCline,
+			mockDarbot,
 			toolUse,
-			mockCline.ask,
+			mockDarbot.ask,
 			vi.fn(),
 			(result: ToolResponse) => {
 				toolResult = result
@@ -495,9 +495,9 @@ describe("read_file tool XML output structure", () => {
 
 			// Execute the tool
 			await readFileTool(
-				mockCline,
+				mockDarbot,
 				toolUse,
-				mockCline.ask,
+				mockDarbot.ask,
 				vi.fn(),
 				(result: ToolResponse) => {
 					toolResult = result
@@ -509,7 +509,7 @@ describe("read_file tool XML output structure", () => {
 			expect(toolResult).toBe(`<files><error>Missing required parameter</error></files>`)
 		})
 
-		it("should include error tag for RooIgnore error", async () => {
+		it("should include error tag for DarbotIgnore error", async () => {
 			// Execute - skip addLineNumbers check as it returns early with an error
 			const result = await executeReadFileTool({}, { validateAccess: false })
 

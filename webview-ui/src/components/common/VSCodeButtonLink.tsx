@@ -1,5 +1,5 @@
 import React from "react"
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton } from "../vscode-components"
 
 interface VSCodeButtonLinkProps {
 	href: string

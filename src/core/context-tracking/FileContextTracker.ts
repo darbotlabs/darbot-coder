@@ -7,30 +7,30 @@ import { fileExistsAtPath } from "../../utils/fs"
 import fs from "fs/promises"
 import { ContextProxy } from "../config/ContextProxy"
 import type { FileMetadataEntry, RecordSource, TaskMetadata } from "./FileContextTrackerTypes"
-import { ClineProvider } from "../webview/ClineProvider"
+import { DarbotProvider } from "../webview/DarbotProvider"
 
 // This class is responsible for tracking file operations that may result in stale context.
-// If a user modifies a file outside of Roo, the context may become stale and need to be updated.
-// We do not want Roo to reload the context every time a file is modified, so we use this class merely
-// to inform Roo that the change has occurred, and tell Roo to reload the file before making
-// any changes to it. This fixes an issue with diff editing, where Roo was unable to complete a diff edit.
+// If a user modifies a file outside of Darbot, the context may become stale and need to be updated.
+// We do not want Darbot to reload the context every time a file is modified, so we use this class merely
+// to inform Darbot that the change has occurred, and tell Darbot to reload the file before making
+// any changes to it. This fixes an issue with diff editing, where Darbot was unable to complete a diff edit.
 
 // FileContextTracker
 //
 // This class is responsible for tracking file operations.
-// If the full contents of a file are passed to Roo via a tool, mention, or edit, the file is marked as active.
-// If a file is modified outside of Roo, we detect and track this change to prevent stale context.
+// If the full contents of a file are passed to Darbot via a tool, mention, or edit, the file is marked as active.
+// If a file is modified outside of Darbot, we detect and track this change to prevent stale context.
 export class FileContextTracker {
 	readonly taskId: string
-	private providerRef: WeakRef<ClineProvider>
+	private providerRef: WeakRef<DarbotProvider>
 
 	// File tracking and watching
 	private fileWatchers = new Map<string, vscode.FileSystemWatcher>()
 	private recentlyModifiedFiles = new Set<string>()
-	private recentlyEditedByRoo = new Set<string>()
+	private recentlyEditedByDarbot = new Set<string>()
 	private checkpointPossibleFiles = new Set<string>()
 
-	constructor(provider: ClineProvider, taskId: string) {
+	constructor(provider: DarbotProvider, taskId: string) {
 		this.providerRef = new WeakRef(provider)
 		this.taskId = taskId
 	}
@@ -64,10 +64,10 @@ export class FileContextTracker {
 
 		// Track file changes
 		watcher.onDidChange(() => {
-			if (this.recentlyEditedByRoo.has(filePath)) {
-				this.recentlyEditedByRoo.delete(filePath) // This was an edit by Roo, no need to inform Roo
+			if (this.recentlyEditedByDarbot.has(filePath)) {
+				this.recentlyEditedByDarbot.delete(filePath) // This was an edit by Darbot, no need to inform Darbot
 			} else {
-				this.recentlyModifiedFiles.add(filePath) // This was a user edit, we will inform Roo
+				this.recentlyModifiedFiles.add(filePath) // This was a user edit, we will inform Darbot
 				this.trackFileContext(filePath, "user_edited") // Update the task metadata with file tracking
 			}
 		})
@@ -77,7 +77,7 @@ export class FileContextTracker {
 	}
 
 	// Tracks a file operation in metadata and sets up a watcher for the file
-	// This is the main entry point for FileContextTracker and is called when a file is passed to Roo via a tool, mention, or edit.
+	// This is the main entry point for FileContextTracker and is called when a file is passed to Darbot via a tool, mention, or edit.
 	async trackFileContext(filePath: string, operation: RecordSource) {
 		try {
 			const cwd = this.getCwd()
@@ -97,7 +97,7 @@ export class FileContextTracker {
 	public getContextProxy(): ContextProxy | undefined {
 		const provider = this.providerRef.deref()
 		if (!provider) {
-			console.error("ClineProvider reference is no longer valid")
+			console.error("DarbotProvider reference is no longer valid")
 			return undefined
 		}
 		const context = provider.contextProxy
@@ -165,8 +165,8 @@ export class FileContextTracker {
 				path: filePath,
 				record_state: "active",
 				record_source: source,
-				roo_read_date: getLatestDateForField(filePath, "roo_read_date"),
-				roo_edit_date: getLatestDateForField(filePath, "roo_edit_date"),
+				darbot_read_date: getLatestDateForField(filePath, "darbot_read_date"),
+				darbot_edit_date: getLatestDateForField(filePath, "darbot_edit_date"),
 				user_edit_date: getLatestDateForField(filePath, "user_edit_date"),
 			}
 
@@ -177,15 +177,15 @@ export class FileContextTracker {
 					this.recentlyModifiedFiles.add(filePath)
 					break
 
-				// roo_edited: Roo has edited the file
-				case "roo_edited":
+				// darbot_edited: Darbot has edited the file
+				case "darbot_edited":
 					newEntry.darbot_read_date = now
 					newEntry.darbot_edit_date = now
 					this.checkpointPossibleFiles.add(filePath)
-					this.markFileAsEditedByRoo(filePath)
+					this.markFileAsEditedByDarbot(filePath)
 					break
 
-				// read_tool/file_mentioned: Roo has read the file via a tool or file mention
+				// read_tool/file_mentioned: Darbot has read the file via a tool or file mention
 				case "read_tool":
 				case "file_mentioned":
 					newEntry.darbot_read_date = now
@@ -212,9 +212,9 @@ export class FileContextTracker {
 		return files
 	}
 
-	// Marks a file as edited by Roo to prevent false positives in file watchers
-	markFileAsEditedByRoo(filePath: string): void {
-		this.recentlyEditedByRoo.add(filePath)
+	// Marks a file as edited by Darbot to prevent false positives in file watchers
+	markFileAsEditedByDarbot(filePath: string): void {
+		this.recentlyEditedByDarbot.add(filePath)
 	}
 
 	// Disposes all file watchers

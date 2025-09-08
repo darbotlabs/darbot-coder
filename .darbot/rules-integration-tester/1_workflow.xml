@@ -109,7 +109,7 @@
       - Plan for both success and failure scenarios
       
       For Test Fixes:
-      - Identify the root cause of the failure
+      - Identify the darbot cause of the failure
       - Plan the minimal changes needed to fix the issue
       - Consider if the test needs to be updated due to code changes
       - Plan for improved error handling or debugging

@@ -3,13 +3,13 @@ import type { Socket } from "net"
 
 import type { DarbotCodeSettings } from "./global-settings.js"
 import type { ProviderSettingsEntry, ProviderSettings } from "./provider-settings.js"
-import type { ClineMessage, TokenUsage } from "./message.js"
+import type { DarbotMessage, TokenUsage } from "./message.js"
 import type { ToolUsage, ToolName } from "./tool.js"
 import type { IpcMessage, IpcServerEvents, IsSubtask } from "./ipc.js"
 
 // TODO: Make sure this matches `DarbotCodeEvents` from `@darbot-code/types`.
 export interface DarbotCodeAPIEvents {
-	message: [data: { taskId: string; action: "created" | "updated"; message: ClineMessage }]
+	message: [data: { taskId: string; action: "created" | "updated"; message: DarbotMessage }]
 	taskCreated: [taskId: string]
 	taskStarted: [taskId: string]
 	taskModeSwitched: [taskId: string, mode: string]
@@ -157,3 +157,4 @@ export interface DarbotCodeIpcServer extends EventEmitter<IpcServerEvents> {
 	get socketPath(): string
 	get isListening(): boolean
 }
+

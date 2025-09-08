@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react"
 import knuthShuffle from "knuth-shuffle-seeded"
 import { Trans } from "react-i18next"
-import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton, VSCodeLink } from "../vscode-components"
 
 import type { ProviderSettings } from "@darbot-code/types"
 
@@ -14,7 +14,8 @@ import { getRequestyAuthUrl, getOpenRouterAuthUrl } from "@src/oauth/urls"
 import ApiOptions from "../settings/ApiOptions"
 import { Tab, TabContent } from "../common/Tab"
 
-import RooHero from "./RooHero"
+import DarbotHero from "./DarbotHero"
+import DarbotTips from "./DarbotTips"
 
 const WelcomeView = () => {
 	const { apiConfiguration, currentApiConfigName, setApiConfiguration, uriScheme, machineId } = useExtensionState()
@@ -50,7 +51,8 @@ const WelcomeView = () => {
 	return (
 		<Tab>
 			<TabContent className="flex flex-col gap-5 p-16">
-				<RooHero />
+				   <DarbotHero />
+				   <DarbotTips cycle={true} />
 				<h2 className="mt-0 mb-0">{t("welcome:greeting")}</h2>
 
 				<div className="font-bold">

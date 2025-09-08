@@ -4,7 +4,7 @@ import { type Keys, type DarbotCodeSettings, GLOBAL_SETTINGS_KEYS, PROVIDER_SETT
 
 import { cn } from "@/lib/utils"
 
-export const ROO_CODE_SETTINGS_KEYS = [...GLOBAL_SETTINGS_KEYS, ...PROVIDER_SETTINGS_KEYS] as Keys<DarbotCodeSettings>[]
+export const DARBOT_CODER_SETTINGS_KEYS = [...GLOBAL_SETTINGS_KEYS, ...PROVIDER_SETTINGS_KEYS] as Keys<DarbotCodeSettings>[]
 
 type SettingsDiffProps = HTMLAttributes<HTMLDivElement> & {
 	defaultSettings: DarbotCodeSettings
@@ -25,7 +25,7 @@ export function SettingsDiff({
 			<div className="font-medium text-muted-foreground">Setting</div>
 			<div className="font-medium text-muted-foreground">Default</div>
 			<div className="font-medium text-muted-foreground">Custom</div>
-			{ROO_CODE_SETTINGS_KEYS.map((key) => {
+			{DARBOT_CODER_SETTINGS_KEYS.map((key) => {
 				const defaultValue = defaults[key as keyof typeof defaults]
 				const customValue = custom[key as keyof typeof custom]
 				const isDefault = JSON.stringify(defaultValue) === JSON.stringify(customValue)

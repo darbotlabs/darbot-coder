@@ -8,12 +8,12 @@ export const revalidate = 300
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-	title: "Roo Code Evals",
+	title: "Darbot Coder Evals",
 	openGraph: {
-		title: "Roo Code Evals",
+		title: "Darbot Coder Evals",
 		description: "Quantitative evals of LLM coding skills.",
-		url: "https://roocode.com/evals",
-		siteName: "Roo Code",
+		url: "https://github.com/DarbotLabs/darbot-coder/evals",
+		siteName: "Darbot Coder",
 		images: {
 			url: "https://i.imgur.com/ijP7aZm.png",
 			width: 1954,

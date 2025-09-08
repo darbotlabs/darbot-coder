@@ -2,14 +2,14 @@ import * as path from "path"
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 
 // Use vi.hoisted to ensure mocks are available during hoisting
-const { mockHomedir, mockStat, mockReadFile, mockReaddir, mockGetRooDirectoriesForCwd, mockGetGlobalRooDirectory } =
+const { mockHomedir, mockStat, mockReadFile, mockReaddir, mockGetDarbotDirectoriesForCwd, mockGetGlobalDarbotDirectory } =
 	vi.hoisted(() => ({
 		mockHomedir: vi.fn(),
 		mockStat: vi.fn(),
 		mockReadFile: vi.fn(),
 		mockReaddir: vi.fn(),
-		mockGetRooDirectoriesForCwd: vi.fn(),
-		mockGetGlobalRooDirectory: vi.fn(),
+		mockGetDarbotDirectoriesForCwd: vi.fn(),
+		mockGetGlobalDarbotDirectory: vi.fn(),
 	}))
 
 // Mock os module
@@ -29,10 +29,10 @@ vi.mock("fs/promises", () => ({
 	},
 }))
 
-// Mock the roo-config service
-vi.mock("../../../../services/roo-config", () => ({
-	getRooDirectoriesForCwd: mockGetRooDirectoriesForCwd,
-	getGlobalRooDirectory: mockGetGlobalRooDirectory,
+// Mock the darbot-config service
+vi.mock("../../../../services/darbot-config", () => ({
+	getDarbotDirectoriesForCwd: mockGetDarbotDirectoriesForCwd,
+	getGlobalDarbotDirectory: mockGetGlobalDarbotDirectory,
 }))
 
 import { loadRuleFiles, addCustomInstructions } from "../custom-instructions"
@@ -40,14 +40,14 @@ import { loadRuleFiles, addCustomInstructions } from "../custom-instructions"
 describe("custom-instructions global .darbot support", () => {
 	const mockCwd = "/mock/project"
 	const mockHomeDir = "/mock/home"
-	const globalRooDir = path.join(mockHomeDir, ".darbot")
-	const projectRooDir = path.join(mockCwd, ".darbot")
+	const globalDarbotDir = path.join(mockHomeDir, ".darbot")
+	const projectDarbotDir = path.join(mockCwd, ".darbot")
 
 	beforeEach(() => {
 		vi.clearAllMocks()
 		mockHomedir.mockReturnValue(mockHomeDir)
-		mockGetRooDirectoriesForCwd.mockReturnValue([globalRooDir, projectRooDir])
-		mockGetGlobalRooDirectory.mockReturnValue(globalRooDir)
+		mockGetDarbotDirectoriesForCwd.mockReturnValue([globalDarbotDir, projectDarbotDir])
+		mockGetGlobalDarbotDirectory.mockReturnValue(globalDarbotDir)
 	})
 
 	afterEach(() => {
@@ -159,7 +159,6 @@ describe("custom-instructions global .darbot support", () => {
 			// So we don't need to mock rejections, just empty responses
 			mockReadFile
 				.mockResolvedValueOnce("") // .darbotrules returns empty (simulating ENOENT caught by safeReadFile)
-				.mockResolvedValueOnce("") // .clinerules returns empty (simulating ENOENT caught by safeReadFile)
 
 			const result = await loadRuleFiles(mockCwd)
 
@@ -194,7 +193,6 @@ describe("custom-instructions global .darbot support", () => {
 				.mockResolvedValueOnce("global mode rule content")
 				.mockResolvedValueOnce("project mode rule content")
 				.mockResolvedValueOnce("") // .darbotrules legacy file (empty)
-				.mockResolvedValueOnce("") // .clinerules legacy file (empty)
 
 			const result = await addCustomInstructions("", "", mockCwd, mode)
 
@@ -219,7 +217,6 @@ describe("custom-instructions global .darbot support", () => {
 			mockReadFile
 				.mockResolvedValueOnce("legacy mode rule content") // .darbotrules-code
 				.mockResolvedValueOnce("") // generic .darbotrules (empty)
-				.mockResolvedValueOnce("") // generic .clinerules (empty)
 
 			const result = await addCustomInstructions("", "", mockCwd, mode)
 

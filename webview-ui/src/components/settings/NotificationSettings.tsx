@@ -1,6 +1,6 @@
 import { HTMLAttributes } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
-import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox } from "../vscode-components"
 import { Bell } from "lucide-react"
 
 import { SetCachedStateField } from "./types"

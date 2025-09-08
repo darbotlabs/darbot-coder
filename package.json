@@ -5,10 +5,10 @@
 		"node": "20.19.2"
 	},
 	"scripts": {
-		"preinstall": "node scripts/bootstrap.mjs",
+		"preinstall": "node scripts/scripts/bootstrap.mjs",
 		"prepare": "husky",
-		"install": "node scripts/bootstrap.mjs",
-		"install:all": "node scripts/bootstrap.mjs",
+		"install": "node scripts/scripts/bootstrap.mjs",
+		"install:all": "node scripts/scripts/bootstrap.mjs",
 		"lint": "turbo lint --log-order grouped --output-logs new-only",
 		"check-types": "turbo check-types --log-order grouped --output-logs new-only",
 		"test": "turbo test --log-order grouped --output-logs new-only",
@@ -19,10 +19,10 @@
 		"vsix": "turbo vsix --log-order grouped --output-logs new-only",
 		"vsix:nightly": "turbo vsix:nightly --log-order grouped --output-logs new-only",
 		"clean": "turbo clean --log-order grouped --output-logs new-only && rimraf dist out bin .vite-port .turbo",
-		"install:vsix": "pnpm install --frozen-lockfile && pnpm clean && pnpm vsix && node scripts/install-vsix.js",
+		"install:vsix": "pnpm install --frozen-lockfile && pnpm clean && pnpm vsix && node scripts/scripts/install-vsix.js",
 		"changeset:version": "cp CHANGELOG.md src/CHANGELOG.md && changeset version && cp -vf src/CHANGELOG.md .",
 		"knip": "knip --include files",
-		"update-contributors": "node scripts/update-contributors.js",
+		"update-contributors": "node scripts/scripts/update-contributors.js",
 		"evals": "docker compose -f packages/evals/docker-compose.yml --profile server --profile runner up --build --scale runner=0"
 	},
 	"devDependencies": {

@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef } from "react"
-import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField } from "../../vscode-components"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { type ProviderSettings, type OrganizationAllowList, unboundDefaultModelId } from "@darbot-code/types"

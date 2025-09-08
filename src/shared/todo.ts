@@ -1,6 +1,6 @@
-import { ClineMessage } from "@darbot-code/types"
-export function getLatestTodo(clineMessages: ClineMessage[]) {
-	const todos = clineMessages
+import { DarbotMessage } from "@darbot-code/types"
+export function getLatestTodo(darbotMessages: DarbotMessage[]) {
+	const todos = darbotMessages
 		.filter(
 			(msg) =>
 				(msg.type === "ask" && msg.ask === "tool") || (msg.type === "say" && msg.say === "user_edit_todos"),
@@ -21,3 +21,4 @@ export function getLatestTodo(clineMessages: ClineMessage[]) {
 		return []
 	}
 }
+

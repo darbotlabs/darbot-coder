@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react"
 import { Checkbox } from "vscrui"
-import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField } from "../../vscode-components"
 
 import type { ProviderSettings } from "@darbot-code/types"
 

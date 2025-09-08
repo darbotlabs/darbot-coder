@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField } from "../../vscode-components"
 
 import { type ProviderSettings, mistralDefaultModelId } from "@darbot-code/types"
 

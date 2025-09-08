@@ -1,4 +1,4 @@
-import { VSCodeButton, VSCodeCheckbox, VSCodeTextField, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton, VSCodeCheckbox, VSCodeTextField, VSCodeLink } from "../vscode-components"
 import { SquareMousePointer } from "lucide-react"
 import { HTMLAttributes, useEffect, useMemo, useState } from "react"
 import { Trans } from "react-i18next"

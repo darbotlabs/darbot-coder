@@ -12,11 +12,9 @@
 	"engines": {
 		"vscode": "^1.84.0",
 		"node": "20.19.2"
-	},
-	"author": {
-		"name": "Darbot Framework"
-	},
-	"repository": {
+	},	"author": {
+		"name": "DarbotFramework"
+	},"repository": {
 		"type": "git",
 		"url": "https://github.com/DarbotFramework/darbot-coder"
 	},

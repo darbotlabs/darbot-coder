@@ -7,7 +7,7 @@ import delay from "delay"
 import { Task } from "../task/Task"
 import { AskApproval, HandleError, PushToolResult, RemoveClosingTag, ToolUse } from "../../shared/tools"
 import { formatResponse } from "../prompts/responses"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { DarbotSayTool } from "../../shared/ExtensionMessage"
 import { getReadablePath } from "../../utils/path"
 import { fileExistsAtPath } from "../../utils/fs"
 import { RecordSource } from "../context-tracking/FileContextTrackerTypes"
@@ -22,30 +22,30 @@ import { DEFAULT_WRITE_DELAY_MS } from "@darbot-code/types"
  * Validates required parameters for search and replace operation
  */
 async function validateParams(
-	cline: Task,
+	darbot: Task,
 	relPath: string | undefined,
 	search: string | undefined,
 	replace: string | undefined,
 	pushToolResult: PushToolResult,
 ): Promise<boolean> {
 	if (!relPath) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("search_and_replace")
-		pushToolResult(await cline.sayAndCreateMissingParamError("search_and_replace", "path"))
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("search_and_replace")
+		pushToolResult(await darbot.sayAndCreateMissingParamError("search_and_replace", "path"))
 		return false
 	}
 
 	if (!search) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("search_and_replace")
-		pushToolResult(await cline.sayAndCreateMissingParamError("search_and_replace", "search"))
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("search_and_replace")
+		pushToolResult(await darbot.sayAndCreateMissingParamError("search_and_replace", "search"))
 		return false
 	}
 
 	if (replace === undefined) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("search_and_replace")
-		pushToolResult(await cline.sayAndCreateMissingParamError("search_and_replace", "replace"))
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("search_and_replace")
+		pushToolResult(await darbot.sayAndCreateMissingParamError("search_and_replace", "replace"))
 		return false
 	}
 
@@ -54,7 +54,7 @@ async function validateParams(
 
 /**
  * Performs search and replace operations on a file
- * @param cline - Cline instance
+ * @param darbot - darbot instance
  * @param block - Tool use parameters
  * @param askApproval - Function to request user approval
  * @param handleError - Function to handle errors
@@ -62,7 +62,7 @@ async function validateParams(
  * @param removeClosingTag - Function to remove closing tags
  */
 export async function searchAndReplaceTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -83,7 +83,7 @@ export async function searchAndReplaceTool(
 		if (block.partial) {
 			const partialMessageProps = {
 				tool: "searchAndReplace" as const,
-				path: getReadablePath(cline.cwd, removeClosingTag("path", relPath)),
+				path: getReadablePath(darbot.cwd, removeClosingTag("path", relPath)),
 				search: removeClosingTag("search", search),
 				replace: removeClosingTag("replace", replace),
 				useRegex: block.params.use_regex === "true",
@@ -91,12 +91,12 @@ export async function searchAndReplaceTool(
 				startLine,
 				endLine,
 			}
-			await cline.ask("tool", JSON.stringify(partialMessageProps), block.partial).catch(() => {})
+			await darbot.ask("tool", JSON.stringify(partialMessageProps), block.partial).catch(() => {})
 			return
 		}
 
 		// Validate required parameters
-		if (!(await validateParams(cline, relPath, search, replace, pushToolResult))) {
+		if (!(await validateParams(darbot, relPath, search, replace, pushToolResult))) {
 			return
 		}
 
@@ -105,9 +105,9 @@ export async function searchAndReplaceTool(
 		const validSearch = search as string
 		const validReplace = replace as string
 
-		const sharedMessageProps: ClineSayTool = {
+		const sharedMessageProps: DarbotSayTool = {
 			tool: "searchAndReplace",
-			path: getReadablePath(cline.cwd, validRelPath),
+			path: getReadablePath(darbot.cwd, validRelPath),
 			search: validSearch,
 			replace: validReplace,
 			useRegex: useRegex,
@@ -116,46 +116,46 @@ export async function searchAndReplaceTool(
 			endLine: endLine,
 		}
 
-		const accessAllowed = cline.darbotIgnoreController?.validateAccess(validRelPath)
+		const accessAllowed = darbot.darbotIgnoreController?.validateAccess(validRelPath)
 
 		if (!accessAllowed) {
-			await cline.say("rooignore_error", validRelPath)
+			await darbot.say("darbotignore_error", validRelPath)
 			pushToolResult(formatResponse.toolError(formatResponse.darbotIgnoreError(validRelPath)))
 			return
 		}
 
 		// Check if file is write-protected
-		const isWriteProtected = cline.darbotProtectedController?.isWriteProtected(validRelPath) || false
+		const isWriteProtected = darbot.darbotProtectedController?.isWriteProtected(validRelPath) || false
 
-		const absolutePath = path.resolve(cline.cwd, validRelPath)
+		const absolutePath = path.resolve(darbot.cwd, validRelPath)
 		const fileExists = await fileExistsAtPath(absolutePath)
 
 		if (!fileExists) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("search_and_replace")
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("search_and_replace")
 			const formattedError = formatResponse.toolError(
 				`File does not exist at path: ${absolutePath}\nThe specified file could not be found. Please verify the file path and try again.`,
 			)
-			await cline.say("error", formattedError)
+			await darbot.say("error", formattedError)
 			pushToolResult(formattedError)
 			return
 		}
 
 		// Reset consecutive mistakes since all validations passed
-		cline.consecutiveMistakeCount = 0
+		darbot.consecutiveMistakeCount = 0
 
 		// Read and process file content
 		let fileContent: string
 		try {
 			fileContent = await fs.readFile(absolutePath, "utf-8")
 		} catch (error) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("search_and_replace")
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("search_and_replace")
 			const errorMessage = `Error reading file: ${absolutePath}\nFailed to read the file content: ${
 				error instanceof Error ? error.message : String(error)
 			}\nPlease verify file permissions and try again.`
 			const formattedError = formatResponse.toolError(errorMessage)
-			await cline.say("error", formattedError)
+			await darbot.say("error", formattedError)
 			pushToolResult(formattedError)
 			return
 		}
@@ -188,74 +188,74 @@ export async function searchAndReplaceTool(
 		}
 
 		// Initialize diff view
-		cline.diffViewProvider.editType = "modify"
-		cline.diffViewProvider.originalContent = fileContent
+		darbot.diffViewProvider.editType = "modify"
+		darbot.diffViewProvider.originalContent = fileContent
 
 		// Generate and validate diff
 		const diff = formatResponse.createPrettyPatch(validRelPath, fileContent, newContent)
 		if (!diff) {
 			pushToolResult(`No changes needed for '${relPath}'`)
-			await cline.diffViewProvider.reset()
+			await darbot.diffViewProvider.reset()
 			return
 		}
 
 		// Show changes in diff view
-		if (!cline.diffViewProvider.isEditing) {
-			await cline.ask("tool", JSON.stringify(sharedMessageProps), true).catch(() => {})
-			await cline.diffViewProvider.open(validRelPath)
-			await cline.diffViewProvider.update(fileContent, false)
-			cline.diffViewProvider.scrollToFirstDiff()
+		if (!darbot.diffViewProvider.isEditing) {
+			await darbot.ask("tool", JSON.stringify(sharedMessageProps), true).catch(() => {})
+			await darbot.diffViewProvider.open(validRelPath)
+			await darbot.diffViewProvider.update(fileContent, false)
+			darbot.diffViewProvider.scrollToFirstDiff()
 			await delay(200)
 		}
 
-		await cline.diffViewProvider.update(newContent, true)
+		await darbot.diffViewProvider.update(newContent, true)
 
 		// Request user approval for changes
 		const completeMessage = JSON.stringify({
 			...sharedMessageProps,
 			diff,
 			isProtected: isWriteProtected,
-		} satisfies ClineSayTool)
-		const didApprove = await cline
+		} satisfies DarbotSayTool)
+		const didApprove = await darbot
 			.ask("tool", completeMessage, isWriteProtected)
 			.then((response) => response.response === "yesButtonClicked")
 
 		if (!didApprove) {
-			await cline.diffViewProvider.revertChanges()
+			await darbot.diffViewProvider.revertChanges()
 			pushToolResult("Changes were rejected by the user.")
-			await cline.diffViewProvider.reset()
+			await darbot.diffViewProvider.reset()
 			return
 		}
 
 		// Call saveChanges to update the DiffViewProvider properties
-		const provider = cline.providerRef.deref()
+		const provider = darbot.providerRef.deref()
 		const state = await provider?.getState()
 		const diagnosticsEnabled = state?.diagnosticsEnabled ?? true
 		const writeDelayMs = state?.writeDelayMs ?? DEFAULT_WRITE_DELAY_MS
-		await cline.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
+		await darbot.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
 
 		// Track file edit operation
 		if (relPath) {
-			await cline.fileContextTracker.trackFileContext(relPath, "roo_edited" as RecordSource)
+			await darbot.fileContextTracker.trackFileContext(relPath, "darbot_edited" as RecordSource)
 		}
 
-		cline.didEditFile = true
+		darbot.didEditFile = true
 
 		// Get the formatted response message
-		const message = await cline.diffViewProvider.pushToolWriteResult(
-			cline,
-			cline.cwd,
+		const message = await darbot.diffViewProvider.pushToolWriteResult(
+			darbot,
+			darbot.cwd,
 			false, // Always false for search_and_replace
 		)
 
 		pushToolResult(message)
 
 		// Record successful tool usage and cleanup
-		cline.recordToolUsage("search_and_replace")
-		await cline.diffViewProvider.reset()
+		darbot.recordToolUsage("search_and_replace")
+		await darbot.diffViewProvider.reset()
 	} catch (error) {
 		handleError("search and replace", error)
-		await cline.diffViewProvider.reset()
+		await darbot.diffViewProvider.reset()
 	}
 }
 
@@ -267,3 +267,4 @@ export async function searchAndReplaceTool(
 function escapeRegExp(input: string): string {
 	return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
+

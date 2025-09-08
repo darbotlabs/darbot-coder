@@ -19,7 +19,7 @@ import * as vscode from "vscode"
 import { z } from "zod"
 import { t } from "../../i18n"
 
-import { ClineProvider } from "../../core/webview/ClineProvider"
+import { DarbotProvider } from "../../core/webview/DarbotProvider"
 import { GlobalFileNames } from "../../shared/globalFileNames"
 import {
 	McpResource,
@@ -124,7 +124,7 @@ const McpSettingsSchema = z.object({
 })
 
 export class McpHub {
-	private providerRef: WeakRef<ClineProvider>
+	private providerRef: WeakRef<DarbotProvider>
 	private disposables: vscode.Disposable[] = []
 	private settingsWatcher?: vscode.FileSystemWatcher
 	private fileWatchers: Map<string, FSWatcher[]> = new Map()
@@ -135,7 +135,7 @@ export class McpHub {
 	private refCount: number = 0 // Reference counter for active clients
 	private configChangeDebounceTimers: Map<string, NodeJS.Timeout> = new Map()
 
-	constructor(provider: ClineProvider) {
+	constructor(provider: DarbotProvider) {
 		this.providerRef = new WeakRef(provider)
 		this.watchMcpSettingsFile()
 		this.watchProjectMcpFile().catch(console.error)
@@ -144,7 +144,7 @@ export class McpHub {
 		this.initializeProjectMcpServers()
 	}
 	/**
-	 * Registers a client (e.g., ClineProvider) using this hub.
+	 * Registers a client (e.g., DarbotProvider) using this hub.
 	 * Increments the reference count.
 	 */
 	public registerClient(): void {
@@ -563,7 +563,7 @@ export class McpHub {
 		try {
 			const client = new Client(
 				{
-					name: "Roo Code",
+					name: "darbot-coder",
 					version: this.providerRef.deref()?.context.extension?.packageJSON?.version ?? "1.0.0",
 				},
 				{
@@ -1214,7 +1214,7 @@ export class McpHub {
 		})
 
 		// Send sorted servers to webview
-		const targetProvider: ClineProvider | undefined = this.providerRef.deref()
+		const targetProvider: DarbotProvider | undefined = this.providerRef.deref()
 
 		if (targetProvider) {
 			const serversToSend = sortedConnections.map((connection) => connection.server)

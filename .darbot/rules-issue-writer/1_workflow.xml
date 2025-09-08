@@ -314,7 +314,7 @@
 
       Would you like me to create this issue, or would you like to make any changes?</question>
       <follow_up>
-      <suggest>Yes, create this issue in RooCodeInc/Roo-Code</suggest>
+      <suggest>Yes, create this issue in DarbotLabs/darbot-coder</suggest>
       <suggest>Modify the problem description</suggest>
       <suggest>Add more technical details</suggest>
       <suggest>Change the title to: [let me specify]</suggest>
@@ -352,12 +352,12 @@ EOF</command>
       
       Then create the issue:
       <execute_command>
-      <command>gh issue create --repo RooCodeInc/Roo-Code --title "[Create a descriptive title based on the issue content]" --body-file /tmp/issue_body.md --label "bug"</command>
+      <command>gh issue create --repo DarbotLabs/darbot-coder --title "[Create a descriptive title based on the issue content]" --body-file /tmp/issue_body.md --label "bug"</command>
       </execute_command>
       
       For feature requests, use labels "proposal,enhancement":
       <execute_command>
-      <command>gh issue create --repo RooCodeInc/Roo-Code --title "[Create a descriptive title based on the issue content]" --body-file /tmp/issue_body.md --label "proposal" --label "enhancement"</command>
+      <command>gh issue create --repo DarbotLabs/darbot-coder --title "[Create a descriptive title based on the issue content]" --body-file /tmp/issue_body.md --label "proposal" --label "enhancement"</command>
       </execute_command>
       
       The command will return the issue URL. Inform the user of the created issue number and URL.

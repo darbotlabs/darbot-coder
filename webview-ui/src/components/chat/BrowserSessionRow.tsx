@@ -2,11 +2,11 @@ import React, { memo, useEffect, useMemo, useRef, useState } from "react"
 import { useSize } from "react-use"
 import deepEqual from "fast-deep-equal"
 import { useTranslation } from "react-i18next"
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton } from "../vscode-components"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
-import { BrowserAction, BrowserActionResult, ClineSayBrowserAction } from "@darbot/ExtensionMessage"
+import { BrowserAction, BrowserActionResult, DarbotSayBrowserAction } from "@darbot/ExtensionMessage"
 
 import { vscode } from "@src/utils/vscode"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
@@ -16,10 +16,10 @@ import { ChatRowContent } from "./ChatRow"
 import { ProgressIndicator } from "./ProgressIndicator"
 
 interface BrowserSessionRowProps {
-	messages: ClineMessage[]
+	messages: DarbotMessage[]
 	isExpanded: (messageTs: number) => boolean
 	onToggleExpand: (messageTs: number) => void
-	lastModifiedMessage?: ClineMessage
+	lastModifiedMessage?: DarbotMessage
 	isLast: boolean
 	onHeightChange: (isTaller: boolean) => void
 	isStreaming: boolean
@@ -65,15 +65,15 @@ const BrowserSessionRow = memo((props: BrowserSessionRowProps) => {
 				screenshot?: string
 				mousePosition?: string
 				consoleLogs?: string
-				messages: ClineMessage[] // messages up to and including the result
+				messages: DarbotMessage[] // messages up to and including the result
 			}
 			nextAction?: {
-				messages: ClineMessage[] // messages leading to next result
+				messages: DarbotMessage[] // messages leading to next result
 			}
 		}[] = []
 
-		let currentStateMessages: ClineMessage[] = []
-		let nextActionMessages: ClineMessage[] = []
+		let currentStateMessages: DarbotMessage[] = []
+		let nextActionMessages: DarbotMessage[] = []
 
 		messages.forEach((message) => {
 			if (message.ask === "browser_action_launch") {
@@ -220,7 +220,7 @@ const BrowserSessionRow = memo((props: BrowserSessionRowProps) => {
 		for (let i = actions.length - 1; i >= 0; i--) {
 			const message = actions[i]
 			if (message.say === "browser_action") {
-				const browserAction = JSON.parse(message.text || "{}") as ClineSayBrowserAction
+				const browserAction = JSON.parse(message.text || "{}") as DarbotSayBrowserAction
 				if (browserAction.action === "click" && browserAction.coordinate) {
 					return browserAction.coordinate
 				}
@@ -245,7 +245,7 @@ const BrowserSessionRow = memo((props: BrowserSessionRowProps) => {
 						style={{ color: "var(--vscode-foreground)", marginBottom: "-1.5px" }}></span>
 				)}
 				<span style={{ fontWeight: "bold" }}>
-					<>{t("chat:browser.rooWantsToUse")}</>
+					<>{t("chat:browser.darbotWantsToUse")}</>
 				</span>
 			</div>
 			<div
@@ -413,7 +413,7 @@ const BrowserSessionRow = memo((props: BrowserSessionRowProps) => {
 }, deepEqual)
 
 interface BrowserSessionRowContentProps extends Omit<BrowserSessionRowProps, "messages"> {
-	message: ClineMessage
+	message: DarbotMessage
 	setMaxActionHeight: (height: number) => void
 	isStreaming: boolean
 }
@@ -460,7 +460,7 @@ const BrowserSessionRowContent = ({
 					)
 
 				case "browser_action":
-					const browserAction = JSON.parse(message.text || "{}") as ClineSayBrowserAction
+					const browserAction = JSON.parse(message.text || "{}") as DarbotSayBrowserAction
 					return (
 						<BrowserActionBox
 							action={browserAction.action}
@@ -577,3 +577,4 @@ const BrowserCursor: React.FC<{ style?: React.CSSProperties }> = ({ style }) => 
 }
 
 export default BrowserSessionRow
+

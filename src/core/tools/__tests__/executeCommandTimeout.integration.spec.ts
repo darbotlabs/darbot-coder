@@ -20,7 +20,7 @@ vitest.mock("../../task/Task")
 vitest.mock("../../prompts/responses", () => ({
 	formatResponse: {
 		toolError: vitest.fn((msg) => `Tool Error: ${msg}`),
-		rooIgnoreError: vitest.fn((msg) => `RooIgnore Error: ${msg}`),
+		darbotIgnoreError: vitest.fn((msg) => `DarbotIgnore Error: ${msg}`),
 	},
 }))
 vitest.mock("../../../utils/text-normalization", () => ({
@@ -245,7 +245,7 @@ describe("Command Execution Timeout Integration", () => {
 				consecutiveMistakeCount: 0,
 				recordToolError: vitest.fn(),
 				sayAndCreateMissingParamError: vitest.fn(),
-				rooIgnoreController: {
+				darbotIgnoreController: {
 					validateCommand: vitest.fn().mockReturnValue(null),
 				},
 				lastMessageTs: Date.now(),

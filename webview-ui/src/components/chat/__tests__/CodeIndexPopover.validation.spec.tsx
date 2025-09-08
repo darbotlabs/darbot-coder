@@ -27,12 +27,12 @@ vi.mock("react-i18next", () => ({
 
 // Mock the doc links utility
 vi.mock("@src/utils/docLinks", () => ({
-	buildDocLink: vi.fn(() => "https://docs.roocode.com"),
+	buildDocLink: vi.fn(() => "https://github.com/DarbotLabs/darbot-coder/blob/main/docs"),
 }))
 
 // Mock the portal hook
-vi.mock("@src/components/ui/hooks/useRooPortal", () => ({
-	useRooPortal: () => ({ portalContainer: document.body }),
+vi.mock("@src/components/ui/hooks/useDarbotPortal", () => ({
+	useDarbotPortal: () => ({ portalContainer: document.body }),
 }))
 
 // Mock Radix UI components to avoid portal issues
@@ -66,7 +66,7 @@ vi.mock("@src/components/ui", () => ({
 }))
 
 // Mock VSCode web components to behave like regular HTML inputs
-vi.mock("@vscode/webview-ui-toolkit/react", () => ({
+vi.mock("darbot-webview-ui/react", () => ({
 	VSCodeTextField: ({ value, onInput, placeholder, className, ...rest }: any) => (
 		<input
 			type="text"

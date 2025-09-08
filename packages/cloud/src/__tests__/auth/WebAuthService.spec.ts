@@ -101,11 +101,11 @@ describe("WebAuthService", () => {
 		MockedRefreshTimer.mockImplementation(() => mockTimer as unknown as RefreshTimer)
 
 		// Setup config mocks - use production URL by default to maintain existing test behavior
-		vi.mocked(Config.getClerkBaseUrl).mockReturnValue("https://clerk.roocode.com")
+		vi.mocked(Config.getClerkBaseUrl).mockReturnValue("https://clerk.darbotcode.com")
 		vi.mocked(Config.getDarbotCodeApiUrl).mockReturnValue("https://api.test.com")
 
 		// Setup utils mock
-		vi.mocked(utils.getUserAgent).mockReturnValue("Roo-Code 1.0.0")
+		vi.mocked(utils.getUserAgent).mockReturnValue("Darbot-Coder 1.0.0")
 
 		// Setup crypto mock
 		vi.mocked(crypto.randomBytes).mockReturnValue(Buffer.from("test-random-bytes") as never)
@@ -273,8 +273,8 @@ describe("WebAuthService", () => {
 				throw new Error("Crypto error")
 			})
 
-			await expect(authService.login()).rejects.toThrow("Failed to initiate Roo Code Cloud authentication")
-			expect(mockLog).toHaveBeenCalledWith("[auth] Error initiating Roo Code Cloud auth: Error: Crypto error")
+			await expect(authService.login()).rejects.toThrow("Failed to initiate Darbot Code Cloud authentication")
+			expect(mockLog).toHaveBeenCalledWith("[auth] Error initiating Darbot Code Cloud auth: Error: Crypto error")
 		})
 	})
 
@@ -289,17 +289,17 @@ describe("WebAuthService", () => {
 			vi.mocked(vscode.window.showInformationMessage).mockImplementation(mockShowInfo)
 
 			await authService.handleCallback(null, "state")
-			expect(mockShowInfo).toHaveBeenCalledWith("Invalid Roo Code Cloud sign in url")
+			expect(mockShowInfo).toHaveBeenCalledWith("Invalid Darbot Code Cloud sign in url")
 
 			await authService.handleCallback("code", null)
-			expect(mockShowInfo).toHaveBeenCalledWith("Invalid Roo Code Cloud sign in url")
+			expect(mockShowInfo).toHaveBeenCalledWith("Invalid Darbot Code Cloud sign in url")
 		})
 
 		it("should validate state parameter", async () => {
 			mockContext.globalState.get.mockReturnValue("stored-state")
 
 			await expect(authService.handleCallback("code", "different-state")).rejects.toThrow(
-				"Failed to handle Roo Code Cloud callback",
+				"Failed to handle Darbot Code Cloud callback",
 			)
 			expect(mockLog).toHaveBeenCalledWith("[auth] State mismatch in callback")
 		})
@@ -331,7 +331,7 @@ describe("WebAuthService", () => {
 				"clerk-auth-credentials",
 				JSON.stringify({ clientToken: "Bearer token-123", sessionId: "session-123", organizationId: null }),
 			)
-			expect(mockShowInfo).toHaveBeenCalledWith("Successfully authenticated with Roo Code Cloud")
+			expect(mockShowInfo).toHaveBeenCalledWith("Successfully authenticated with Darbot Code Cloud")
 		})
 
 		it("should handle Clerk API errors", async () => {
@@ -348,7 +348,7 @@ describe("WebAuthService", () => {
 			authService.on("logged-out", loggedOutSpy)
 
 			await expect(authService.handleCallback("auth-code", storedState)).rejects.toThrow(
-				"Failed to handle Roo Code Cloud callback",
+				"Failed to handle Darbot Code Cloud callback",
 			)
 			expect(loggedOutSpy).toHaveBeenCalled()
 		})
@@ -378,7 +378,7 @@ describe("WebAuthService", () => {
 			expect(mockContext.secrets.delete).toHaveBeenCalledWith("clerk-auth-credentials")
 			expect(mockContext.globalState.update).toHaveBeenCalledWith("clerk-auth-state", undefined)
 			expect(mockFetch).toHaveBeenCalledWith(
-				"https://clerk.roocode.com/v1/client/sessions/test-session/remove",
+				"https://clerk.darbotcode.com/v1/client/sessions/test-session/remove",
 				expect.objectContaining({
 					method: "POST",
 					headers: expect.objectContaining({
@@ -386,7 +386,7 @@ describe("WebAuthService", () => {
 					}),
 				}),
 			)
-			expect(mockShowInfo).toHaveBeenCalledWith("Logged out from Roo Code Cloud")
+			expect(mockShowInfo).toHaveBeenCalledWith("Logged out from Darbot Code Cloud")
 		})
 
 		it("should handle logout without credentials", async () => {
@@ -398,7 +398,7 @@ describe("WebAuthService", () => {
 
 			expect(mockContext.secrets.delete).toHaveBeenCalled()
 			expect(mockFetch).not.toHaveBeenCalled()
-			expect(mockShowInfo).toHaveBeenCalledWith("Logged out from Roo Code Cloud")
+			expect(mockShowInfo).toHaveBeenCalledWith("Logged out from Darbot Code Cloud")
 		})
 
 		it("should handle Clerk logout errors gracefully", async () => {
@@ -418,7 +418,7 @@ describe("WebAuthService", () => {
 			await authService.logout()
 
 			expect(mockLog).toHaveBeenCalledWith("[auth] Error calling clerkLogout:", expect.any(Error))
-			expect(mockShowInfo).toHaveBeenCalledWith("Logged out from Roo Code Cloud")
+			expect(mockShowInfo).toHaveBeenCalledWith("Logged out from Darbot Code Cloud")
 		})
 	})
 
@@ -934,7 +934,7 @@ describe("WebAuthService", () => {
 			})
 
 			await expect(authService.handleCallback("auth-code", storedState)).rejects.toThrow(
-				"Failed to handle Roo Code Cloud callback",
+				"Failed to handle Darbot Code Cloud callback",
 			)
 		})
 	})
@@ -959,7 +959,7 @@ describe("WebAuthService", () => {
 	describe("auth credentials key scoping", () => {
 		it("should use default key when getClerkBaseUrl returns production URL", async () => {
 			// Mock getClerkBaseUrl to return production URL
-			vi.mocked(Config.getClerkBaseUrl).mockReturnValue("https://clerk.roocode.com")
+			vi.mocked(Config.getClerkBaseUrl).mockReturnValue("https://clerk.darbotcode.com")
 
 			const service = new WebAuthService(mockContext as unknown as vscode.ExtensionContext, mockLog)
 			const credentials = { clientToken: "test-token", sessionId: "test-session" }

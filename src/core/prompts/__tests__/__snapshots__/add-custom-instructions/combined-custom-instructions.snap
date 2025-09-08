@@ -12,7 +12,7 @@ Mode-specific Instructions:
 Custom test instructions
 
 Rules:
-# Rules from .clinerules-architect:
+# Rules from .darbotrules-architect:
 Mock mode-specific rules
-# Rules from .clinerules:
+# Rules from .darbotrules:
 Mock generic rules

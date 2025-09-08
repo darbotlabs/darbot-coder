@@ -157,7 +157,7 @@
     <issue type="behavior">
       <problem>Mode not following instructions</problem>
       <causes>
-        <cause>Instructions not in .roo/rules-[slug]/ folder</cause>
+        <cause>Instructions not in .darbot/rules-[slug]/ folder</cause>
         <cause>XML parsing errors</cause>
         <cause>Conflicting instructions</cause>
       </causes>

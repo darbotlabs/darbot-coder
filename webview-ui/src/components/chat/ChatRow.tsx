@@ -4,12 +4,12 @@ import { McpExecution } from "./McpExecution"
 import { useSize } from "react-use"
 import { useTranslation, Trans } from "react-i18next"
 import deepEqual from "fast-deep-equal"
-import { VSCodeBadge, VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeBadge, VSCodeButton } from "../vscode-components"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 import { Mode } from "@darbot/modes"
 
-import { ClineApiReqInfo, ClineAskUseMcpServer, ClineSayTool } from "@darbot/ExtensionMessage"
+import { DarbotApiReqInfo, DarbotAskUseMcpServer, DarbotSayTool } from "@darbot/ExtensionMessage"
 import { COMMAND_OUTPUT_STRING } from "@darbot/combineCommandSequences"
 import { safeJsonParse } from "@darbot/safeJsonParse"
 import { FollowUpData, SuggestionItem } from "@darbot-code/types"
@@ -48,8 +48,8 @@ import { CondenseContextErrorRow, CondensingContextRow, ContextCondenseRow } fro
 import CodebaseSearchResultsDisplay from "./CodebaseSearchResultsDisplay"
 
 interface ChatRowProps {
-	message: ClineMessage
-	lastModifiedMessage?: ClineMessage
+	message: DarbotMessage
+	lastModifiedMessage?: DarbotMessage
 	isExpanded: boolean
 	isLast: boolean
 	isStreaming: boolean
@@ -179,7 +179,7 @@ export const ChatRowContent = ({
 
 	const [cost, apiReqCancelReason, apiReqStreamingFailedMessage] = useMemo(() => {
 		if (message.text !== null && message.text !== undefined && message.say === "api_req_started") {
-			const info = safeJsonParse<ClineApiReqInfo>(message.text)
+			const info = safeJsonParse<DarbotApiReqInfo>(message.text)
 			return [info?.cost, info?.cancelReason, info?.streamingFailedMessage]
 		}
 
@@ -234,7 +234,7 @@ export const ChatRowContent = ({
 					<span style={{ color: normalColor, fontWeight: "bold" }}>{t("chat:runCommand.title")}:</span>,
 				]
 			case "use_mcp_server":
-				const mcpServerUse = safeJsonParse<ClineAskUseMcpServer>(message.text)
+				const mcpServerUse = safeJsonParse<DarbotAskUseMcpServer>(message.text)
 				if (mcpServerUse === undefined) {
 					return [null, null]
 				}
@@ -338,7 +338,7 @@ export const ChatRowContent = ({
 	}
 
 	const tool = useMemo(
-		() => (message.ask === "tool" ? safeJsonParse<ClineSayTool>(message.text) : null),
+		() => (message.ask === "tool" ? safeJsonParse<DarbotSayTool>(message.text) : null),
 		[message.ask, message.text],
 	)
 
@@ -1026,7 +1026,7 @@ export const ChatRowContent = ({
 												<br />
 												{t("chat:powershell.issues")}{" "}
 												<a
-													href="https://github.com/cline/cline/wiki/TroubleShooting-%E2%80%90-%22PowerShell-is-not-recognized-as-an-internal-or-external-command%22"
+													href="https://github.com/DarbotLabs/darbot-coder/wiki/TroubleShooting-%E2%80%90-%22PowerShell-is-not-recognized-as-an-internal-or-external-command%22"
 													style={{ color: "inherit", textDecoration: "underline" }}>
 													troubleshooting guide
 												</a>
@@ -1117,7 +1117,7 @@ export const ChatRowContent = ({
 						</div>
 					)
 				case "user_feedback_diff":
-					const tool = safeJsonParse<ClineSayTool>(message.text)
+					const tool = safeJsonParse<DarbotSayTool>(message.text)
 					return (
 						<div style={{ marginTop: -10, width: "100%" }}>
 							<CodeAccordian
@@ -1247,7 +1247,7 @@ export const ChatRowContent = ({
 					const { response, ...mcpServerRequest } = messageJson
 
 					// Create the useMcpServer object with the response field
-					const useMcpServer: ClineAskUseMcpServer = {
+					const useMcpServer: DarbotAskUseMcpServer = {
 						...mcpServerRequest,
 						response,
 					}
@@ -1345,3 +1345,4 @@ export const ChatRowContent = ({
 			}
 	}
 }
+

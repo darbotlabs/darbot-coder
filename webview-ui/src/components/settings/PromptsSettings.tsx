@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { VSCodeTextArea } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextArea } from "../vscode-components"
 
 import { supportPrompt, SupportPromptType } from "@darbot/support-prompt"
 

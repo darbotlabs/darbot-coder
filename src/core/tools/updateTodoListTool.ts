@@ -12,31 +12,31 @@ let approvedTodoList: TodoItem[] | undefined = undefined
 /**
  * Add a todo item to the task's todoList.
  */
-export function addTodoToTask(cline: Task, content: string, status: TodoStatus = "pending", id?: string): TodoItem {
+export function addTodoToTask(darbot: Task, content: string, status: TodoStatus = "pending", id?: string): TodoItem {
 	const todo: TodoItem = {
 		id: id ?? crypto.randomUUID(),
 		content,
 		status,
 	}
-	if (!cline.todoList) cline.todoList = []
-	cline.todoList.push(todo)
+	if (!darbot.todoList) darbot.todoList = []
+	darbot.todoList.push(todo)
 	return todo
 }
 
 /**
  * Update the status of a todo item by id.
  */
-export function updateTodoStatusForTask(cline: Task, id: string, nextStatus: TodoStatus): boolean {
-	if (!cline.todoList) return false
-	const idx = cline.todoList.findIndex((t) => t.id === id)
+export function updateTodoStatusForTask(darbot: Task, id: string, nextStatus: TodoStatus): boolean {
+	if (!darbot.todoList) return false
+	const idx = darbot.todoList.findIndex((t) => t.id === id)
 	if (idx === -1) return false
-	const current = cline.todoList[idx]
+	const current = darbot.todoList[idx]
 	if (
 		(current.status === "pending" && nextStatus === "in_progress") ||
 		(current.status === "in_progress" && nextStatus === "completed") ||
 		current.status === nextStatus
 	) {
-		cline.todoList[idx] = { ...current, status: nextStatus }
+		darbot.todoList[idx] = { ...current, status: nextStatus }
 		return true
 	}
 	return false
@@ -45,38 +45,38 @@ export function updateTodoStatusForTask(cline: Task, id: string, nextStatus: Tod
 /**
  * Remove a todo item by id.
  */
-export function removeTodoFromTask(cline: Task, id: string): boolean {
-	if (!cline.todoList) return false
-	const idx = cline.todoList.findIndex((t) => t.id === id)
+export function removeTodoFromTask(darbot: Task, id: string): boolean {
+	if (!darbot.todoList) return false
+	const idx = darbot.todoList.findIndex((t) => t.id === id)
 	if (idx === -1) return false
-	cline.todoList.splice(idx, 1)
+	darbot.todoList.splice(idx, 1)
 	return true
 }
 
 /**
  * Get a copy of the todoList.
  */
-export function getTodoListForTask(cline: Task): TodoItem[] | undefined {
-	return cline.todoList?.slice()
+export function getTodoListForTask(darbot: Task): TodoItem[] | undefined {
+	return darbot.todoList?.slice()
 }
 
 /**
  * Set the todoList for the task.
  */
-export async function setTodoListForTask(cline?: Task, todos?: TodoItem[]) {
-	if (cline === undefined) return
-	cline.todoList = Array.isArray(todos) ? todos : []
+export async function setTodoListForTask(darbot?: Task, todos?: TodoItem[]) {
+	if (darbot === undefined) return
+	darbot.todoList = Array.isArray(todos) ? todos : []
 }
 
 /**
- * Restore the todoList from argument or from clineMessages.
+ * Restore the todoList from argument or from darbotMessages.
  */
-export function restoreTodoListForTask(cline: Task, todoList?: TodoItem[]) {
+export function restoreTodoListForTask(darbot: Task, todoList?: TodoItem[]) {
 	if (todoList) {
-		cline.todoList = Array.isArray(todoList) ? todoList : []
+		darbot.todoList = Array.isArray(todoList) ? todoList : []
 		return
 	}
-	cline.todoList = getLatestTodo(cline.clineMessages)
+	darbot.todoList = getLatestTodo(darbot.darbotMessages)
 }
 /**
  * Convert TodoItem[] to markdown checklist string.
@@ -145,7 +145,7 @@ function validateTodos(todos: any[]): { valid: boolean; error?: string } {
 
 /**
  * Update the todo list for a task.
- * @param cline Task instance
+ * @param darbot Task instance
  * @param block ToolUse block
  * @param askApproval AskApproval function
  * @param handleError HandleError function
@@ -154,7 +154,7 @@ function validateTodos(todos: any[]): { valid: boolean; error?: string } {
  * @param userEdited If true, only show "User Edit Succeeded" and do nothing else
  */
 export async function updateTodoListTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -174,16 +174,16 @@ export async function updateTodoListTool(
 		try {
 			todos = parseMarkdownChecklist(todosRaw || "")
 		} catch {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("update_todo_list")
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("update_todo_list")
 			pushToolResult(formatResponse.toolError("The todos parameter is not valid markdown checklist or JSON"))
 			return
 		}
 
 		const { valid, error } = validateTodos(todos)
 		if (!valid && !block.partial) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("update_todo_list")
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("update_todo_list")
 			pushToolResult(formatResponse.toolError(error || "todos parameter validation failed"))
 			return
 		}
@@ -199,7 +199,7 @@ export async function updateTodoListTool(
 			todos: normalizedTodos,
 		})
 		if (block.partial) {
-			await cline.ask("tool", approvalMsg, block.partial).catch(() => {})
+			await darbot.ask("tool", approvalMsg, block.partial).catch(() => {})
 			return
 		}
 		approvedTodoList = cloneDeep(normalizedTodos)
@@ -212,7 +212,7 @@ export async function updateTodoListTool(
 			approvedTodoList !== undefined && JSON.stringify(normalizedTodos) !== JSON.stringify(approvedTodoList)
 		if (isTodoListChanged) {
 			normalizedTodos = approvedTodoList ?? []
-			cline.say(
+			darbot.say(
 				"user_edit_todos",
 				JSON.stringify({
 					tool: "updateTodoList",
@@ -221,7 +221,7 @@ export async function updateTodoListTool(
 			)
 		}
 
-		await setTodoListForTask(cline, normalizedTodos)
+		await setTodoListForTask(darbot, normalizedTodos)
 
 		// If todo list changed, output new todo list in markdown format
 		if (isTodoListChanged) {

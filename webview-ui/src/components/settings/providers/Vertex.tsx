@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import { VSCodeLink, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeLink, VSCodeTextField } from "../../vscode-components"
 
 import { type ProviderSettings, VERTEX_REGIONS } from "@darbot-code/types"
 

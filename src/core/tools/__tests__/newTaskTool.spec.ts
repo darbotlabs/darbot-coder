@@ -15,20 +15,20 @@ vi.mock("../../prompts/responses", () => ({
 }))
 
 // Define a minimal type for the resolved value
-type MockClineInstance = { taskId: string }
+type MockDarbotInstance = { taskId: string }
 
 // Mock dependencies after modules are mocked
 const mockAskApproval = vi.fn<AskApproval>()
 const mockHandleError = vi.fn<HandleError>()
 const mockPushToolResult = vi.fn()
 const mockRemoveClosingTag = vi.fn((_name: string, value: string | undefined) => value ?? "")
-const mockInitClineWithTask = vi.fn<() => Promise<MockClineInstance>>().mockResolvedValue({ taskId: "mock-subtask-id" })
+const mockInitDarbotWithTask = vi.fn<() => Promise<MockDarbotInstance>>().mockResolvedValue({ taskId: "mock-subtask-id" })
 const mockEmit = vi.fn()
 const mockRecordToolError = vi.fn()
 const mockSayAndCreateMissingParamError = vi.fn()
 
-// Mock the Cline instance and its methods/properties
-const mockCline = {
+// Mock the darbot instance and its methods/properties
+const mockDarbot = {
 	ask: vi.fn(),
 	sayAndCreateMissingParamError: mockSayAndCreateMissingParamError,
 	emit: mockEmit,
@@ -40,7 +40,7 @@ const mockCline = {
 		deref: vi.fn(() => ({
 			getState: vi.fn(() => ({ customModes: [], mode: "ask" })),
 			handleModeSwitch: vi.fn(),
-			initClineWithTask: mockInitClineWithTask,
+			initDarbotWithTask: mockInitDarbotWithTask,
 		})),
 	},
 }
@@ -61,8 +61,8 @@ describe("newTaskTool", () => {
 			roleDefinition: "Test role definition",
 			groups: ["command", "read", "edit"],
 		}) // Default valid mode
-		mockCline.consecutiveMistakeCount = 0
-		mockCline.isPaused = false
+		mockDarbot.consecutiveMistakeCount = 0
+		mockDarbot.isPaused = false
 	})
 
 	it("should correctly un-escape \\\\@ to \\@ in the message passed to the new task", async () => {
@@ -77,7 +77,7 @@ describe("newTaskTool", () => {
 		}
 
 		await newTaskTool(
-			mockCline as any, // Use 'as any' for simplicity in mocking complex type
+			mockDarbot as any, // Use 'as any' for simplicity in mocking complex type
 			block,
 			mockAskApproval, // Now correctly typed
 			mockHandleError,
@@ -88,17 +88,17 @@ describe("newTaskTool", () => {
 		// Verify askApproval was called
 		expect(mockAskApproval).toHaveBeenCalled()
 
-		// Verify the message passed to initClineWithTask reflects the code's behavior in unit tests
-		expect(mockInitClineWithTask).toHaveBeenCalledWith(
+		// Verify the message passed to initDarbotWithTask reflects the code's behavior in unit tests
+		expect(mockInitDarbotWithTask).toHaveBeenCalledWith(
 			"Review this: \\@file1.txt and also \\\\\\@file2.txt", // Unit Test Expectation: \\@ -> \@, \\\\@ -> \\\\@
 			undefined,
-			mockCline,
+			mockDarbot,
 		)
 
 		// Verify side effects
-		expect(mockCline.emit).toHaveBeenCalledWith("taskSpawned", expect.any(String)) // Assuming initCline returns a mock task ID
-		expect(mockCline.isPaused).toBe(true)
-		expect(mockCline.emit).toHaveBeenCalledWith("taskPaused")
+		expect(mockDarbot.emit).toHaveBeenCalledWith("taskSpawned", expect.any(String)) // Assuming initDarbot returns a mock task ID
+		expect(mockDarbot.isPaused).toBe(true)
+		expect(mockDarbot.emit).toHaveBeenCalledWith("taskPaused")
 		expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Successfully created new task"))
 	})
 
@@ -114,7 +114,7 @@ describe("newTaskTool", () => {
 		}
 
 		await newTaskTool(
-			mockCline as any,
+			mockDarbot as any,
 			block,
 			mockAskApproval, // Now correctly typed
 			mockHandleError,
@@ -122,10 +122,10 @@ describe("newTaskTool", () => {
 			mockRemoveClosingTag,
 		)
 
-		expect(mockInitClineWithTask).toHaveBeenCalledWith(
+		expect(mockInitDarbotWithTask).toHaveBeenCalledWith(
 			"This is already unescaped: \\@file1.txt", // Expected: \@ remains \@
 			undefined,
-			mockCline,
+			mockDarbot,
 		)
 	})
 
@@ -141,7 +141,7 @@ describe("newTaskTool", () => {
 		}
 
 		await newTaskTool(
-			mockCline as any,
+			mockDarbot as any,
 			block,
 			mockAskApproval, // Now correctly typed
 			mockHandleError,
@@ -149,10 +149,10 @@ describe("newTaskTool", () => {
 			mockRemoveClosingTag,
 		)
 
-		expect(mockInitClineWithTask).toHaveBeenCalledWith(
+		expect(mockInitDarbotWithTask).toHaveBeenCalledWith(
 			"A normal mention @file1.txt", // Expected: @ remains @
 			undefined,
-			mockCline,
+			mockDarbot,
 		)
 	})
 
@@ -168,7 +168,7 @@ describe("newTaskTool", () => {
 		}
 
 		await newTaskTool(
-			mockCline as any,
+			mockDarbot as any,
 			block,
 			mockAskApproval, // Now correctly typed
 			mockHandleError,
@@ -176,10 +176,10 @@ describe("newTaskTool", () => {
 			mockRemoveClosingTag,
 		)
 
-		expect(mockInitClineWithTask).toHaveBeenCalledWith(
+		expect(mockInitDarbotWithTask).toHaveBeenCalledWith(
 			"Mix: @file0.txt, \\@file1.txt, \\@file2.txt, \\\\\\@file3.txt", // Unit Test Expectation: @->@, \@->\@, \\@->\@, \\\\@->\\\\@
 			undefined,
-			mockCline,
+			mockDarbot,
 		)
 	})
 

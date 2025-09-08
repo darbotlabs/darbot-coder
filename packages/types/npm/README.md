@@ -41,7 +41,7 @@ await api.pressSecondaryButton()
 **NOTE:** To ensure that the `DarbotFramework.darbot-coder` extension is activated before your extension, add it to the `extensionDependencies` in your `package.json`:
 
 ```json
-"extensionDependencies": ["RooVeterinaryInc.roo-cline"]
+"extensionDependencies": ["DarbotLabs.darbot-coder"]
 ```
 
-For detailed information on the available methods and their usage, refer to the `roo-code.d.ts` file.
+For detailed information on the available methods and their usage, refer to the `darbot-coder.d.ts` file.

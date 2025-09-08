@@ -6,27 +6,27 @@ describe("custom-instructions path detection", () => {
 	it("should use exact path comparison instead of string includes", () => {
 		// Test the logic that our fix implements
 		const fakeHomeDir = "/Users/john.darbot.smith"
-		const globalRooDir = path.join(fakeHomeDir, ".darbot") // "/Users/john.darbot.smith/.darbot"
-		const projectRooDir = "/projects/my-project/.darbot"
+		const globalDarbotDir = path.join(fakeHomeDir, ".darbot") // "/Users/john.darbot.smith/.darbot"
+		const projectDarbotDir = "/projects/my-project/.darbot"
 
 		// Old implementation (fragile):
-		// const isGlobal = rooDir.includes(path.join(os.homedir(), ".darbot"))
+		// const isGlobal = darbotDir.includes(path.join(os.homedir(), ".darbot"))
 		// This could fail if the home directory path contains ".darbot" elsewhere
 
 		// New implementation (robust):
-		// const isGlobal = path.resolve(rooDir) === path.resolve(getGlobalRooDirectory())
+		// const isGlobal = path.resolve(darbotDir) === path.resolve(getGlobalDarbotDirectory())
 
 		// Test the new logic
-		const isGlobalForGlobalDir = path.resolve(globalRooDir) === path.resolve(globalRooDir)
-		const isGlobalForProjectDir = path.resolve(projectRooDir) === path.resolve(globalRooDir)
+		const isGlobalForGlobalDir = path.resolve(globalDarbotDir) === path.resolve(globalDarbotDir)
+		const isGlobalForProjectDir = path.resolve(projectDarbotDir) === path.resolve(globalDarbotDir)
 
 		expect(isGlobalForGlobalDir).toBe(true)
 		expect(isGlobalForProjectDir).toBe(false)
 
 		// Verify that the old implementation would have been problematic
 		// if the home directory contained ".darbot" in the path
-		const oldLogicGlobal = globalRooDir.includes(path.join(fakeHomeDir, ".darbot"))
-		const oldLogicProject = projectRooDir.includes(path.join(fakeHomeDir, ".darbot"))
+		const oldLogicGlobal = globalDarbotDir.includes(path.join(fakeHomeDir, ".darbot"))
+		const oldLogicProject = projectDarbotDir.includes(path.join(fakeHomeDir, ".darbot"))
 
 		expect(oldLogicGlobal).toBe(true) // This works
 		expect(oldLogicProject).toBe(false) // This also works, but is fragile

@@ -10,7 +10,7 @@ import { ExtensionStateContextProvider } from "@src/context/ExtensionStateContex
 import ApiOptions, { ApiOptionsProps } from "../ApiOptions"
 
 // Mock VSCode components
-vi.mock("@vscode/webview-ui-toolkit/react", () => ({
+vi.mock("darbot-webview-ui/react", () => ({
 	VSCodeTextField: ({ children, value, onBlur }: any) => (
 		<div>
 			{children}

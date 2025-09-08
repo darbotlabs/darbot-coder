@@ -8,7 +8,7 @@ import {
 	VSCodeOption,
 	VSCodeLink,
 	VSCodeCheckbox,
-} from "@vscode/webview-ui-toolkit/react"
+} from "../vscode-components"
 import * as ProgressPrimitive from "@radix-ui/react-progress"
 import { vscode } from "@src/utils/vscode"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
@@ -37,7 +37,7 @@ import {
 	StandardTooltip,
 } from "@src/components/ui"
 import { AlertTriangle } from "lucide-react"
-import { useRooPortal } from "@src/components/ui/hooks/useRooPortal"
+import { useDarbotPortal } from "@src/components/ui/hooks/useDarbotPortal"
 import type { EmbedderProvider } from "@darbot/embeddingModels"
 import type { IndexingStatus } from "@darbot/ExtensionMessage"
 import { CODEBASE_INDEX_DEFAULTS } from "@darbot-code/types"
@@ -493,7 +493,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		return models ? Object.keys(models) : []
 	}
 
-	const portalContainer = useRooPortal("roo-portal")
+	const portalContainer = useDarbotPortal("darbot-portal")
 
 	return (
 		<>

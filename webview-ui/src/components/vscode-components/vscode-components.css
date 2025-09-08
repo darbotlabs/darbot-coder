@@ -1,0 +1,312 @@
+/* VSCode Component Styles */
+/* Using CSS custom properties that match VS Code's design system */
+
+.vscode-button {
+  background: var(--vscode-button-background, #0e639c);
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: var(--vscode-button-foreground, #ffffff);
+  cursor: pointer;
+  display: inline-block;
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  line-height: 1.4;
+  outline: none;
+  padding: 4px 11px;
+  text-align: center;
+  text-decoration: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.vscode-button:hover:not(:disabled) {
+  background: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+.vscode-button:focus:not(:disabled) {
+  outline: 1px solid var(--vscode-focusBorder, #007acc);
+  outline-offset: 2px;
+}
+
+.vscode-button:active:not(:disabled) {
+  background: var(--vscode-button-background, #0e639c);
+}
+
+.vscode-button:disabled {
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-disabledForeground, rgba(204, 204, 204, 0.4));
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.vscode-button--primary {
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-button-foreground, #ffffff);
+}
+
+.vscode-button--secondary {
+  background: var(--vscode-button-secondaryBackground, transparent);
+  color: var(--vscode-button-secondaryForeground, #cccccc);
+  border: 1px solid var(--vscode-button-border, #8e8e8e);
+}
+
+.vscode-button--secondary:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground, rgba(90, 93, 94, 0.31));
+}
+
+.vscode-button--icon {
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground, #cccccc);
+  padding: 4px;
+}
+
+.vscode-button--icon:hover:not(:disabled) {
+  background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+}
+
+.vscode-link {
+  color: var(--vscode-textLink-foreground, #3794ff);
+  text-decoration: none;
+}
+
+.vscode-link:hover {
+  color: var(--vscode-textLink-activeForeground, #3794ff);
+  text-decoration: underline;
+}
+
+.vscode-link:focus {
+  outline: 1px solid var(--vscode-focusBorder, #007acc);
+  outline-offset: 2px;
+}
+
+.vscode-checkbox {
+  align-items: center;
+  display: flex;
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  user-select: none;
+}
+
+.vscode-checkbox input[type="checkbox"] {
+  background: var(--vscode-checkbox-background, #3c3c3c);
+  border: 1px solid var(--vscode-checkbox-border, #3c3c3c);
+  border-radius: 3px;
+  cursor: pointer;
+  height: 18px;
+  margin: 0;
+  margin-right: 9px;
+  outline: none;
+  width: 18px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.vscode-checkbox input[type="checkbox"]:checked {
+  background: var(--vscode-checkbox-background, #3c3c3c);
+  background-image: url("data:image/svg+xml,%3csvg width='16' height='16' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='%23ffffff'%3e%3cpath fill-rule='evenodd' clip-rule='evenodd' d='M14.431 3.323l-8.47 10-.79-.036-3.35-4.77.818-.574 2.978 4.24 8.051-9.506.764.646z'/%3e%3c/svg%3e");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+
+.vscode-checkbox input[type="checkbox"]:focus {
+  outline: 1px solid var(--vscode-focusBorder, #007acc);
+  outline-offset: 2px;
+}
+
+.vscode-checkbox input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.vscode-checkbox-label {
+  color: var(--vscode-foreground, #cccccc);
+  cursor: pointer;
+}
+
+.vscode-badge {
+  background: var(--vscode-badge-background, #4d4d4d);
+  border-radius: 11px;
+  color: var(--vscode-badge-foreground, #ffffff);
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  padding: 2px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.vscode-textfield {
+  background: var(--vscode-input-background, #3c3c3c);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: var(--vscode-input-foreground, #cccccc);
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  line-height: 1.4;
+  outline: none;
+  padding: 4px 6px;
+  width: 100%;
+}
+
+.vscode-textfield:focus {
+  border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.vscode-textfield:disabled {
+  background: var(--vscode-input-background, #3c3c3c);
+  color: var(--vscode-disabledForeground, rgba(204, 204, 204, 0.4));
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.vscode-textfield::placeholder {
+  color: var(--vscode-input-placeholderForeground, rgba(204, 204, 204, 0.6));
+}
+
+.vscode-progress-ring {
+  align-items: center;
+  display: flex;
+  height: 16px;
+  justify-content: center;
+  width: 16px;
+}
+
+.vscode-progress-ring svg {
+  animation: vscode-progress-ring-spin 2s linear infinite;
+  height: 16px;
+  width: 16px;
+}
+
+.vscode-progress-ring svg circle {
+  animation: vscode-progress-ring-dash 1.5s ease-in-out infinite;
+  fill: none;
+  stroke: var(--vscode-progressBar-background, #0e70c0);
+  stroke-dasharray: 90, 150;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+@keyframes vscode-progress-ring-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vscode-progress-ring-dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+.vscode-textarea {
+  background: var(--vscode-input-background, #3c3c3c);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: var(--vscode-input-foreground, #cccccc);
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  line-height: 1.4;
+  outline: none;
+  padding: 6px 8px;
+  resize: vertical;
+  width: 100%;
+}
+
+.vscode-textarea:focus {
+  border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.vscode-textarea:disabled {
+  background: var(--vscode-input-background, #3c3c3c);
+  color: var(--vscode-disabledForeground, rgba(204, 204, 204, 0.4));
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.vscode-textarea::placeholder {
+  color: var(--vscode-input-placeholderForeground, rgba(204, 204, 204, 0.6));
+}
+
+.vscode-radio-group {
+  display: flex;
+  gap: 8px;
+}
+
+.vscode-radio-group--vertical {
+  flex-direction: column;
+}
+
+.vscode-radio-group--horizontal {
+  flex-direction: row;
+}
+
+.vscode-radio {
+  align-items: center;
+  display: flex;
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  user-select: none;
+}
+
+.vscode-radio input[type="radio"] {
+  background: var(--vscode-checkbox-background, #3c3c3c);
+  border: 1px solid var(--vscode-checkbox-border, #3c3c3c);
+  border-radius: 50%;
+  cursor: pointer;
+  height: 16px;
+  margin: 0;
+  margin-right: 9px;
+  outline: none;
+  width: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.vscode-radio input[type="radio"]:checked {
+  background: var(--vscode-checkbox-background, #3c3c3c);
+  border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.vscode-radio input[type="radio"]:checked::after {
+  background: var(--vscode-focusBorder, #007acc);
+  border-radius: 50%;
+  content: '';
+  display: block;
+  height: 8px;
+  margin: 3px;
+  width: 8px;
+}
+
+.vscode-radio input[type="radio"]:focus {
+  outline: 1px solid var(--vscode-focusBorder, #007acc);
+  outline-offset: 2px;
+}
+
+.vscode-radio input[type="radio"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.vscode-radio-label {
+  color: var(--vscode-foreground, #cccccc);
+  cursor: pointer;
+}

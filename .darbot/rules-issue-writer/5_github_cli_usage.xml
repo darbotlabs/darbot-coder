@@ -16,7 +16,7 @@
       </when_to_use>
       <example>
         <execute_command>
-        <command>gh issue list --repo RooCodeInc/Roo-Code --search "dark theme button visibility" --state all --limit 20</command>
+        <command>gh issue list --repo DarbotLabs/darbot-coder --search "dark theme button visibility" --state all --limit 20</command>
         </execute_command>
       </example>
       <options>
@@ -35,7 +35,7 @@
       </when_to_use>
       <example>
         <execute_command>
-        <command>gh search issues --repo RooCodeInc/Roo-Code "dark theme button" --limit 10</command>
+        <command>gh search issues --repo DarbotLabs/darbot-coder "dark theme button" --limit 10</command>
         </execute_command>
       </example>
     </command>
@@ -47,7 +47,7 @@
       </when_to_use>
       <example>
         <execute_command>
-        <command>gh issue view 123 --repo RooCodeInc/Roo-Code --comments</command>
+        <command>gh issue view 123 --repo DarbotLabs/darbot-coder --comments</command>
         </execute_command>
       </example>
       <options>
@@ -70,7 +70,7 @@
       </when_to_use>
       <example>
         <execute_command>
-        <command>gh repo view RooCodeInc/Roo-Code --json defaultBranchRef,description,updatedAt</command>
+        <command>gh repo view DarbotLabs/darbot-coder --json defaultBranchRef,description,updatedAt</command>
         </execute_command>
       </example>
     </command>
@@ -82,7 +82,7 @@
       </when_to_use>
       <example>
         <execute_command>
-        <command>gh search prs --repo RooCodeInc/Roo-Code "dark theme" --limit 10 --state all</command>
+        <command>gh search prs --repo DarbotLabs/darbot-coder "dark theme" --limit 10 --state all</command>
         </execute_command>
       </example>
     </command>
@@ -111,12 +111,12 @@
       </when_to_use>
       <bug_report_example>
         <execute_command>
-        <command>gh issue create --repo RooCodeInc/Roo-Code --title "[Descriptive title of the bug]" --body-file /tmp/issue_body.md --label "bug"</command>
+        <command>gh issue create --repo DarbotLabs/darbot-coder --title "[Descriptive title of the bug]" --body-file /tmp/issue_body.md --label "bug"</command>
         </execute_command>
       </bug_report_example>
       <feature_request_example>
         <execute_command>
-        <command>gh issue create --repo RooCodeInc/Roo-Code --title "[Problem-focused title]" --body-file /tmp/issue_body.md --label "proposal" --label "enhancement"</command>
+        <command>gh issue create --repo DarbotLabs/darbot-coder --title "[Problem-focused title]" --body-file /tmp/issue_body.md --label "proposal" --label "enhancement"</command>
         </execute_command>
       </feature_request_example>
       <options>
@@ -138,7 +138,7 @@
       </when_to_use>
       <example>
         <execute_command>
-        <command>gh issue comment 456 --repo RooCodeInc/Roo-Code --body "Additional context or comments."</command>
+        <command>gh issue comment 456 --repo DarbotLabs/darbot-coder --body "Additional context or comments."</command>
         </execute_command>
       </example>
     </command>
@@ -150,7 +150,7 @@
       </when_to_use>
       <example>
         <execute_command>
-        <command>gh issue edit 456 --repo RooCodeInc/Roo-Code --title "[Updated title]" --body "[Updated body]"</command>
+        <command>gh issue edit 456 --repo DarbotLabs/darbot-coder --title "[Updated title]" --body "[Updated body]"</command>
         </execute_command>
       </example>
     </command>
@@ -168,7 +168,7 @@
       When searching GitHub Discussions:
       1. Note that GitHub CLI doesn't currently have full discussions support
       2. Use web search or instruct user to manually search discussions at:
-         https://github.com/RooCodeInc/Roo-Code/discussions/categories/feature-requests
+         https://github.com/DarbotLabs/darbot-coder/discussions/categories/feature-requests
       3. Ask user to provide any related discussion numbers they find
       4. Include these in the "Related Discussions" section of the issue
     </step_3_integration>
@@ -183,7 +183,7 @@
 
     <step_5_integration>
       During codebase exploration (CONTRIBUTORS ONLY):
-      1. Clone repo locally if needed: `gh repo clone RooCodeInc/Roo-Code`
+      1. Clone repo locally if needed: `gh repo clone DarbotLabs/darbot-coder`
       2. Use `git log` to find recent changes to affected files
       3. Use `gh search prs` for related pull requests
       4. Include findings in the technical context section

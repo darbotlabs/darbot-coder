@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react"
 import { Trans } from "react-i18next"
 import { Checkbox } from "vscrui"
-import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField } from "../../vscode-components"
 
 import { type ProviderSettings, type OrganizationAllowList, openRouterDefaultModelId } from "@darbot-code/types"
 

@@ -1,10 +1,10 @@
 import { memo, useRef, useState } from "react"
 import { useWindowSize } from "react-use"
 import { useTranslation } from "react-i18next"
-import { VSCodeBadge } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeBadge } from "../vscode-components"
 import { CloudUpload, CloudDownload, FoldVertical } from "lucide-react"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { getModelMaxOutputTokens } from "@darbot/api"
 
@@ -23,7 +23,7 @@ import { Mention } from "./Mention"
 import { TodoListDisplay } from "./TodoListDisplay"
 
 export interface TaskHeaderProps {
-	task: ClineMessage
+	task: DarbotMessage
 	tokensIn: number
 	tokensOut: number
 	cacheWrites?: number
@@ -226,3 +226,4 @@ const TaskHeader = ({
 }
 
 export default memo(TaskHeader)
+

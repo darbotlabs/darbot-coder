@@ -1,13 +1,13 @@
 import React, { memo, useState } from "react"
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton } from "../vscode-components"
 import { Trans } from "react-i18next"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { vscode } from "@src/utils/vscode"
 
 type AutoApprovedRequestLimitWarningProps = {
-	message: ClineMessage
+	message: DarbotMessage
 }
 
 export const AutoApprovedRequestLimitWarning = memo(({ message }: AutoApprovedRequestLimitWarningProps) => {
@@ -52,3 +52,4 @@ export const AutoApprovedRequestLimitWarning = memo(({ message }: AutoApprovedRe
 		</>
 	)
 })
+

@@ -137,7 +137,7 @@ describe("autoImportSettings", () => {
 	})
 
 	it("should skip auto-import when settings file does not exist", async () => {
-		const settingsPath = "~/Documents/roo-config.json"
+		const settingsPath = "~/Documents/darbot-config.json"
 		vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
 			get: vi.fn().mockReturnValue(settingsPath),
 		} as any)
@@ -152,10 +152,10 @@ describe("autoImportSettings", () => {
 		})
 
 		expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
-			"[AutoImport] Checking for settings file at: /home/user/Documents/roo-config.json",
+			"[AutoImport] Checking for settings file at: /home/user/Documents/darbot-config.json",
 		)
 		expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
-			"[AutoImport] Settings file not found at /home/user/Documents/roo-config.json, skipping auto-import",
+			"[AutoImport] Settings file not found at /home/user/Documents/darbot-config.json, skipping auto-import",
 		)
 		expect(mockProviderSettingsManager.import).not.toHaveBeenCalled()
 	})

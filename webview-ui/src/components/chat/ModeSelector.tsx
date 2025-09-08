@@ -1,7 +1,7 @@
 import React from "react"
 import { ChevronUp, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useRooPortal } from "@/components/ui/hooks/useRooPortal"
+import { useDarbotPortal } from "@/components/ui/hooks/useDarbotPortal"
 import { Popover, PopoverContent, PopoverTrigger, StandardTooltip } from "@/components/ui"
 import { IconButton } from "./IconButton"
 import { vscode } from "@/utils/vscode"
@@ -34,7 +34,7 @@ export const ModeSelector = ({
 	customModePrompts,
 }: ModeSelectorProps) => {
 	const [open, setOpen] = React.useState(false)
-	const portalContainer = useRooPortal("roo-portal")
+	const portalContainer = useDarbotPortal("darbot-portal")
 	const { hasOpenedModeSelector, setHasOpenedModeSelector } = useExtensionState()
 	const { t } = useAppTranslation()
 

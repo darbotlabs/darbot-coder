@@ -4,12 +4,12 @@ import * as path from "path"
 import * as os from "os"
 import * as vscode from "vscode"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { waitFor, sleep } from "../utils"
 import { setDefaultSuiteTimeout } from "../test-utils"
 
-suite("Roo Code read_file Tool", function () {
+suite("darbot-coder read_file Tool", function () {
 	setDefaultSuiteTimeout(this)
 
 	let tempDir: string
@@ -24,7 +24,7 @@ suite("Roo Code read_file Tool", function () {
 
 	// Create a temporary directory and test files
 	suiteSetup(async () => {
-		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "roo-test-read-"))
+		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "darbot-test-read-"))
 
 		// Create test files in VSCode workspace directory
 		const workspaceDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || tempDir
@@ -122,7 +122,7 @@ suite("Roo Code read_file Tool", function () {
 
 	test("Should read a simple text file", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskStarted = false
 		let taskCompleted = false
 		let errorOccurred: string | null = null
@@ -130,7 +130,7 @@ suite("Roo Code read_file Tool", function () {
 		let toolResult: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution and extract result
@@ -267,13 +267,13 @@ suite("Roo Code read_file Tool", function () {
 
 	test("Should read a multiline file", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let toolExecuted = false
 		let toolResult: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution and extract result
@@ -378,13 +378,13 @@ suite("Roo Code read_file Tool", function () {
 
 	test("Should read file with line range", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let toolExecuted = false
 		let toolResult: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution and extract result
@@ -491,13 +491,13 @@ suite("Roo Code read_file Tool", function () {
 
 	test("Should handle reading non-existent file", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let toolExecuted = false
 		let _errorHandled = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution
@@ -563,12 +563,12 @@ suite("Roo Code read_file Tool", function () {
 
 	test("Should read XML content file", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let toolExecuted = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution
@@ -634,12 +634,12 @@ suite("Roo Code read_file Tool", function () {
 
 	test("Should read multiple files in sequence", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let readFileCount = 0
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Count read_file executions
@@ -707,12 +707,12 @@ Assume both files exist and you can read them directly. Read each file and tell 
 
 	test("Should read large file efficiently", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let toolExecuted = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution
@@ -776,3 +776,4 @@ Assume both files exist and you can read them directly. Read each file and tell 
 		}
 	})
 })
+

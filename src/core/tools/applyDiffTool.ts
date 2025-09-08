@@ -4,7 +4,7 @@ import fs from "fs/promises"
 import { TelemetryService } from "@darbot-code/telemetry"
 import { DEFAULT_WRITE_DELAY_MS } from "@darbot-code/types"
 
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { DarbotSayTool } from "../../shared/ExtensionMessage"
 import { getReadablePath } from "../../utils/path"
 import { Task } from "../task/Task"
 import { ToolUse, RemoveClosingTag, AskApproval, HandleError, PushToolResult } from "../../shared/tools"
@@ -14,7 +14,7 @@ import { RecordSource } from "../context-tracking/FileContextTrackerTypes"
 import { unescapeHtmlEntities } from "../../utils/text-normalization"
 
 export async function applyDiffToolLegacy(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -24,13 +24,13 @@ export async function applyDiffToolLegacy(
 	const relPath: string | undefined = block.params.path
 	let diffContent: string | undefined = block.params.diff
 
-	if (diffContent && !cline.api.getModel().id.includes("claude")) {
+	if (diffContent && !darbot.api.getModel().id.includes("claude")) {
 		diffContent = unescapeHtmlEntities(diffContent)
 	}
 
-	const sharedMessageProps: ClineSayTool = {
+	const sharedMessageProps: DarbotSayTool = {
 		tool: "appliedDiff",
-		path: getReadablePath(cline.cwd, removeClosingTag("path", relPath)),
+		path: getReadablePath(darbot.cwd, removeClosingTag("path", relPath)),
 		diff: diffContent,
 	}
 
@@ -39,50 +39,50 @@ export async function applyDiffToolLegacy(
 			// Update GUI message
 			let toolProgressStatus
 
-			if (cline.diffStrategy && cline.diffStrategy.getProgressStatus) {
-				toolProgressStatus = cline.diffStrategy.getProgressStatus(block)
+			if (darbot.diffStrategy && darbot.diffStrategy.getProgressStatus) {
+				toolProgressStatus = darbot.diffStrategy.getProgressStatus(block)
 			}
 
 			if (toolProgressStatus && Object.keys(toolProgressStatus).length === 0) {
 				return
 			}
 
-			await cline
+			await darbot
 				.ask("tool", JSON.stringify(sharedMessageProps), block.partial, toolProgressStatus)
 				.catch(() => {})
 
 			return
 		} else {
 			if (!relPath) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("apply_diff")
-				pushToolResult(await cline.sayAndCreateMissingParamError("apply_diff", "path"))
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("apply_diff")
+				pushToolResult(await darbot.sayAndCreateMissingParamError("apply_diff", "path"))
 				return
 			}
 
 			if (!diffContent) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("apply_diff")
-				pushToolResult(await cline.sayAndCreateMissingParamError("apply_diff", "diff"))
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("apply_diff")
+				pushToolResult(await darbot.sayAndCreateMissingParamError("apply_diff", "diff"))
 				return
 			}
 
-			const accessAllowed = cline.darbotIgnoreController?.validateAccess(relPath)
+			const accessAllowed = darbot.darbotIgnoreController?.validateAccess(relPath)
 
 			if (!accessAllowed) {
-				await cline.say("rooignore_error", relPath)
+				await darbot.say("darbotignore_error", relPath)
 				pushToolResult(formatResponse.toolError(formatResponse.darbotIgnoreError(relPath)))
 				return
 			}
 
-			const absolutePath = path.resolve(cline.cwd, relPath)
+			const absolutePath = path.resolve(darbot.cwd, relPath)
 			const fileExists = await fileExistsAtPath(absolutePath)
 
 			if (!fileExists) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("apply_diff")
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("apply_diff")
 				const formattedError = `File does not exist at path: ${absolutePath}\n\n<error_details>\nThe specified file could not be found. Please verify the file path and try again.\n</error_details>`
-				await cline.say("error", formattedError)
+				await darbot.say("error", formattedError)
 				pushToolResult(formattedError)
 				return
 			}
@@ -90,7 +90,7 @@ export async function applyDiffToolLegacy(
 			let originalContent: string | null = await fs.readFile(absolutePath, "utf-8")
 
 			// Apply the diff to the original content
-			const diffResult = (await cline.diffStrategy?.applyDiff(
+			const diffResult = (await darbot.diffStrategy?.applyDiff(
 				originalContent,
 				diffContent,
 				parseInt(block.params.start_line ?? ""),
@@ -103,11 +103,11 @@ export async function applyDiffToolLegacy(
 			originalContent = null
 
 			if (!diffResult.success) {
-				cline.consecutiveMistakeCount++
-				const currentCount = (cline.consecutiveMistakeCountForApplyDiff.get(relPath) || 0) + 1
-				cline.consecutiveMistakeCountForApplyDiff.set(relPath, currentCount)
+				darbot.consecutiveMistakeCount++
+				const currentCount = (darbot.consecutiveMistakeCountForApplyDiff.get(relPath) || 0) + 1
+				darbot.consecutiveMistakeCountForApplyDiff.set(relPath, currentCount)
 				let formattedError = ""
-				TelemetryService.instance.captureDiffApplicationError(cline.taskId, currentCount)
+				TelemetryService.instance.captureDiffApplicationError(darbot.taskId, currentCount)
 
 				if (diffResult.failParts && diffResult.failParts.length > 0) {
 					for (const failPart of diffResult.failParts) {
@@ -130,60 +130,60 @@ export async function applyDiffToolLegacy(
 				}
 
 				if (currentCount >= 2) {
-					await cline.say("diff_error", formattedError)
+					await darbot.say("diff_error", formattedError)
 				}
 
-				cline.recordToolError("apply_diff", formattedError)
+				darbot.recordToolError("apply_diff", formattedError)
 
 				pushToolResult(formattedError)
 				return
 			}
 
-			cline.consecutiveMistakeCount = 0
-			cline.consecutiveMistakeCountForApplyDiff.delete(relPath)
+			darbot.consecutiveMistakeCount = 0
+			darbot.consecutiveMistakeCountForApplyDiff.delete(relPath)
 
 			// Show diff view before asking for approval
-			cline.diffViewProvider.editType = "modify"
-			await cline.diffViewProvider.open(relPath)
-			await cline.diffViewProvider.update(diffResult.content, true)
-			cline.diffViewProvider.scrollToFirstDiff()
+			darbot.diffViewProvider.editType = "modify"
+			await darbot.diffViewProvider.open(relPath)
+			await darbot.diffViewProvider.update(diffResult.content, true)
+			darbot.diffViewProvider.scrollToFirstDiff()
 
 			// Check if file is write-protected
-			const isWriteProtected = cline.darbotProtectedController?.isWriteProtected(relPath) || false
+			const isWriteProtected = darbot.darbotProtectedController?.isWriteProtected(relPath) || false
 
 			const completeMessage = JSON.stringify({
 				...sharedMessageProps,
 				diff: diffContent,
 				isProtected: isWriteProtected,
-			} satisfies ClineSayTool)
+			} satisfies DarbotSayTool)
 
 			let toolProgressStatus
 
-			if (cline.diffStrategy && cline.diffStrategy.getProgressStatus) {
-				toolProgressStatus = cline.diffStrategy.getProgressStatus(block, diffResult)
+			if (darbot.diffStrategy && darbot.diffStrategy.getProgressStatus) {
+				toolProgressStatus = darbot.diffStrategy.getProgressStatus(block, diffResult)
 			}
 
 			const didApprove = await askApproval("tool", completeMessage, toolProgressStatus, isWriteProtected)
 
 			if (!didApprove) {
-				await cline.diffViewProvider.revertChanges() // Cline likely handles closing the diff view
+				await darbot.diffViewProvider.revertChanges() // darbot likely handles closing the diff view
 				return
 			}
 
 			// Call saveChanges to update the DiffViewProvider properties
-			const provider = cline.providerRef.deref()
+			const provider = darbot.providerRef.deref()
 			const state = await provider?.getState()
 			const diagnosticsEnabled = state?.diagnosticsEnabled ?? true
 			const writeDelayMs = state?.writeDelayMs ?? DEFAULT_WRITE_DELAY_MS
-			await cline.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
+			await darbot.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
 
 			// Track file edit operation
 			if (relPath) {
-				await cline.fileContextTracker.trackFileContext(relPath, "roo_edited" as RecordSource)
+				await darbot.fileContextTracker.trackFileContext(relPath, "darbot_edited" as RecordSource)
 			}
 
 			// Used to determine if we should wait for busy terminal to update before sending api request
-			cline.didEditFile = true
+			darbot.didEditFile = true
 			let partFailHint = ""
 
 			if (diffResult.failParts && diffResult.failParts.length > 0) {
@@ -191,7 +191,7 @@ export async function applyDiffToolLegacy(
 			}
 
 			// Get the formatted response message
-			const message = await cline.diffViewProvider.pushToolWriteResult(cline, cline.cwd, !fileExists)
+			const message = await darbot.diffViewProvider.pushToolWriteResult(darbot, darbot.cwd, !fileExists)
 
 			if (partFailHint) {
 				pushToolResult(partFailHint + message)
@@ -199,13 +199,14 @@ export async function applyDiffToolLegacy(
 				pushToolResult(message)
 			}
 
-			await cline.diffViewProvider.reset()
+			await darbot.diffViewProvider.reset()
 
 			return
 		}
 	} catch (error) {
 		await handleError("applying diff", error)
-		await cline.diffViewProvider.reset()
+		await darbot.diffViewProvider.reset()
 		return
 	}
 }
+

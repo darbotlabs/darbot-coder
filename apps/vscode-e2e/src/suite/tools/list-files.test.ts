@@ -3,12 +3,12 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import * as vscode from "vscode"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { waitFor, sleep } from "../utils"
 import { setDefaultSuiteTimeout } from "../test-utils"
 
-suite("Roo Code list_files Tool", function () {
+suite("darbot-coder list_files Tool", function () {
 	setDefaultSuiteTimeout(this)
 
 	let workspaceDir: string
@@ -175,13 +175,13 @@ This directory contains various files and subdirectories for testing the list_fi
 
 	test("Should list files in a directory (non-recursive)", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let toolExecuted = false
 		let listResults: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution and capture results
@@ -282,13 +282,13 @@ This directory contains various files and subdirectories for testing the list_fi
 
 	test("Should list files in a directory (recursive)", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let toolExecuted = false
 		let listResults: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution and capture results
@@ -392,13 +392,13 @@ This directory contains various files and subdirectories for testing the list_fi
 
 	test("Should list symlinked files and directories", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let toolExecuted = false
 		let listResults: string | null = null
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution and capture results
@@ -510,12 +510,12 @@ This directory contains various files and subdirectories for testing the list_fi
 
 	test("Should list files in workspace root directory", async function () {
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		let taskCompleted = false
 		let toolExecuted = false
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution
@@ -578,3 +578,4 @@ This directory contains various files and subdirectories for testing the list_fi
 		}
 	})
 })
+

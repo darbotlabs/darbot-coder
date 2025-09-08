@@ -16,12 +16,12 @@
 
     <principle name="hide_implementation_details">
       <bad>The feature uses a thread pool with configurable concurrency limits.</bad>
-      <good>Roo reads up to 100 files at once (changeable in settings).</good>
+      <good>Darbot reads up to 100 files at once (changeable in settings).</good>
     </principle>
 
     <principle name="direct_tone">
       <bad>Users must configure the concurrent file read limit parameter.</bad>
-      <good>Adjust how many files Roo reads at once in settings.</good>
+      <good>Adjust how many files Darbot reads at once in settings.</good>
     </principle>
   </writing_principles>
 
@@ -108,7 +108,7 @@ Customize this feature in settings:
     <explanations>
       <example context="limit">
         <technical>The system imposes a hard limit of 100 concurrent operations.</technical>
-        <direct>Roo handles up to 100 files at once.</direct>
+        <direct>Darbot handles up to 100 files at once.</direct>
       </example>
 
       <example context="error">
@@ -159,11 +159,11 @@ Read multiple files from your workspace in a single step.
 - "Read `src/utils.js`?" → Approve
 - "Read `src/config.json`?" → Approve
 
-**Now**: Roo asks once to read all related files.
+**Now**: Darbot asks once to read all related files.
 
 ## How it Works
 
-Roo automatically identifies and reads relevant files together for tasks requiring multi-file context, such as:
+Darbot automatically identifies and reads relevant files together for tasks requiring multi-file context, such as:
 
 - Understanding components split across multiple files.
 - Refactoring code with dependencies.
@@ -175,15 +175,15 @@ The [`read_file`](/tools/read-file) tool accepts multiple files in a single requ
 
 ## Configuration
 
-Customize in Roo's settings:
+Customize in Darbot's settings:
 
 1. **Enable/Disable Concurrent File Reads**
-   - **Does**: Toggles whether Roo can read multiple files at once.
+   - **Does**: Toggles whether Darbot can read multiple files at once.
    - **Default**: Enabled.
    - **Disable if**: Using a less capable AI model or requiring more access control.
 
 2. **Concurrent File Reads Limit**
-   - **Does**: Sets max number of files Roo can read at once.
+   - **Does**: Sets max number of files Darbot can read at once.
    - **Default**: 100.
    - **Adjust**: Lower for memory constraints; raise for very large projects.
 
@@ -196,8 +196,8 @@ Customize in Roo's settings:
 - Deny individual files in the batch dialog.
 
 **"Some files were denied but others were approved."**
-- Normal behavior. Roo works with approved files.
-- Files may be blocked by `.rooignore` settings.
+- Normal behavior. Darbot works with approved files.
+- Files may be blocked by `.darbotignore` settings.
 
 **"Does this use more memory?"**
 - Yes, but the impact is usually minimal.

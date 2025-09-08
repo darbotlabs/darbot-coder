@@ -55,32 +55,32 @@
 
     <file name="pr-metadata.json">
       <purpose>Raw PR data from GitHub</purpose>
-      <location>.roo/temp/pr-[PR_NUMBER]/pr-metadata.json</location>
+      <location>.darbot/temp/pr-[PR_NUMBER]/pr-metadata.json</location>
     </file>
 
     <file name="existing-feedback.json">
       <purpose>All existing comments and reviews</purpose>
-      <location>.roo/temp/pr-[PR_NUMBER]/existing-feedback.json</location>
+      <location>.darbot/temp/pr-[PR_NUMBER]/existing-feedback.json</location>
     </file>
 
     <file name="pattern-analysis.md">
       <purpose>Output from code mode delegation</purpose>
-      <location>.roo/temp/pr-[PR_NUMBER]/pattern-analysis.md</location>
+      <location>.darbot/temp/pr-[PR_NUMBER]/pattern-analysis.md</location>
     </file>
 
     <file name="architecture-review.md">
       <purpose>Output from architect mode delegation</purpose>
-      <location>.roo/temp/pr-[PR_NUMBER]/architecture-review.md</location>
+      <location>.darbot/temp/pr-[PR_NUMBER]/architecture-review.md</location>
     </file>
 
     <file name="test-analysis.md">
       <purpose>Output from test mode delegation</purpose>
-      <location>.roo/temp/pr-[PR_NUMBER]/test-analysis.md</location>
+      <location>.darbot/temp/pr-[PR_NUMBER]/test-analysis.md</location>
     </file>
 
     <file name="final-review.md">
       <purpose>Synthesized review ready for posting</purpose>
-      <location>.roo/temp/pr-[PR_NUMBER]/final-review.md</location>
+      <location>.darbot/temp/pr-[PR_NUMBER]/final-review.md</location>
     </file>
   </context_files>
 
@@ -89,13 +89,13 @@
       <action>Update review-context.json with PR metadata</action>
       <example><![CDATA[
 <read_file>
-<path>.roo/temp/pr-123/review-context.json</path>
+<path>.darbot/temp/pr-123/review-context.json</path>
 </read_file>
 
 <!-- Parse and update the JSON -->
 
 <write_to_file>
-<path>.roo/temp/pr-123/review-context.json</path>
+<path>.darbot/temp/pr-123/review-context.json</path>
 <content>
 {
   ...existing,
@@ -212,7 +212,7 @@
     </practice>
     
     <practice name="clean_up_old_reviews">
-      Suggest cleaning .roo/temp/ periodically
+      Suggest cleaning .darbot/temp/ periodically
     </practice>
   </best_practices>
 
@@ -221,15 +221,15 @@
       <action>Initialize context</action>
       <code><![CDATA[
 <execute_command>
-<command>New-Item -ItemType Directory -Force -Path ".roo/temp/pr-123"</command>
+<command>New-Item -ItemType Directory -Force -Path ".darbot/temp/pr-123"</command>
 </execute_command>
 
 <write_to_file>
-<path>.roo/temp/pr-123/review-context.json</path>
+<path>.darbot/temp/pr-123/review-context.json</path>
 <content>
 {
   "prNumber": "123",
-  "repository": "RooCodeInc/Roo-Code",
+  "repository": "DarbotLabs/darbot-coder",
   "reviewStartTime": "2025-01-04T18:00:00Z",
   "calledByMode": null,
   "prMetadata": {},
@@ -256,13 +256,13 @@
       <action>Update after GitHub fetch</action>
       <code><![CDATA[
 <read_file>
-<path>.roo/temp/pr-123/review-context.json</path>
+<path>.darbot/temp/pr-123/review-context.json</path>
 </read_file>
 
 <!-- Update with PR data -->
 
 <write_to_file>
-<path>.roo/temp/pr-123/review-context.json</path>
+<path>.darbot/temp/pr-123/review-context.json</path>
 <content>
 {
   ...existing,
@@ -289,12 +289,12 @@
       <code><![CDATA[
 <!-- Before delegation -->
 <read_file>
-<path>.roo/temp/pr-123/review-context.json</path>
+<path>.darbot/temp/pr-123/review-context.json</path>
 </read_file>
 
 <!-- Update to add pending task -->
 <write_to_file>
-<path>.roo/temp/pr-123/review-context.json</path>
+<path>.darbot/temp/pr-123/review-context.json</path>
 <content>
 {
   ...existing,
@@ -322,20 +322,20 @@
       <code><![CDATA[
 <!-- Read all analysis files -->
 <read_file>
-<path>.roo/temp/pr-123/pattern-analysis.md</path>
+<path>.darbot/temp/pr-123/pattern-analysis.md</path>
 </read_file>
 
 <read_file>
-<path>.roo/temp/pr-123/architecture-review.md</path>
+<path>.darbot/temp/pr-123/architecture-review.md</path>
 </read_file>
 
 <read_file>
-<path>.roo/temp/pr-123/test-analysis.md</path>
+<path>.darbot/temp/pr-123/test-analysis.md</path>
 </read_file>
 
 <!-- Update findings and status -->
 <write_to_file>
-<path>.roo/temp/pr-123/review-context.json</path>
+<path>.darbot/temp/pr-123/review-context.json</path>
 <content>
 {
   ...existing,

@@ -21,7 +21,7 @@ import { createOutputChannelLogger, createDualLogger } from "./utils/outputChann
 import { Package } from "./shared/package"
 import { formatLanguage } from "./shared/language"
 import { ContextProxy } from "./core/config/ContextProxy"
-import { ClineProvider } from "./core/webview/ClineProvider"
+import { DarbotProvider } from "./core/webview/DarbotProvider"
 import { DIFF_VIEW_URI_SCHEME } from "./integrations/editor/DiffViewProvider"
 import { TerminalRegistry } from "./integrations/terminal/TerminalRegistry"
 import { McpServerManager } from "./services/mcp/McpServerManager"
@@ -74,9 +74,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Create logger for cloud services
 	const cloudLogger = createDualLogger(createOutputChannelLogger(outputChannel))
 
-	// Initialize Roo Code Cloud service.
+	// Initialize darbot-coder Cloud service.
 	await CloudService.createInstance(context, {
-		stateChanged: () => ClineProvider.getVisibleInstance()?.postStateToWebview(),
+		stateChanged: () => DarbotProvider.getVisibleInstance()?.postStateToWebview(),
 		log: cloudLogger,
 	})
 
@@ -108,7 +108,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		)
 	}
 
-	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy, codeIndexManager, mdmService)
+	const provider = new DarbotProvider(context, outputChannel, "sidebar", contextProxy, codeIndexManager, mdmService)
 	TelemetryService.instance.setProvider(provider)
 
 	if (codeIndexManager) {
@@ -116,7 +116,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(ClineProvider.sideBarId, provider, {
+		vscode.window.registerWebviewViewProvider(DarbotProvider.sideBarId, provider, {
 			webviewOptions: { retainContextWhenHidden: true },
 		}),
 	)
@@ -174,11 +174,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	registerCodeActions(context)
 	registerTerminalActions(context)
 
-	// Allows other extensions to activate once Roo is ready.
+	// Allows other extensions to activate once darbot is ready.
 	vscode.commands.executeCommand(`${Package.name}.activationCompleted`)
 
 	// Implements the `DarbotCodeAPI` interface.
-	const socketPath = process.env.ROO_CODE_IPC_SOCKET_PATH
+	const socketPath = process.env.DARBOT_CODER_IPC_SOCKET_PATH
 	const enableLogging = typeof socketPath === "string"
 
 	// Watch the core files and automatically reload the extension host.

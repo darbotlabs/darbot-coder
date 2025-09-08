@@ -3,7 +3,7 @@ import delay from "delay"
 import * as vscode from "vscode"
 
 import { Task } from "../task/Task"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { DarbotSayTool } from "../../shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
 import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../shared/tools"
 import { RecordSource } from "../context-tracking/FileContextTrackerTypes"
@@ -16,7 +16,7 @@ import { unescapeHtmlEntities } from "../../utils/text-normalization"
 import { DEFAULT_WRITE_DELAY_MS } from "@darbot-code/types"
 
 export async function writeToFileTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -34,46 +34,46 @@ export async function writeToFileTool(
 	}
 
 	if (!relPath) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("write_to_file")
-		pushToolResult(await cline.sayAndCreateMissingParamError("write_to_file", "path"))
-		await cline.diffViewProvider.reset()
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("write_to_file")
+		pushToolResult(await darbot.sayAndCreateMissingParamError("write_to_file", "path"))
+		await darbot.diffViewProvider.reset()
 		return
 	}
 
 	if (newContent === undefined) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("write_to_file")
-		pushToolResult(await cline.sayAndCreateMissingParamError("write_to_file", "content"))
-		await cline.diffViewProvider.reset()
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("write_to_file")
+		pushToolResult(await darbot.sayAndCreateMissingParamError("write_to_file", "content"))
+		await darbot.diffViewProvider.reset()
 		return
 	}
 
-	const accessAllowed = cline.darbotIgnoreController?.validateAccess(relPath)
+	const accessAllowed = darbot.darbotIgnoreController?.validateAccess(relPath)
 
 	if (!accessAllowed) {
-		await cline.say("rooignore_error", relPath)
+		await darbot.say("darbotignore_error", relPath)
 		pushToolResult(formatResponse.toolError(formatResponse.darbotIgnoreError(relPath)))
 		return
 	}
 
 	// Check if file is write-protected
-	const isWriteProtected = cline.darbotProtectedController?.isWriteProtected(relPath) || false
+	const isWriteProtected = darbot.darbotProtectedController?.isWriteProtected(relPath) || false
 
 	// Check if file exists using cached map or fs.access
 	let fileExists: boolean
 
-	if (cline.diffViewProvider.editType !== undefined) {
-		fileExists = cline.diffViewProvider.editType === "modify"
+	if (darbot.diffViewProvider.editType !== undefined) {
+		fileExists = darbot.diffViewProvider.editType === "modify"
 	} else {
-		const absolutePath = path.resolve(cline.cwd, relPath)
+		const absolutePath = path.resolve(darbot.cwd, relPath)
 		fileExists = await fileExistsAtPath(absolutePath)
-		cline.diffViewProvider.editType = fileExists ? "modify" : "create"
+		darbot.diffViewProvider.editType = fileExists ? "modify" : "create"
 	}
 
 	// pre-processing newContent for cases where weaker models might add artifacts like markdown codeblock markers (deepseek/llama) or extra escape characters (gemini)
 	if (newContent.startsWith("```")) {
-		// cline handles cases where it includes language specifiers like ```python ```js
+		// darbot handles cases where it includes language specifiers like ```python ```js
 		newContent = newContent.split("\n").slice(1).join("\n")
 	}
 
@@ -81,17 +81,17 @@ export async function writeToFileTool(
 		newContent = newContent.split("\n").slice(0, -1).join("\n")
 	}
 
-	if (!cline.api.getModel().id.includes("claude")) {
+	if (!darbot.api.getModel().id.includes("claude")) {
 		newContent = unescapeHtmlEntities(newContent)
 	}
 
 	// Determine if the path is outside the workspace
-	const fullPath = relPath ? path.resolve(cline.cwd, removeClosingTag("path", relPath)) : ""
+	const fullPath = relPath ? path.resolve(darbot.cwd, removeClosingTag("path", relPath)) : ""
 	const isOutsideWorkspace = isPathOutsideWorkspace(fullPath)
 
-	const sharedMessageProps: ClineSayTool = {
+	const sharedMessageProps: DarbotSayTool = {
 		tool: fileExists ? "editedExistingFile" : "newFileCreated",
-		path: getReadablePath(cline.cwd, removeClosingTag("path", relPath)),
+		path: getReadablePath(darbot.cwd, removeClosingTag("path", relPath)),
 		content: newContent,
 		isOutsideWorkspace,
 		isProtected: isWriteProtected,
@@ -101,16 +101,16 @@ export async function writeToFileTool(
 		if (block.partial) {
 			// update gui message
 			const partialMessage = JSON.stringify(sharedMessageProps)
-			await cline.ask("tool", partialMessage, block.partial).catch(() => {})
+			await darbot.ask("tool", partialMessage, block.partial).catch(() => {})
 
 			// update editor
-			if (!cline.diffViewProvider.isEditing) {
+			if (!darbot.diffViewProvider.isEditing) {
 				// open the editor and prepare to stream content in
-				await cline.diffViewProvider.open(relPath)
+				await darbot.diffViewProvider.open(relPath)
 			}
 
 			// editor is open, stream content in
-			await cline.diffViewProvider.update(
+			await darbot.diffViewProvider.update(
 				everyLineHasLineNumbers(newContent) ? stripLineNumbers(newContent) : newContent,
 				false,
 			)
@@ -118,8 +118,8 @@ export async function writeToFileTool(
 			return
 		} else {
 			if (predictedLineCount === undefined) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("write_to_file")
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("write_to_file")
 
 				// Calculate the actual number of lines in the content
 				const actualLineCount = newContent.split("\n").length
@@ -128,12 +128,12 @@ export async function writeToFileTool(
 				const isNewFile = !fileExists
 
 				// Check if diffStrategy is enabled
-				const diffStrategyEnabled = !!cline.diffStrategy
+				const diffStrategyEnabled = !!darbot.diffStrategy
 
 				// Use more specific error message for line_count that provides guidance based on the situation
-				await cline.say(
+				await darbot.say(
 					"error",
-					`Roo tried to use write_to_file${
+					`darbot tried to use write_to_file${
 						relPath ? ` for '${relPath.toPosix()}'` : ""
 					} but the required parameter 'line_count' was missing or truncated after ${actualLineCount} lines of content were written. Retrying...`,
 				)
@@ -143,34 +143,34 @@ export async function writeToFileTool(
 						formatResponse.lineCountTruncationError(actualLineCount, isNewFile, diffStrategyEnabled),
 					),
 				)
-				await cline.diffViewProvider.revertChanges()
+				await darbot.diffViewProvider.revertChanges()
 				return
 			}
 
-			cline.consecutiveMistakeCount = 0
+			darbot.consecutiveMistakeCount = 0
 
 			// if isEditingFile false, that means we have the full contents of the file already.
-			// it's important to note how cline function works, you can't make the assumption that the block.partial conditional will always be called since it may immediately get complete, non-partial data. So cline part of the logic will always be called.
+			// it's important to note how darbot function works, you can't make the assumption that the block.partial conditional will always be called since it may immediately get complete, non-partial data. So darbot part of the logic will always be called.
 			// in other words, you must always repeat the block.partial logic here
-			if (!cline.diffViewProvider.isEditing) {
+			if (!darbot.diffViewProvider.isEditing) {
 				// show gui message before showing edit animation
 				const partialMessage = JSON.stringify(sharedMessageProps)
-				await cline.ask("tool", partialMessage, true).catch(() => {}) // sending true for partial even though it's not a partial, cline shows the edit row before the content is streamed into the editor
-				await cline.diffViewProvider.open(relPath)
+				await darbot.ask("tool", partialMessage, true).catch(() => {}) // sending true for partial even though it's not a partial, darbot shows the edit row before the content is streamed into the editor
+				await darbot.diffViewProvider.open(relPath)
 			}
 
-			await cline.diffViewProvider.update(
+			await darbot.diffViewProvider.update(
 				everyLineHasLineNumbers(newContent) ? stripLineNumbers(newContent) : newContent,
 				true,
 			)
 
 			await delay(300) // wait for diff view to update
-			cline.diffViewProvider.scrollToFirstDiff()
+			darbot.diffViewProvider.scrollToFirstDiff()
 
 			// Check for code omissions before proceeding
-			if (detectCodeOmission(cline.diffViewProvider.originalContent || "", newContent, predictedLineCount)) {
-				if (cline.diffStrategy) {
-					await cline.diffViewProvider.revertChanges()
+			if (detectCodeOmission(darbot.diffViewProvider.originalContent || "", newContent, predictedLineCount)) {
+				if (darbot.diffStrategy) {
+					await darbot.diffViewProvider.revertChanges()
 
 					pushToolResult(
 						formatResponse.toolError(
@@ -183,14 +183,14 @@ export async function writeToFileTool(
 				} else {
 					vscode.window
 						.showWarningMessage(
-							"Potential code truncation detected. cline happens when the AI reaches its max output limit.",
-							"Follow cline guide to fix the issue",
+							"Potential code truncation detected. darbot-coder happens when the AI reaches its max output limit.",
+							"Follow darbot-coder guide to fix the issue",
 						)
 						.then((selection) => {
-							if (selection === "Follow cline guide to fix the issue") {
+							if (selection === "Follow darbot-coder guide to fix the issue") {
 								vscode.env.openExternal(
 									vscode.Uri.parse(
-										"https://github.com/cline/cline/wiki/Troubleshooting-%E2%80%90-Cline-Deleting-Code-with-%22Rest-of-Code-Here%22-Comments",
+										"https://github.com/DarbotLabs/darbot-coder/wiki/Troubleshooting-%E2%80%90-darbot-coder-Deleting-Code-with-%22Rest-of-Code-Here%22-Comments",
 									),
 								)
 							}
@@ -202,43 +202,43 @@ export async function writeToFileTool(
 				...sharedMessageProps,
 				content: fileExists ? undefined : newContent,
 				diff: fileExists
-					? formatResponse.createPrettyPatch(relPath, cline.diffViewProvider.originalContent, newContent)
+					? formatResponse.createPrettyPatch(relPath, darbot.diffViewProvider.originalContent, newContent)
 					: undefined,
-			} satisfies ClineSayTool)
+			} satisfies DarbotSayTool)
 
 			const didApprove = await askApproval("tool", completeMessage, undefined, isWriteProtected)
 
 			if (!didApprove) {
-				await cline.diffViewProvider.revertChanges()
+				await darbot.diffViewProvider.revertChanges()
 				return
 			}
 
 			// Call saveChanges to update the DiffViewProvider properties
-			const provider = cline.providerRef.deref()
+			const provider = darbot.providerRef.deref()
 			const state = await provider?.getState()
 			const diagnosticsEnabled = state?.diagnosticsEnabled ?? true
 			const writeDelayMs = state?.writeDelayMs ?? DEFAULT_WRITE_DELAY_MS
-			await cline.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
+			await darbot.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
 
 			// Track file edit operation
 			if (relPath) {
-				await cline.fileContextTracker.trackFileContext(relPath, "roo_edited" as RecordSource)
+				await darbot.fileContextTracker.trackFileContext(relPath, "darbot_edited" as RecordSource)
 			}
 
-			cline.didEditFile = true // used to determine if we should wait for busy terminal to update before sending api request
+			darbot.didEditFile = true // used to determine if we should wait for busy terminal to update before sending api request
 
 			// Get the formatted response message
-			const message = await cline.diffViewProvider.pushToolWriteResult(cline, cline.cwd, !fileExists)
+			const message = await darbot.diffViewProvider.pushToolWriteResult(darbot, darbot.cwd, !fileExists)
 
 			pushToolResult(message)
 
-			await cline.diffViewProvider.reset()
+			await darbot.diffViewProvider.reset()
 
 			return
 		}
 	} catch (error) {
 		await handleError("writing file", error)
-		await cline.diffViewProvider.reset()
+		await darbot.diffViewProvider.reset()
 		return
 	}
 }

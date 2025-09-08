@@ -1,5 +1,5 @@
 import { memo, useState } from "react"
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton } from "../vscode-components"
 
 import { useCopyToClipboard } from "@src/utils/clipboard"
 import { StandardTooltip } from "@src/components/ui"

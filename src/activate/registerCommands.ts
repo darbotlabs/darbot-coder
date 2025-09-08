@@ -6,7 +6,7 @@ import { TelemetryService } from "@darbot-code/telemetry"
 
 import { Package } from "../shared/package"
 import { getCommand } from "../utils/commands"
-import { ClineProvider } from "../core/webview/ClineProvider"
+import { DarbotProvider } from "../core/webview/DarbotProvider"
 import { ContextProxy } from "../core/config/ContextProxy"
 import { focusPanel } from "../utils/focusPanel"
 
@@ -18,12 +18,12 @@ import { MdmService } from "../services/mdm/MdmService"
 import { t } from "../i18n"
 
 /**
- * Helper to get the visible ClineProvider instance or log if not found.
+ * Helper to get the visible DarbotProvider instance or log if not found.
  */
-export function getVisibleProviderOrLog(outputChannel: vscode.OutputChannel): ClineProvider | undefined {
-	const visibleProvider = ClineProvider.getVisibleInstance()
+export function getVisibleProviderOrLog(outputChannel: vscode.OutputChannel): DarbotProvider | undefined {
+	const visibleProvider = DarbotProvider.getVisibleInstance()
 	if (!visibleProvider) {
-		outputChannel.appendLine("Cannot find any visible Roo Code instances.")
+		outputChannel.appendLine("Cannot find any visible darbot-coder instances.")
 		return undefined
 	}
 	return visibleProvider
@@ -60,7 +60,7 @@ export function setPanel(
 export type RegisterCommandOptions = {
 	context: vscode.ExtensionContext
 	outputChannel: vscode.OutputChannel
-	provider: ClineProvider
+	provider: DarbotProvider
 }
 
 export const registerCommands = (options: RegisterCommandOptions) => {
@@ -94,7 +94,7 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 
 		TelemetryService.instance.captureTitleButtonClicked("plus")
 
-		await visibleProvider.removeClineFromStack()
+		await visibleProvider.removeDarbotFromStack()
 		await visibleProvider.postStateToWebview()
 		await visibleProvider.postMessageToWebview({ type: "action", action: "chatButtonClicked" })
 	},
@@ -123,9 +123,9 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 	popoutButtonClicked: () => {
 		TelemetryService.instance.captureTitleButtonClicked("popout")
 
-		return openClineInNewTab({ context, outputChannel })
+		return openDarbotInNewTab({ context, outputChannel })
 	},
-	openInNewTab: () => openClineInNewTab({ context, outputChannel }),
+	openInNewTab: () => openDarbotInNewTab({ context, outputChannel }),
 	settingsButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)
 
@@ -220,7 +220,7 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 	},
 })
 
-export const openClineInNewTab = async ({ context, outputChannel }: Omit<RegisterCommandOptions, "provider">) => {
+export const openDarbotInNewTab = async ({ context, outputChannel }: Omit<RegisterCommandOptions, "provider">) => {
 	// (This example uses webviewProvider activation event which is necessary to
 	// deserialize cached webview, but since we use retainContextWhenHidden, we
 	// don't need to use that event).
@@ -237,7 +237,7 @@ export const openClineInNewTab = async ({ context, outputChannel }: Omit<Registe
 		mdmService = undefined
 	}
 
-	const tabProvider = new ClineProvider(context, outputChannel, "editor", contextProxy, codeIndexManager, mdmService)
+	const tabProvider = new DarbotProvider(context, outputChannel, "editor", contextProxy, codeIndexManager, mdmService)
 	const lastCol = Math.max(...vscode.window.visibleTextEditors.map((editor) => editor.viewColumn || 0))
 
 	// Check if there are any visible text editors, otherwise open a new group
@@ -250,7 +250,7 @@ export const openClineInNewTab = async ({ context, outputChannel }: Omit<Registe
 
 	const targetCol = hasVisibleEditors ? Math.max(lastCol + 1, 1) : vscode.ViewColumn.Two
 
-	const newPanel = vscode.window.createWebviewPanel(ClineProvider.tabPanelId, "Roo Code", targetCol, {
+	const newPanel = vscode.window.createWebviewPanel(DarbotProvider.tabPanelId, "darbot-coder", targetCol, {
 		enableScripts: true,
 		retainContextWhenHidden: true,
 		localResourceRoots: [context.extensionUri],

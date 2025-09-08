@@ -2,16 +2,16 @@ import { truncateOutput, applyRunLengthEncoding, processBackspaces, processCarri
 import { DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT } from "@darbot-code/types"
 
 import type {
-	RooTerminalProvider,
-	RooTerminal,
-	RooTerminalCallbacks,
-	RooTerminalProcess,
-	RooTerminalProcessResultPromise,
+	DarbotTerminalProvider as DarbotTerminalProvider,
+	DarbotTerminal as DarbotTerminal,
+	DarbotTerminalCallbacks as DarbotTerminalCallbacks,
+	DarbotTerminalProcess as DarbotTerminalProcess,
+	DarbotTerminalProcessResultPromise as DarbotTerminalProcessResultPromise,
 	ExitCodeDetails,
 } from "./types"
 
-export abstract class BaseTerminal implements RooTerminal {
-	public readonly provider: RooTerminalProvider
+export abstract class BaseTerminal implements DarbotTerminal {
+	public readonly provider: DarbotTerminalProvider
 	public readonly id: number
 	public readonly initialCwd: string
 
@@ -20,17 +20,17 @@ export abstract class BaseTerminal implements RooTerminal {
 	protected streamClosed: boolean
 
 	public taskId?: string
-	public process?: RooTerminalProcess
-	public completedProcesses: RooTerminalProcess[] = []
+	public process?: DarbotTerminalProcess
+	public completedProcesses: DarbotTerminalProcess[] = []
 
-	constructor(provider: RooTerminalProvider, id: number, cwd: string) {
-		this.provider = provider
-		this.id = id
-		this.initialCwd = cwd
-		this.busy = false
-		this.running = false
-		this.streamClosed = false
-	}
+		constructor(provider: DarbotTerminalProvider, id: number, cwd: string) {
+			this.provider = provider
+			this.id = id
+			this.initialCwd = cwd
+			this.busy = false
+			this.running = false
+			this.streamClosed = false
+		}
 
 	public getCurrentWorkingDirectory(): string {
 		return this.initialCwd
@@ -38,27 +38,27 @@ export abstract class BaseTerminal implements RooTerminal {
 
 	abstract isClosed(): boolean
 
-	abstract runCommand(command: string, callbacks: RooTerminalCallbacks): RooTerminalProcessResultPromise
+		abstract runCommand(command: string, callbacks: DarbotTerminalCallbacks): DarbotTerminalProcessResultPromise
 
 	/**
 	 * Sets the active stream for this terminal and notifies the process
 	 * @param stream The stream to set, or undefined to clean up
 	 * @throws Error if process is undefined when a stream is provided
 	 */
-	public setActiveStream(stream: AsyncIterable<string> | undefined, pid?: number): void {
-		if (stream) {
-			if (!this.process) {
-				this.running = false
+		public setActiveStream(stream: AsyncIterable<string> | undefined, pid?: number): void {
+			if (stream) {
+				if (!this.process) {
+					this.running = false
 
-				console.warn(
-					`[Terminal ${this.provider}/${this.id}] process is undefined, so cannot set terminal stream (probably user-initiated non-Roo command)`,
-				)
+					console.warn(
+						`[Terminal ${this.provider}/${this.id}] process is undefined, so cannot set terminal stream (probably user-initiated non-darbot-coder command)`,
+					)
 
-				return
-			}
+					return
+				}
 
-			this.running = true
-			this.streamClosed = false
+				this.running = true
+				this.streamClosed = false
 			this.process.emit("shell_execution_started", pid)
 			this.process.emit("stream_available", stream)
 		} else {
@@ -117,7 +117,7 @@ export abstract class BaseTerminal implements RooTerminal {
 	 * Gets all processes with unretrieved output
 	 * @returns Array of processes with unretrieved output
 	 */
-	public getProcessesWithOutput(): RooTerminalProcess[] {
+	public getProcessesWithOutput(): DarbotTerminalProcess[] {
 		// Clean the queue first to remove any processes without output
 		this.cleanCompletedProcessQueue()
 		return [...this.completedProcesses]

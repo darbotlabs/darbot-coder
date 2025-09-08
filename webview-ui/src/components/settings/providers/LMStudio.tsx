@@ -2,7 +2,7 @@ import { useCallback, useState, useMemo, useEffect } from "react"
 import { useEvent } from "react-use"
 import { Trans } from "react-i18next"
 import { Checkbox } from "vscrui"
-import { VSCodeLink, VSCodeRadio, VSCodeRadioGroup, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeLink, VSCodeRadio, VSCodeRadioGroup, VSCodeTextField } from "../../vscode-components"
 
 import type { ProviderSettings } from "@darbot-code/types"
 

@@ -226,7 +226,7 @@ describe("TaskActions", () => {
 			expect(screen.queryByText("Share Publicly")).not.toBeInTheDocument()
 		})
 
-		it("sends rooCloudSignIn message when connect to cloud is selected", () => {
+		it("sends darbotCloudSignIn message when connect to cloud is selected", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
 			// Find button by its icon class
@@ -239,7 +239,7 @@ describe("TaskActions", () => {
 			fireEvent.click(connectOption)
 
 			expect(mockPostMessage).toHaveBeenCalledWith({
-				type: "rooCloudSignIn",
+				type: "darbotCloudSignIn",
 			})
 		})
 	})
@@ -312,9 +312,9 @@ describe("TaskActions", () => {
 			const connectButton = screen.getByText("Connect")
 			fireEvent.click(connectButton)
 
-			// Verify rooCloudSignIn message was sent
+			// Verify darbotCloudSignIn message was sent
 			expect(mockPostMessage).toHaveBeenCalledWith({
-				type: "rooCloudSignIn",
+				type: "darbotCloudSignIn",
 			})
 
 			// Simulate user becoming authenticated after clicking connect from share button

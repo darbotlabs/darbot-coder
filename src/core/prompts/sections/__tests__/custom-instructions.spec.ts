@@ -118,16 +118,16 @@ describe("loadRuleFiles", () => {
 		statMock.mockRejectedValueOnce({ code: "ENOENT" })
 		readFileMock.mockImplementation((filePath: PathLike) => {
 			if (filePath.toString().endsWith(".darbotrules")) {
-				return Promise.resolve("roo rules content")
+				return Promise.resolve("darbot rules content")
 			}
-			if (filePath.toString().endsWith(".clinerules")) {
-				return Promise.resolve("cline rules content")
+			if (filePath.toString().endsWith(".darbotrules")) {
+				return Promise.resolve("darbot rules content")
 			}
 			return Promise.reject({ code: "ENOENT" })
 		})
 
 		const result = await loadRuleFiles("/fake/path")
-		expect(result).toBe("\n# Rules from .darbotrules:\nroo rules content\n")
+		expect(result).toBe("\n# Rules from .darbotrules:\ndarbot rules content\n")
 	})
 
 	it("should handle when no rule files exist", async () => {
@@ -146,7 +146,7 @@ describe("loadRuleFiles", () => {
 			if (filePath.toString().endsWith(".darbotrules")) {
 				return Promise.reject({ code: "EISDIR" })
 			}
-			if (filePath.toString().endsWith(".clinerules")) {
+			if (filePath.toString().endsWith(".darbotrules")) {
 				return Promise.reject({ code: "EISDIR" })
 			}
 			return Promise.reject({ code: "ENOENT" })
@@ -333,13 +333,13 @@ describe("loadRuleFiles", () => {
 		// Simulate .darbotrules exists
 		readFileMock.mockImplementation((filePath: PathLike) => {
 			if (filePath.toString().endsWith(".darbotrules")) {
-				return Promise.resolve("roo rules content")
+				return Promise.resolve("darbot rules content")
 			}
 			return Promise.reject({ code: "ENOENT" })
 		})
 
 		const result = await loadRuleFiles("/fake/path")
-		expect(result).toBe("\n# Rules from .darbotrules:\nroo rules content\n")
+		expect(result).toBe("\n# Rules from .darbotrules:\ndarbot rules content\n")
 	})
 
 	it("should handle errors when reading directory", async () => {
@@ -354,13 +354,13 @@ describe("loadRuleFiles", () => {
 		// Simulate .darbotrules exists
 		readFileMock.mockImplementation((filePath: PathLike) => {
 			if (filePath.toString().endsWith(".darbotrules")) {
-				return Promise.resolve("roo rules content")
+				return Promise.resolve("darbot rules content")
 			}
 			return Promise.reject({ code: "ENOENT" })
 		})
 
 		const result = await loadRuleFiles("/fake/path")
-		expect(result).toBe("\n# Rules from .darbotrules:\nroo rules content\n")
+		expect(result).toBe("\n# Rules from .darbotrules:\ndarbot rules content\n")
 	})
 
 	it("should read files from nested subdirectories in .darbot/rules/", async () => {
@@ -530,7 +530,7 @@ describe("addCustomInstructions", () => {
 
 		expect(result).toContain("Global Instructions:")
 		expect(result).toContain("Mode-specific Instructions:")
-		expect(result).not.toContain("Rules from .clinerules-test-mode")
+		expect(result).not.toContain("Rules from .darbotrules-test-mode")
 	})
 
 	it("should handle unknown language codes properly", async () => {
@@ -570,7 +570,7 @@ describe("addCustomInstructions", () => {
 		statMock.mockRejectedValueOnce({ code: "ENOENT" })
 
 		readFileMock.mockImplementation((filePath: PathLike) => {
-			if (filePath.toString().includes(".clinerules-test-mode")) {
+			if (filePath.toString().includes(".darbotrules-test-mode")) {
 				return Promise.reject({ code: "EISDIR" })
 			}
 			return Promise.reject({ code: "ENOENT" })
@@ -585,7 +585,7 @@ describe("addCustomInstructions", () => {
 
 		expect(result).toContain("Global Instructions:\nglobal instructions")
 		expect(result).toContain("Mode-specific Instructions:\nmode instructions")
-		expect(result).not.toContain("Rules from .clinerules-test-mode")
+		expect(result).not.toContain("Rules from .darbotrules-test-mode")
 	})
 
 	it("should use .darbot/rules-test-mode/ directory when it exists and has files", async () => {
@@ -704,7 +704,7 @@ describe("addCustomInstructions", () => {
 		expect(result).toContain("Rules from .darbotrules-test-mode:\nmode specific rules from file")
 	})
 
-	it("should fall back to .clinerules-test-mode when .darbot/rules-test-mode/ and .darbotrules-test-mode do not exist", async () => {
+	it("should fall back to .darbotrules-test-mode when .darbot/rules-test-mode/ and .darbotrules-test-mode do not exist", async () => {
 		// Simulate .darbot/rules-test-mode directory does not exist
 		statMock.mockRejectedValueOnce({ code: "ENOENT" })
 
@@ -713,8 +713,8 @@ describe("addCustomInstructions", () => {
 			if (filePath.toString().includes(".darbotrules-test-mode")) {
 				return Promise.reject({ code: "ENOENT" })
 			}
-			if (filePath.toString().includes(".clinerules-test-mode")) {
-				return Promise.resolve("mode specific rules from cline file")
+			if (filePath.toString().includes(".darbotrules-test-mode")) {
+				return Promise.resolve("mode specific rules from darbot file")
 			}
 			return Promise.reject({ code: "ENOENT" })
 		})
@@ -726,7 +726,7 @@ describe("addCustomInstructions", () => {
 			"test-mode",
 		)
 
-		expect(result).toContain("Rules from .clinerules-test-mode:\nmode specific rules from cline file")
+		expect(result).toContain("Rules from .darbotrules-test-mode:\nmode specific rules from darbot file")
 	})
 
 	it("should correctly format content from directories when using .darbot/rules-test-mode/", async () => {

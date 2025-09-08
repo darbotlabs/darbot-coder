@@ -66,17 +66,17 @@ export async function loadSystemPromptFile(cwd: string, mode: Mode, variables: P
 /**
  * Ensures the .darbot directory exists, creating it if necessary
  */
-export async function ensureRooDirectory(cwd: string): Promise<void> {
-	const rooDir = path.join(cwd, ".darbot")
+export async function ensureDarbotDirectory(cwd: string): Promise<void> {
+	const darbotDir = path.join(cwd, ".darbot")
 
 	// Check if directory already exists
-	if (await fileExistsAtPath(rooDir)) {
+	if (await fileExistsAtPath(darbotDir)) {
 		return
 	}
 
 	// Create the directory
 	try {
-		await fs.mkdir(rooDir, { recursive: true })
+		await fs.mkdir(darbotDir, { recursive: true })
 	} catch (err) {
 		// If directory already exists (race condition), ignore the error
 		const errorCode = (err as NodeJS.ErrnoException).code

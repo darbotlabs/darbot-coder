@@ -6,7 +6,7 @@ import { Dirent } from "fs"
 import { isLanguage } from "@darbot-code/types"
 
 import { LANGUAGES } from "../../../shared/language"
-import { getRooDirectoriesForCwd, getGlobalRooDirectory } from "../../../services/roo-config"
+import { getDarbotDirectoriesForCwd, getGlobalDarbotDirectory } from "../../../services/darbot-config"
 
 /**
  * Safely read a file and return its trimmed content
@@ -163,11 +163,11 @@ function formatDirectoryContent(dirPath: string, files: Array<{ filename: string
  */
 export async function loadRuleFiles(cwd: string): Promise<string> {
 	const rules: string[] = []
-	const rooDirectories = getRooDirectoriesForCwd(cwd)
+	const darbotDirectories = getDarbotDirectoriesForCwd(cwd)
 
 	// Check for .darbot/rules/ directories in order (global first, then project-local)
-	for (const rooDir of rooDirectories) {
-		const rulesDir = path.join(rooDir, "rules")
+	for (const darbotDir of darbotDirectories) {
+		const rulesDir = path.join(darbotDir, "rules")
 		if (await directoryExists(rulesDir)) {
 			const files = await readTextFilesFromDirectory(rulesDir)
 			if (files.length > 0) {
@@ -182,8 +182,8 @@ export async function loadRuleFiles(cwd: string): Promise<string> {
 		return "\n" + rules.join("\n\n")
 	}
 
-	// Fall back to existing behavior for legacy .darbotrules/.clinerules files
-	const ruleFiles = [".darbotrules", ".clinerules"]
+	// Fall back to existing behavior for legacy .darbotrules files
+	const ruleFiles = [".darbotrules"]
 
 	for (const file of ruleFiles) {
 		const content = await safeReadFile(path.join(cwd, file))
@@ -200,7 +200,7 @@ export async function addCustomInstructions(
 	globalCustomInstructions: string,
 	cwd: string,
 	mode: string,
-	options: { language?: string; rooIgnoreInstructions?: string } = {},
+	options: { language?: string; darbotIgnoreInstructions?: string } = {},
 ): Promise<string> {
 	const sections = []
 
@@ -210,11 +210,11 @@ export async function addCustomInstructions(
 
 	if (mode) {
 		const modeRules: string[] = []
-		const rooDirectories = getRooDirectoriesForCwd(cwd)
+		const darbotDirectories = getDarbotDirectoriesForCwd(cwd)
 
 		// Check for .darbot/rules-${mode}/ directories in order (global first, then project-local)
-		for (const rooDir of rooDirectories) {
-			const modeRulesDir = path.join(rooDir, `rules-${mode}`)
+		for (const darbotDir of darbotDirectories) {
+			const modeRulesDir = path.join(darbotDir, `rules-${mode}`)
 			if (await directoryExists(modeRulesDir)) {
 				const files = await readTextFilesFromDirectory(modeRulesDir)
 				if (files.length > 0) {
@@ -230,15 +230,16 @@ export async function addCustomInstructions(
 			usedRuleFile = `rules-${mode} directories`
 		} else {
 			// Fall back to existing behavior for legacy files
-			const rooModeRuleFile = `.darbotrules-${mode}`
-			modeRuleContent = await safeReadFile(path.join(cwd, rooModeRuleFile))
+			const darbotModeRuleFile = `.darbotrules-${mode}`
+			modeRuleContent = await safeReadFile(path.join(cwd, darbotModeRuleFile))
 			if (modeRuleContent) {
-				usedRuleFile = rooModeRuleFile
+				usedRuleFile = darbotModeRuleFile
 			} else {
-				const clineModeRuleFile = `.clinerules-${mode}`
-				modeRuleContent = await safeReadFile(path.join(cwd, clineModeRuleFile))
+				// Legacy support - fallback to .darbotrules files
+				const legacyModeRuleFile = `.darbotrules-${mode}`
+				modeRuleContent = await safeReadFile(path.join(cwd, legacyModeRuleFile))
 				if (modeRuleContent) {
-					usedRuleFile = clineModeRuleFile
+					usedRuleFile = legacyModeRuleFile
 				}
 			}
 		}

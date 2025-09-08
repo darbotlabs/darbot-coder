@@ -140,7 +140,7 @@ export class AuthService {
 
       <file_references>
         <format>`path/to/file.ts`</format>
-        <rule>Use relative paths from project root, in backticks.</rule>
+        <rule>Use relative paths from project darbot, in backticks.</rule>
       </file_references>
     </cross_references>
 

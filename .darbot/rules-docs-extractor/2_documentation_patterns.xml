@@ -110,8 +110,8 @@
 - You are working with very large files.
 
 **"What if some files are blocked?"**
-- Roo reads approved files and works with what it has.
-- `.rooignore` files are excluded automatically.
+- Darbot reads approved files and works with what it has.
+- `.darbotignore` files are excluded automatically.
 - Individual files can still be denied in the batch dialog.
       ]]></template>
     </faq>
@@ -142,7 +142,7 @@
 ## Help
 
 - See the [FAQ](#faq) for common issues.
-- Report problems on [GitHub Issues](https://github.com/RooCodeInc/Roo-Code/issues).
+- Report problems on [GitHub Issues](https://github.com/DarbotLabs/darbot-coder/issues).
 - Include reproduction steps and error messages.
       ]]></template>
     </help>
@@ -237,7 +237,7 @@
 >
 > [Description of concern]
 > - **Risk**: [High/Medium/Low]
-> - **Affected**: [versions]
+- **Affected**: [versions]
 > - **Mitigation**: [steps]
 > - **References**: [links]
       ]]></template>

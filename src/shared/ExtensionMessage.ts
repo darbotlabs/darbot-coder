@@ -6,7 +6,7 @@ import type {
 	ModeConfig,
 	TelemetrySetting,
 	Experiments,
-	ClineMessage,
+	DarbotMessage,
 	OrganizationAllowList,
 	CloudUserInfo,
 	ShareVisibility,
@@ -129,7 +129,7 @@ export interface ExtensionMessage {
 		isActive: boolean
 		path?: string
 	}>
-	clineMessage?: ClineMessage
+	darbotMessage?: DarbotMessage
 	routerModels?: RouterModels
 	openAiModels?: string[]
 	ollamaModels?: string[]
@@ -201,7 +201,7 @@ export type ExtensionState = Pick<
 	| "soundVolume"
 	// | "maxOpenTabsContext" // Optional in GlobalSettings, required here.
 	// | "maxWorkspaceFiles" // Optional in GlobalSettings, required here.
-	// | "showRooIgnoredFiles" // Optional in GlobalSettings, required here.
+	// | "showDarbotIgnoredFiles" // Optional in GlobalSettings, required here.
 	// | "maxReadFileLine" // Optional in GlobalSettings, required here.
 	| "maxConcurrentFileReads" // Optional in GlobalSettings, required here.
 	| "terminalOutputLineLimit"
@@ -236,7 +236,7 @@ export type ExtensionState = Pick<
 	| "profileThresholds"
 > & {
 	version: string
-	clineMessages: ClineMessage[]
+	darbotMessages: DarbotMessage[]
 	currentTaskItem?: HistoryItem
 	apiConfiguration?: ProviderSettings
 	uriScheme?: string
@@ -250,7 +250,7 @@ export type ExtensionState = Pick<
 	enableCheckpoints: boolean
 	maxOpenTabsContext: number // Maximum number of VSCode open tabs to include in context (0-500)
 	maxWorkspaceFiles: number // Maximum number of files to include in current working directory details (0-500)
-	showRooIgnoredFiles: boolean // Whether to show .darbotignore'd files in listings
+	showDarbotIgnoredFiles: boolean // Whether to show .darbotignore'd files in listings
 	maxReadFileLine: number // Maximum number of lines to read from a file before truncating
 
 	experiments: Experiments // Map of experiment IDs to their enabled state
@@ -285,7 +285,7 @@ export type ExtensionState = Pick<
 	hasOpenedModeSelector: boolean
 }
 
-export interface ClineSayTool {
+export interface DarbotSayTool {
 	tool:
 		| "editedExistingFile"
 		| "appliedDiff"
@@ -354,7 +354,7 @@ export const browserActions = [
 
 export type BrowserAction = (typeof browserActions)[number]
 
-export interface ClineSayBrowserAction {
+export interface DarbotSayBrowserAction {
 	action: BrowserAction
 	coordinate?: string
 	size?: string
@@ -368,7 +368,7 @@ export type BrowserActionResult = {
 	currentMousePosition?: string
 }
 
-export interface ClineAskUseMcpServer {
+export interface DarbotAskUseMcpServer {
 	serverName: string
 	type: "use_mcp_tool" | "access_mcp_resource"
 	toolName?: string
@@ -377,16 +377,16 @@ export interface ClineAskUseMcpServer {
 	response?: string
 }
 
-export interface ClineApiReqInfo {
+export interface DarbotApiReqInfo {
 	request?: string
 	tokensIn?: number
 	tokensOut?: number
 	cacheWrites?: number
 	cacheReads?: number
 	cost?: number
-	cancelReason?: ClineApiReqCancelReason
+	cancelReason?: DarbotApiReqCancelReason
 	streamingFailedMessage?: string
 	apiProtocol?: "anthropic" | "openai"
 }
 
-export type ClineApiReqCancelReason = "streaming_failed" | "user_cancelled"
+export type DarbotApiReqCancelReason = "streaming_failed" | "user_cancelled"

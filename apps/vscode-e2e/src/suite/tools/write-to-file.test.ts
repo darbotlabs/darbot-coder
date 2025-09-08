@@ -3,12 +3,12 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import * as os from "os"
 
-import type { ClineMessage } from "@darbot-code/types"
+import type { DarbotMessage } from "@darbot-code/types"
 
 import { waitFor, sleep } from "../utils"
 import { setDefaultSuiteTimeout } from "../test-utils"
 
-suite("Roo Code write_to_file Tool", function () {
+suite("darbot-coder write_to_file Tool", function () {
 	setDefaultSuiteTimeout(this)
 
 	let tempDir: string
@@ -16,7 +16,7 @@ suite("Roo Code write_to_file Tool", function () {
 
 	// Create a temporary directory for test files
 	suiteSetup(async () => {
-		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "roo-test-"))
+		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "darbot-test-"))
 	})
 
 	// Clean up temporary directory after tests
@@ -70,7 +70,7 @@ suite("Roo Code write_to_file Tool", function () {
 		// Increase timeout for this specific test
 
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		const fileContent = "Hello, this is a test file!"
 		let taskStarted = false
 		let taskCompleted = false
@@ -79,7 +79,7 @@ suite("Roo Code write_to_file Tool", function () {
 		let toolExecutionDetails = ""
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution
@@ -167,7 +167,7 @@ suite("Roo Code write_to_file Tool", function () {
 				testFilePath, // Expected location
 				path.join(tempDir, baseFileName), // In temp directory
 				path.join(process.cwd(), baseFileName), // In current working directory
-				path.join("/tmp/roo-test-workspace-" + "*", baseFileName), // In workspace created by runTest.ts
+				path.join("/tmp/darbot-test-workspace-" + "*", baseFileName), // In workspace created by runTest.ts
 			]
 
 			let fileFound = false
@@ -177,7 +177,7 @@ suite("Roo Code write_to_file Tool", function () {
 			// First check the workspace directory that was created
 			const workspaceDirs = await fs
 				.readdir("/tmp")
-				.then((files) => files.filter((f) => f.startsWith("roo-test-workspace-")))
+				.then((files) => files.filter((f) => f.startsWith("darbot-test-workspace-")))
 				.catch(() => [])
 
 			for (const wsDir of workspaceDirs) {
@@ -238,7 +238,7 @@ suite("Roo Code write_to_file Tool", function () {
 					const tmpFiles = await fs.readdir("/tmp")
 					console.log(
 						"Test files in /tmp:",
-						tmpFiles.filter((f) => f.includes("test-file") || f.includes("roo-test")),
+						tmpFiles.filter((f) => f.includes("test-file") || f.includes("darbot-test")),
 					)
 				} catch (e) {
 					console.log("Could not list /tmp:", e)
@@ -269,7 +269,7 @@ suite("Roo Code write_to_file Tool", function () {
 		// Increase timeout for this specific test
 
 		const api = globalThis.api
-		const messages: ClineMessage[] = []
+		const messages: DarbotMessage[] = []
 		const content = "File in nested directory"
 		const fileName = `file-${Date.now()}.txt`
 		const nestedPath = path.join(tempDir, "nested", "deep", "directory", fileName)
@@ -279,7 +279,7 @@ suite("Roo Code write_to_file Tool", function () {
 		let toolExecutionDetails = ""
 
 		// Listen for messages
-		const messageHandler = ({ message }: { message: ClineMessage }) => {
+		const messageHandler = ({ message }: { message: DarbotMessage }) => {
 			messages.push(message)
 
 			// Check for tool execution
@@ -355,7 +355,7 @@ suite("Roo Code write_to_file Tool", function () {
 			// Check workspace directories
 			const workspaceDirs = await fs
 				.readdir("/tmp")
-				.then((files) => files.filter((f) => f.startsWith("roo-test-workspace-")))
+				.then((files) => files.filter((f) => f.startsWith("darbot-test-workspace-")))
 				.catch(() => [])
 
 			for (const wsDir of workspaceDirs) {
@@ -446,3 +446,4 @@ suite("Roo Code write_to_file Tool", function () {
 		}
 	})
 })
+

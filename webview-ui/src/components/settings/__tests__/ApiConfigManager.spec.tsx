@@ -5,7 +5,7 @@ import { render, screen, fireEvent, within } from "@/utils/test-utils"
 import ApiConfigManager from "../ApiConfigManager"
 
 // Mock VSCode components
-vitest.mock("@vscode/webview-ui-toolkit/react", () => ({
+vitest.mock("darbot-webview-ui/react", () => ({
 	VSCodeTextField: ({ value, onInput, placeholder, onKeyDown, "data-testid": dataTestId }: any) => (
 		<input
 			value={value}

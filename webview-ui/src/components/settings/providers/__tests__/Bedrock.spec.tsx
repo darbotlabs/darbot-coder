@@ -19,7 +19,7 @@ vi.mock("vscrui", () => ({
 }))
 
 // Mock the VSCodeTextField component
-vi.mock("@vscode/webview-ui-toolkit/react", () => ({
+vi.mock("darbot-webview-ui/react", () => ({
 	VSCodeTextField: ({
 		children,
 		value,

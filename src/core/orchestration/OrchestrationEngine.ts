@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import { type ModeConfig, type ClineMessage, type ProviderSettings } from "@darbot-code/types"
+import { type ModeConfig, type DarbotMessage, type ProviderSettings } from "@darbot-code/types"
 import { Task } from "../task/Task"
 import { CustomModesManager } from "../config/CustomModesManager"
 import { logger } from "../../utils/logging"

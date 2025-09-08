@@ -34,7 +34,7 @@ vi.mock("../../../utils/fs", () => ({
 vi.mock("../../prompts/responses", () => ({
 	formatResponse: {
 		toolError: vi.fn((msg) => `Error: ${msg}`),
-		rooIgnoreError: vi.fn((path) => `Access denied: ${path}`),
+		darbotIgnoreError: vi.fn((path) => `Access denied: ${path}`),
 		lineCountTruncationError: vi.fn(
 			(count, isNew, diffEnabled) => `Line count error: ${count}, new: ${isNew}, diff: ${diffEnabled}`,
 		),
@@ -81,8 +81,8 @@ vi.mock("vscode", () => ({
 	},
 }))
 
-vi.mock("../../ignore/RooIgnoreController", () => ({
-	RooIgnoreController: class {
+vi.mock("../../ignore/DarbotIgnoreController", () => ({
+	DarbotIgnoreController: class {
 		initialize() {
 			return Promise.resolve()
 		}
@@ -109,7 +109,7 @@ describe("writeToFileTool", () => {
 	const mockedStripLineNumbers = stripLineNumbers as MockedFunction<typeof stripLineNumbers>
 	const mockedPathResolve = path.resolve as MockedFunction<typeof path.resolve>
 
-	const mockCline: any = {}
+	const mockDarbot: any = {}
 	let mockAskApproval: ReturnType<typeof vi.fn>
 	let mockHandleError: ReturnType<typeof vi.fn>
 	let mockPushToolResult: ReturnType<typeof vi.fn>
@@ -128,11 +128,11 @@ describe("writeToFileTool", () => {
 		mockedEveryLineHasLineNumbers.mockReturnValue(false)
 		mockedStripLineNumbers.mockImplementation((content) => content)
 
-		mockCline.cwd = "/"
-		mockCline.consecutiveMistakeCount = 0
-		mockCline.didEditFile = false
-		mockCline.diffStrategy = undefined
-		mockCline.providerRef = {
+		mockDarbot.cwd = "/"
+		mockDarbot.consecutiveMistakeCount = 0
+		mockDarbot.didEditFile = false
+		mockDarbot.diffStrategy = undefined
+		mockDarbot.providerRef = {
 			deref: vi.fn().mockReturnValue({
 				getState: vi.fn().mockResolvedValue({
 					diagnosticsEnabled: true,
@@ -140,10 +140,10 @@ describe("writeToFileTool", () => {
 				}),
 			}),
 		}
-		mockCline.darbotIgnoreController = {
+		mockDarbot.darbotIgnoreController = {
 			validateAccess: vi.fn().mockReturnValue(true),
 		}
-		mockCline.diffViewProvider = {
+		mockDarbot.diffViewProvider = {
 			editType: undefined,
 			isEditing: false,
 			originalContent: "",
@@ -177,16 +177,16 @@ describe("writeToFileTool", () => {
 				return "Tool result message"
 			}),
 		}
-		mockCline.api = {
+		mockDarbot.api = {
 			getModel: vi.fn().mockReturnValue({ id: "claude-3" }),
 		}
-		mockCline.fileContextTracker = {
+		mockDarbot.fileContextTracker = {
 			trackFileContext: vi.fn().mockResolvedValue(undefined),
 		}
-		mockCline.say = vi.fn().mockResolvedValue(undefined)
-		mockCline.ask = vi.fn().mockResolvedValue(undefined)
-		mockCline.recordToolError = vi.fn()
-		mockCline.sayAndCreateMissingParamError = vi.fn().mockResolvedValue("Missing param error")
+		mockDarbot.say = vi.fn().mockResolvedValue(undefined)
+		mockDarbot.ask = vi.fn().mockResolvedValue(undefined)
+		mockDarbot.recordToolError = vi.fn()
+		mockDarbot.sayAndCreateMissingParamError = vi.fn().mockResolvedValue("Missing param error")
 
 		mockAskApproval = vi.fn().mockResolvedValue(true)
 		mockHandleError = vi.fn().mockResolvedValue(undefined)
@@ -212,7 +212,7 @@ describe("writeToFileTool", () => {
 		const accessAllowed = options.accessAllowed ?? true
 
 		mockedFileExistsAtPath.mockResolvedValue(fileExists)
-		mockCline.darbotIgnoreController.validateAccess.mockReturnValue(accessAllowed)
+		mockDarbot.darbotIgnoreController.validateAccess.mockReturnValue(accessAllowed)
 
 		// Create a tool use object
 		const toolUse: ToolUse = {
@@ -228,7 +228,7 @@ describe("writeToFileTool", () => {
 		}
 
 		await writeToFileTool(
-			mockCline,
+			mockDarbot,
 			toolUse,
 			mockAskApproval,
 			mockHandleError,
@@ -242,11 +242,11 @@ describe("writeToFileTool", () => {
 	}
 
 	describe("access control", () => {
-		it("validates and allows access when rooIgnoreController permits", async () => {
+		it("validates and allows access when darbotIgnoreController permits", async () => {
 			await executeWriteFileTool({}, { accessAllowed: true })
 
-			expect(mockCline.darbotIgnoreController.validateAccess).toHaveBeenCalledWith(testFilePath)
-			expect(mockCline.diffViewProvider.open).toHaveBeenCalledWith(testFilePath)
+			expect(mockDarbot.darbotIgnoreController.validateAccess).toHaveBeenCalledWith(testFilePath)
+			expect(mockDarbot.diffViewProvider.open).toHaveBeenCalledWith(testFilePath)
 		})
 	})
 
@@ -255,18 +255,18 @@ describe("writeToFileTool", () => {
 			await executeWriteFileTool({}, { fileExists: true })
 
 			expect(mockedFileExistsAtPath).toHaveBeenCalledWith(absoluteFilePath)
-			expect(mockCline.diffViewProvider.editType).toBe("modify")
+			expect(mockDarbot.diffViewProvider.editType).toBe("modify")
 		})
 
 		it.skipIf(process.platform === "win32")("detects new file and sets editType to create", async () => {
 			await executeWriteFileTool({}, { fileExists: false })
 
 			expect(mockedFileExistsAtPath).toHaveBeenCalledWith(absoluteFilePath)
-			expect(mockCline.diffViewProvider.editType).toBe("create")
+			expect(mockDarbot.diffViewProvider.editType).toBe("create")
 		})
 
 		it("uses cached editType without filesystem check", async () => {
-			mockCline.diffViewProvider.editType = "modify"
+			mockDarbot.diffViewProvider.editType = "modify"
 
 			await executeWriteFileTool({})
 
@@ -278,17 +278,17 @@ describe("writeToFileTool", () => {
 		it("removes markdown code block markers from content", async () => {
 			await executeWriteFileTool({ content: testContentWithMarkdown })
 
-			expect(mockCline.diffViewProvider.update).toHaveBeenCalledWith("Line 1\nLine 2", true)
+			expect(mockDarbot.diffViewProvider.update).toHaveBeenCalledWith("Line 1\nLine 2", true)
 		})
 
 		it("passes through empty content unchanged", async () => {
 			await executeWriteFileTool({ content: "" })
 
-			expect(mockCline.diffViewProvider.update).toHaveBeenCalledWith("", true)
+			expect(mockDarbot.diffViewProvider.update).toHaveBeenCalledWith("", true)
 		})
 
 		it("unescapes HTML entities for non-Claude models", async () => {
-			mockCline.api.getModel.mockReturnValue({ id: "gpt-4" })
+			mockDarbot.api.getModel.mockReturnValue({ id: "gpt-4" })
 
 			await executeWriteFileTool({ content: "&lt;test&gt;" })
 
@@ -296,7 +296,7 @@ describe("writeToFileTool", () => {
 		})
 
 		it("skips HTML unescaping for Claude models", async () => {
-			mockCline.api.getModel.mockReturnValue({ id: "claude-3" })
+			mockDarbot.api.getModel.mockReturnValue({ id: "claude-3" })
 
 			await executeWriteFileTool({ content: "&lt;test&gt;" })
 
@@ -312,7 +312,7 @@ describe("writeToFileTool", () => {
 
 			expect(mockedEveryLineHasLineNumbers).toHaveBeenCalledWith(contentWithLineNumbers)
 			expect(mockedStripLineNumbers).toHaveBeenCalledWith(contentWithLineNumbers)
-			expect(mockCline.diffViewProvider.update).toHaveBeenCalledWith("line one\nline two", true)
+			expect(mockDarbot.diffViewProvider.update).toHaveBeenCalledWith("line one\nline two", true)
 		})
 	})
 
@@ -320,13 +320,13 @@ describe("writeToFileTool", () => {
 		it("successfully creates new files with full workflow", async () => {
 			await executeWriteFileTool({}, { fileExists: false })
 
-			expect(mockCline.consecutiveMistakeCount).toBe(0)
-			expect(mockCline.diffViewProvider.open).toHaveBeenCalledWith(testFilePath)
-			expect(mockCline.diffViewProvider.update).toHaveBeenCalledWith(testContent, true)
+			expect(mockDarbot.consecutiveMistakeCount).toBe(0)
+			expect(mockDarbot.diffViewProvider.open).toHaveBeenCalledWith(testFilePath)
+			expect(mockDarbot.diffViewProvider.update).toHaveBeenCalledWith(testContent, true)
 			expect(mockAskApproval).toHaveBeenCalled()
-			expect(mockCline.diffViewProvider.saveChanges).toHaveBeenCalled()
-			expect(mockCline.fileContextTracker.trackFileContext).toHaveBeenCalledWith(testFilePath, "roo_edited")
-			expect(mockCline.didEditFile).toBe(true)
+			expect(mockDarbot.diffViewProvider.saveChanges).toHaveBeenCalled()
+			expect(mockDarbot.fileContextTracker.trackFileContext).toHaveBeenCalledWith(testFilePath, "darbot_edited")
+			expect(mockDarbot.didEditFile).toBe(true)
 		})
 
 		it("processes files outside workspace boundary", async () => {
@@ -341,7 +341,7 @@ describe("writeToFileTool", () => {
 			await executeWriteFileTool({ line_count: "999999" })
 
 			// Should process normally without issues
-			expect(mockCline.consecutiveMistakeCount).toBe(0)
+			expect(mockDarbot.consecutiveMistakeCount).toBe(0)
 		})
 	})
 
@@ -349,21 +349,21 @@ describe("writeToFileTool", () => {
 		it("returns early when path is missing in partial block", async () => {
 			await executeWriteFileTool({ path: undefined }, { isPartial: true })
 
-			expect(mockCline.diffViewProvider.open).not.toHaveBeenCalled()
+			expect(mockDarbot.diffViewProvider.open).not.toHaveBeenCalled()
 		})
 
 		it("returns early when content is undefined in partial block", async () => {
 			await executeWriteFileTool({ content: undefined }, { isPartial: true })
 
-			expect(mockCline.diffViewProvider.open).not.toHaveBeenCalled()
+			expect(mockDarbot.diffViewProvider.open).not.toHaveBeenCalled()
 		})
 
 		it("streams content updates during partial execution", async () => {
 			await executeWriteFileTool({}, { isPartial: true })
 
-			expect(mockCline.ask).toHaveBeenCalled()
-			expect(mockCline.diffViewProvider.open).toHaveBeenCalledWith(testFilePath)
-			expect(mockCline.diffViewProvider.update).toHaveBeenCalledWith(testContent, false)
+			expect(mockDarbot.ask).toHaveBeenCalled()
+			expect(mockDarbot.diffViewProvider.open).toHaveBeenCalledWith(testFilePath)
+			expect(mockDarbot.diffViewProvider.update).toHaveBeenCalledWith(testContent, false)
 		})
 	})
 
@@ -373,23 +373,23 @@ describe("writeToFileTool", () => {
 
 			await executeWriteFileTool({})
 
-			expect(mockCline.diffViewProvider.revertChanges).toHaveBeenCalled()
-			expect(mockCline.diffViewProvider.saveChanges).not.toHaveBeenCalled()
+			expect(mockDarbot.diffViewProvider.revertChanges).toHaveBeenCalled()
+			expect(mockDarbot.diffViewProvider.saveChanges).not.toHaveBeenCalled()
 		})
 
 		it("reports user edits with diff feedback", async () => {
 			const userEditsValue = "- old line\n+ new line"
-			mockCline.diffViewProvider.saveChanges.mockResolvedValue({
+			mockDarbot.diffViewProvider.saveChanges.mockResolvedValue({
 				newProblemsMessage: " with warnings",
 				userEdits: userEditsValue,
 				finalContent: "modified content",
 			})
 			// Set the userEdits property on the diffViewProvider mock to simulate user edits
-			mockCline.diffViewProvider.userEdits = userEditsValue
+			mockDarbot.diffViewProvider.userEdits = userEditsValue
 
 			await executeWriteFileTool({}, { fileExists: true })
 
-			expect(mockCline.say).toHaveBeenCalledWith(
+			expect(mockDarbot.say).toHaveBeenCalledWith(
 				"user_feedback_diff",
 				expect.stringContaining("editedExistingFile"),
 			)
@@ -398,21 +398,21 @@ describe("writeToFileTool", () => {
 
 	describe("error handling", () => {
 		it("handles general file operation errors", async () => {
-			mockCline.diffViewProvider.open.mockRejectedValue(new Error("General error"))
+			mockDarbot.diffViewProvider.open.mockRejectedValue(new Error("General error"))
 
 			await executeWriteFileTool({})
 
 			expect(mockHandleError).toHaveBeenCalledWith("writing file", expect.any(Error))
-			expect(mockCline.diffViewProvider.reset).toHaveBeenCalled()
+			expect(mockDarbot.diffViewProvider.reset).toHaveBeenCalled()
 		})
 
 		it("handles partial streaming errors", async () => {
-			mockCline.diffViewProvider.open.mockRejectedValue(new Error("Open failed"))
+			mockDarbot.diffViewProvider.open.mockRejectedValue(new Error("Open failed"))
 
 			await executeWriteFileTool({}, { isPartial: true })
 
 			expect(mockHandleError).toHaveBeenCalledWith("writing file", expect.any(Error))
-			expect(mockCline.diffViewProvider.reset).toHaveBeenCalled()
+			expect(mockDarbot.diffViewProvider.reset).toHaveBeenCalled()
 		})
 	})
 })

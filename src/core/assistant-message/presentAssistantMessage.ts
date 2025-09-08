@@ -1,7 +1,7 @@
 import cloneDeep from "clone-deep"
 import { serializeError } from "serialize-error"
 
-import type { ToolName, ClineAsk, ToolProgressStatus } from "@darbot-code/types"
+import type { ToolName, DarbotAsk, ToolProgressStatus } from "@darbot-code/types"
 import { TelemetryService } from "@darbot-code/telemetry"
 
 import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
@@ -52,37 +52,37 @@ import { applyDiffToolLegacy } from "../tools/applyDiffTool"
  * as it becomes available.
  */
 
-export async function presentAssistantMessage(cline: Task) {
-	if (cline.abort) {
-		throw new Error(`[Task#presentAssistantMessage] task ${cline.taskId}.${cline.instanceId} aborted`)
+export async function presentAssistantMessage(darbot: Task) {
+	if (darbot.abort) {
+		throw new Error(`[Task#presentAssistantMessage] task ${darbot.taskId}.${darbot.instanceId} aborted`)
 	}
 
-	if (cline.presentAssistantMessageLocked) {
-		cline.presentAssistantMessageHasPendingUpdates = true
+	if (darbot.presentAssistantMessageLocked) {
+		darbot.presentAssistantMessageHasPendingUpdates = true
 		return
 	}
 
-	cline.presentAssistantMessageLocked = true
-	cline.presentAssistantMessageHasPendingUpdates = false
+	darbot.presentAssistantMessageLocked = true
+	darbot.presentAssistantMessageHasPendingUpdates = false
 
-	if (cline.currentStreamingContentIndex >= cline.assistantMessageContent.length) {
+	if (darbot.currentStreamingContentIndex >= darbot.assistantMessageContent.length) {
 		// This may happen if the last content block was completed before
 		// streaming could finish. If streaming is finished, and we're out of
 		// bounds then this means we already  presented/executed the last
 		// content block and are ready to continue to next request.
-		if (cline.didCompleteReadingStream) {
-			cline.userMessageContentReady = true
+		if (darbot.didCompleteReadingStream) {
+			darbot.userMessageContentReady = true
 		}
 
-		cline.presentAssistantMessageLocked = false
+		darbot.presentAssistantMessageLocked = false
 		return
 	}
 
-	const block = cloneDeep(cline.assistantMessageContent[cline.currentStreamingContentIndex]) // need to create copy bc while stream is updating the array, it could be updating the reference block properties too
+	const block = cloneDeep(darbot.assistantMessageContent[darbot.currentStreamingContentIndex]) // need to create copy bc while stream is updating the array, it could be updating the reference block properties too
 
 	switch (block.type) {
 		case "text": {
-			if (cline.didRejectTool || cline.didAlreadyUseTool) {
+			if (darbot.didRejectTool || darbot.didAlreadyUseTool) {
 				break
 			}
 
@@ -147,7 +147,7 @@ export async function presentAssistantMessage(cline: Task) {
 				}
 			}
 
-			await cline.say("text", content, undefined, block.partial)
+			await darbot.say("text", content, undefined, block.partial)
 			break
 		}
 		case "tool_use":
@@ -217,16 +217,16 @@ export async function presentAssistantMessage(cline: Task) {
 				}
 			}
 
-			if (cline.didRejectTool) {
+			if (darbot.didRejectTool) {
 				// Ignore any tool content after user has rejected tool once.
 				if (!block.partial) {
-					cline.userMessageContent.push({
+					darbot.userMessageContent.push({
 						type: "text",
 						text: `Skipping tool ${toolDescription()} due to user rejecting a previous tool.`,
 					})
 				} else {
 					// Partial tool after user rejected a previous tool.
-					cline.userMessageContent.push({
+					darbot.userMessageContent.push({
 						type: "text",
 						text: `Tool ${toolDescription()} was interrupted and not executed due to user rejecting a previous tool.`,
 					})
@@ -235,9 +235,9 @@ export async function presentAssistantMessage(cline: Task) {
 				break
 			}
 
-			if (cline.didAlreadyUseTool) {
+			if (darbot.didAlreadyUseTool) {
 				// Ignore any content after a tool has already been used.
-				cline.userMessageContent.push({
+				darbot.userMessageContent.push({
 					type: "text",
 					text: `Tool [${block.name}] was not executed because a tool has already been used in this message. Only one tool may be used per message. You must assess the first tool's result before proceeding to use the next tool.`,
 				})
@@ -246,27 +246,27 @@ export async function presentAssistantMessage(cline: Task) {
 			}
 
 			const pushToolResult = (content: ToolResponse) => {
-				cline.userMessageContent.push({ type: "text", text: `${toolDescription()} Result:` })
+				darbot.userMessageContent.push({ type: "text", text: `${toolDescription()} Result:` })
 
 				if (typeof content === "string") {
-					cline.userMessageContent.push({ type: "text", text: content || "(tool did not return anything)" })
+					darbot.userMessageContent.push({ type: "text", text: content || "(tool did not return anything)" })
 				} else {
-					cline.userMessageContent.push(...content)
+					darbot.userMessageContent.push(...content)
 				}
 
 				// Once a tool result has been collected, ignore all other tool
 				// uses since we should only ever present one tool result per
 				// message.
-				cline.didAlreadyUseTool = true
+				darbot.didAlreadyUseTool = true
 			}
 
 			const askApproval = async (
-				type: ClineAsk,
+				type: DarbotAsk,
 				partialMessage?: string,
 				progressStatus?: ToolProgressStatus,
 				isProtected?: boolean,
 			) => {
-				const { response, text, images } = await cline.ask(
+				const { response, text, images } = await darbot.ask(
 					type,
 					partialMessage,
 					false,
@@ -277,18 +277,18 @@ export async function presentAssistantMessage(cline: Task) {
 				if (response !== "yesButtonClicked") {
 					// Handle both messageResponse and noButtonClicked with text.
 					if (text) {
-						await cline.say("user_feedback", text, images)
+						await darbot.say("user_feedback", text, images)
 						pushToolResult(formatResponse.toolResult(formatResponse.toolDeniedWithFeedback(text), images))
 					} else {
 						pushToolResult(formatResponse.toolDenied())
 					}
-					cline.didRejectTool = true
+					darbot.didRejectTool = true
 					return false
 				}
 
 				// Handle yesButtonClicked with text.
 				if (text) {
-					await cline.say("user_feedback", text, images)
+					await darbot.say("user_feedback", text, images)
 					pushToolResult(formatResponse.toolResult(formatResponse.toolApprovedWithFeedback(text), images))
 				}
 
@@ -307,7 +307,7 @@ export async function presentAssistantMessage(cline: Task) {
 			const handleError = async (action: string, error: Error) => {
 				const errorString = `Error ${action}: ${JSON.stringify(serializeError(error))}`
 
-				await cline.say(
+				await darbot.say(
 					"error",
 					`Error ${action}:\n${error.message ?? JSON.stringify(serializeError(error), null, 2)}`,
 				)
@@ -343,27 +343,27 @@ export async function presentAssistantMessage(cline: Task) {
 			}
 
 			if (block.name !== "browser_action") {
-				await cline.browserSession.closeBrowser()
+				await darbot.browserSession.closeBrowser()
 			}
 
 			if (!block.partial) {
-				cline.recordToolUsage(block.name)
-				TelemetryService.instance.captureToolUsage(cline.taskId, block.name)
+				darbot.recordToolUsage(block.name)
+				TelemetryService.instance.captureToolUsage(darbot.taskId, block.name)
 			}
 
 			// Validate tool use before execution.
-			const { mode, customModes } = (await cline.providerRef.deref()?.getState()) ?? {}
+			const { mode, customModes } = (await darbot.providerRef.deref()?.getState()) ?? {}
 
 			try {
 				validateToolUse(
 					block.name as ToolName,
 					mode ?? defaultModeSlug,
 					customModes ?? [],
-					{ apply_diff: cline.diffEnabled },
+					{ apply_diff: darbot.diffEnabled },
 					block.params,
 				)
 			} catch (error) {
-				cline.consecutiveMistakeCount++
+				darbot.consecutiveMistakeCount++
 				pushToolResult(formatResponse.toolError(error.message))
 				break
 			}
@@ -372,19 +372,19 @@ export async function presentAssistantMessage(cline: Task) {
 			if (!block.partial) {
 				// Use the detector to check for repetition, passing the ToolUse
 				// block directly.
-				const repetitionCheck = cline.toolRepetitionDetector.check(block)
+				const repetitionCheck = darbot.toolRepetitionDetector.check(block)
 
 				// If execution is not allowed, notify user and break.
 				if (!repetitionCheck.allowExecution && repetitionCheck.askUser) {
 					// Handle repetition similar to mistake_limit_reached pattern.
-					const { response, text, images } = await cline.ask(
-						repetitionCheck.askUser.messageKey as ClineAsk,
+					const { response, text, images } = await darbot.ask(
+						repetitionCheck.askUser.messageKey as DarbotAsk,
 						repetitionCheck.askUser.messageDetail.replace("{toolName}", block.name),
 					)
 
 					if (response === "messageResponse") {
 						// Add user feedback to userContent.
-						cline.userMessageContent.push(
+						darbot.userMessageContent.push(
 							{
 								type: "text" as const,
 								text: `Tool repetition limit reached. User feedback: ${text}`,
@@ -393,10 +393,10 @@ export async function presentAssistantMessage(cline: Task) {
 						)
 
 						// Add user feedback to chat.
-						await cline.say("user_feedback", text, images)
+						await darbot.say("user_feedback", text, images)
 
 						// Track tool repetition in telemetry.
-						TelemetryService.instance.captureConsecutiveMistakeError(cline.taskId)
+						TelemetryService.instance.captureConsecutiveMistakeError(darbot.taskId)
 					}
 
 					// Return tool result message about the repetition
@@ -411,14 +411,14 @@ export async function presentAssistantMessage(cline: Task) {
 
 			switch (block.name) {
 				case "write_to_file":
-					await writeToFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await writeToFileTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "update_todo_list":
-					await updateTodoListTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await updateTodoListTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "apply_diff": {
 					// Get the provider and state to check experiment settings
-					const provider = cline.providerRef.deref()
+					const provider = darbot.providerRef.deref()
 					let isMultiFileApplyDiffEnabled = false
 
 					if (provider) {
@@ -430,10 +430,10 @@ export async function presentAssistantMessage(cline: Task) {
 					}
 
 					if (isMultiFileApplyDiffEnabled) {
-						await applyDiffTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+						await applyDiffTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					} else {
 						await applyDiffToolLegacy(
-							cline,
+							darbot,
 							block,
 							askApproval,
 							handleError,
@@ -444,27 +444,27 @@ export async function presentAssistantMessage(cline: Task) {
 					break
 				}
 				case "insert_content":
-					await insertContentTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await insertContentTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "search_and_replace":
-					await searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await searchAndReplaceTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "read_file":
-					await readFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await readFileTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 
 					break
 				case "fetch_instructions":
-					await fetchInstructionsTool(cline, block, askApproval, handleError, pushToolResult)
+					await fetchInstructionsTool(darbot, block, askApproval, handleError, pushToolResult)
 					break
 				case "list_files":
-					await listFilesTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await listFilesTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "codebase_search":
-					await codebaseSearchTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await codebaseSearchTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "list_code_definition_names":
 					await listCodeDefinitionNamesTool(
-						cline,
+						darbot,
 						block,
 						askApproval,
 						handleError,
@@ -473,20 +473,20 @@ export async function presentAssistantMessage(cline: Task) {
 					)
 					break
 				case "search_files":
-					await searchFilesTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await searchFilesTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "browser_action":
-					await browserActionTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await browserActionTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "execute_command":
-					await executeCommandTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await executeCommandTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "use_mcp_tool":
-					await useMcpToolTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await useMcpToolTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "access_mcp_resource":
 					await accessMcpResourceTool(
-						cline,
+						darbot,
 						block,
 						askApproval,
 						handleError,
@@ -496,7 +496,7 @@ export async function presentAssistantMessage(cline: Task) {
 					break
 				case "ask_followup_question":
 					await askFollowupQuestionTool(
-						cline,
+						darbot,
 						block,
 						askApproval,
 						handleError,
@@ -505,14 +505,14 @@ export async function presentAssistantMessage(cline: Task) {
 					)
 					break
 				case "switch_mode":
-					await switchModeTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await switchModeTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "new_task":
-					await newTaskTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await newTaskTool(darbot, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "attempt_completion":
 					await attemptCompletionTool(
-						cline,
+						darbot,
 						block,
 						askApproval,
 						handleError,
@@ -527,12 +527,12 @@ export async function presentAssistantMessage(cline: Task) {
 			break
 	}
 
-	const recentlyModifiedFiles = cline.fileContextTracker.getAndClearCheckpointPossibleFile()
+	const recentlyModifiedFiles = darbot.fileContextTracker.getAndClearCheckpointPossibleFile()
 
 	if (recentlyModifiedFiles.length > 0) {
 		// TODO: We can track what file changes were made and only
 		// checkpoint those files, this will be save storage.
-		await checkpointSave(cline)
+		await checkpointSave(darbot)
 	}
 
 	// Seeing out of bounds is fine, it means that the next too call is being
@@ -542,18 +542,18 @@ export async function presentAssistantMessage(cline: Task) {
 	// was breaking when relpath was undefined, and for invalid relpath it never
 	// presented UI.
 	// This needs to be placed here, if not then calling
-	// cline.presentAssistantMessage below would fail (sometimes) since it's
+	// darbot.presentAssistantMessage below would fail (sometimes) since it's
 	// locked.
-	cline.presentAssistantMessageLocked = false
+	darbot.presentAssistantMessageLocked = false
 
 	// NOTE: When tool is rejected, iterator stream is interrupted and it waits
 	// for `userMessageContentReady` to be true. Future calls to present will
 	// skip execution since `didRejectTool` and iterate until `contentIndex` is
 	// set to message length and it sets userMessageContentReady to true itself
 	// (instead of preemptively doing it in iterator).
-	if (!block.partial || cline.didRejectTool || cline.didAlreadyUseTool) {
+	if (!block.partial || darbot.didRejectTool || darbot.didAlreadyUseTool) {
 		// Block is finished streaming and executing.
-		if (cline.currentStreamingContentIndex === cline.assistantMessageContent.length - 1) {
+		if (darbot.currentStreamingContentIndex === darbot.assistantMessageContent.length - 1) {
 			// It's okay that we increment if !didCompleteReadingStream, it'll
 			// just return because out of bounds and as streaming continues it
 			// will call `presentAssitantMessage` if a new block is ready. If
@@ -561,25 +561,27 @@ export async function presentAssistantMessage(cline: Task) {
 			// true when out of bounds. This gracefully allows the stream to
 			// continue on and all potential content blocks be presented.
 			// Last block is complete and it is finished executing
-			cline.userMessageContentReady = true // Will allow `pWaitFor` to continue.
+			darbot.userMessageContentReady = true // Will allow `pWaitFor` to continue.
 		}
 
 		// Call next block if it exists (if not then read stream will call it
 		// when it's ready).
 		// Need to increment regardless, so when read stream calls this function
 		// again it will be streaming the next block.
-		cline.currentStreamingContentIndex++
+		darbot.currentStreamingContentIndex++
 
-		if (cline.currentStreamingContentIndex < cline.assistantMessageContent.length) {
+		if (darbot.currentStreamingContentIndex < darbot.assistantMessageContent.length) {
 			// There are already more content blocks to stream, so we'll call
 			// this function ourselves.
-			presentAssistantMessage(cline)
+			presentAssistantMessage(darbot)
 			return
 		}
 	}
 
 	// Block is partial, but the read stream may have finished.
-	if (cline.presentAssistantMessageHasPendingUpdates) {
-		presentAssistantMessage(cline)
+	if (darbot.presentAssistantMessageHasPendingUpdates) {
+		presentAssistantMessage(darbot)
 	}
 }
+
+

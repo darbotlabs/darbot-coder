@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 
 import { Package } from "../shared/package"
-import { ClineProvider } from "../core/webview/ClineProvider"
+import { DarbotProvider } from "../core/webview/DarbotProvider"
 import { t } from "../i18n"
 
 export const handleNewTask = async (params: { prompt?: string } | null | undefined) => {
@@ -19,5 +19,5 @@ export const handleNewTask = async (params: { prompt?: string } | null | undefin
 		return
 	}
 
-	await ClineProvider.handleCodeAction("newTask", "NEW_TASK", { userInput: prompt })
+	await DarbotProvider.handleCodeAction("newTask", "NEW_TASK", { userInput: prompt })
 }

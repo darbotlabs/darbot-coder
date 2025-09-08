@@ -22,16 +22,16 @@ vi.mock("os", () => ({
 }))
 
 import {
-	getGlobalRooDirectory,
-	getProjectRooDirectoryForCwd,
+	getGlobalDarbotDirectory,
+	getProjectDarbotDirectoryForCwd,
 	directoryExists,
 	fileExists,
 	readFileIfExists,
-	getRooDirectoriesForCwd,
+	getDarbotDirectoriesForCwd,
 	loadConfiguration,
 } from "../index"
 
-describe("RooConfigService", () => {
+describe("DarbotConfigService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 		mockHomedir.mockReturnValue("/mock/home")
@@ -41,23 +41,23 @@ describe("RooConfigService", () => {
 		vi.restoreAllMocks()
 	})
 
-	describe("getGlobalRooDirectory", () => {
+	describe("getGlobalDarbotDirectory", () => {
 		it("should return correct path for global .darbot directory", () => {
-			const result = getGlobalRooDirectory()
+			const result = getGlobalDarbotDirectory()
 			expect(result).toBe(path.join("/mock/home", ".darbot"))
 		})
 
 		it("should handle different home directories", () => {
 			mockHomedir.mockReturnValue("/different/home")
-			const result = getGlobalRooDirectory()
+			const result = getGlobalDarbotDirectory()
 			expect(result).toBe(path.join("/different/home", ".darbot"))
 		})
 	})
 
-	describe("getProjectRooDirectoryForCwd", () => {
+	describe("getProjectDarbotDirectoryForCwd", () => {
 		it("should return correct path for given cwd", () => {
 			const cwd = "/custom/project/path"
-			const result = getProjectRooDirectoryForCwd(cwd)
+			const result = getProjectDarbotDirectoryForCwd(cwd)
 			expect(result).toBe(path.join(cwd, ".darbot"))
 		})
 	})
@@ -205,11 +205,11 @@ describe("RooConfigService", () => {
 		})
 	})
 
-	describe("getRooDirectoriesForCwd", () => {
+	describe("getDarbotDirectoriesForCwd", () => {
 		it("should return directories for given cwd", () => {
 			const cwd = "/custom/project/path"
 
-			const result = getRooDirectoriesForCwd(cwd)
+			const result = getDarbotDirectoriesForCwd(cwd)
 
 			expect(result).toEqual([path.join("/mock/home", ".darbot"), path.join(cwd, ".darbot")])
 		})

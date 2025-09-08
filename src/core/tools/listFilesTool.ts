@@ -1,7 +1,7 @@
 import * as path from "path"
 
 import { Task } from "../task/Task"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { DarbotSayTool } from "../../shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
 import { listFiles } from "../../services/glob/list-files"
 import { getReadablePath } from "../../utils/path"
@@ -11,7 +11,7 @@ import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } f
 /**
  * Implements the list_files tool.
  *
- * @param cline - The instance of Cline that is executing this tool.
+ * @param darbot - The instance of Darbot that is executing this tool.
  * @param block - The block of assistant message content that specifies the
  *   parameters for this tool.
  * @param askApproval - A function that asks the user for approval to show a
@@ -24,7 +24,7 @@ import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } f
  */
 
 export async function listFilesTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -36,43 +36,43 @@ export async function listFilesTool(
 	const recursive = recursiveRaw?.toLowerCase() === "true"
 
 	// Calculate if the path is outside workspace
-	const absolutePath = relDirPath ? path.resolve(cline.cwd, relDirPath) : cline.cwd
+	const absolutePath = relDirPath ? path.resolve(darbot.cwd, relDirPath) : darbot.cwd
 	const isOutsideWorkspace = isPathOutsideWorkspace(absolutePath)
 
-	const sharedMessageProps: ClineSayTool = {
+	const sharedMessageProps: DarbotSayTool = {
 		tool: !recursive ? "listFilesTopLevel" : "listFilesRecursive",
-		path: getReadablePath(cline.cwd, removeClosingTag("path", relDirPath)),
+		path: getReadablePath(darbot.cwd, removeClosingTag("path", relDirPath)),
 		isOutsideWorkspace,
 	}
 
 	try {
 		if (block.partial) {
-			const partialMessage = JSON.stringify({ ...sharedMessageProps, content: "" } satisfies ClineSayTool)
-			await cline.ask("tool", partialMessage, block.partial).catch(() => {})
+			const partialMessage = JSON.stringify({ ...sharedMessageProps, content: "" } satisfies DarbotSayTool)
+			await darbot.ask("tool", partialMessage, block.partial).catch(() => {})
 			return
 		} else {
 			if (!relDirPath) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("list_files")
-				pushToolResult(await cline.sayAndCreateMissingParamError("list_files", "path"))
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("list_files")
+				pushToolResult(await darbot.sayAndCreateMissingParamError("list_files", "path"))
 				return
 			}
 
-			cline.consecutiveMistakeCount = 0
+			darbot.consecutiveMistakeCount = 0
 
 			const [files, didHitLimit] = await listFiles(absolutePath, recursive, 200)
-			const { showRooIgnoredFiles = true } = (await cline.providerRef.deref()?.getState()) ?? {}
+			const { showDarbotIgnoredFiles = true } = (await darbot.providerRef.deref()?.getState()) ?? {}
 
 			const result = formatResponse.formatFilesList(
 				absolutePath,
 				files,
 				didHitLimit,
-				cline.darbotIgnoreController,
-				showRooIgnoredFiles,
-				cline.darbotProtectedController,
+				darbot.darbotIgnoreController,
+				showDarbotIgnoredFiles,
+				darbot.darbotProtectedController,
 			)
 
-			const completeMessage = JSON.stringify({ ...sharedMessageProps, content: result } satisfies ClineSayTool)
+			const completeMessage = JSON.stringify({ ...sharedMessageProps, content: result } satisfies DarbotSayTool)
 			const didApprove = await askApproval("tool", completeMessage)
 
 			if (!didApprove) {
@@ -85,3 +85,4 @@ export async function listFilesTool(
 		await handleError("listing files", error)
 	}
 }
+

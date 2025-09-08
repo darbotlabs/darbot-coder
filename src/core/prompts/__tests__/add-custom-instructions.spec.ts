@@ -103,9 +103,9 @@ __setMockImplementation(
 		// Add rules
 		const rules = []
 		if (mode) {
-			rules.push(`# Rules from .clinerules-${mode}:\nMock mode-specific rules`)
+			rules.push(`# Rules from .darbotrules-${mode}:\nMock mode-specific rules`)
 		}
-		rules.push(`# Rules from .clinerules:\nMock generic rules`)
+		rules.push(`# Rules from .darbotrules:\nMock generic rules`)
 
 		if (rules.length > 0) {
 			sections.push(`Rules:\n${rules.join("\n")}`)
@@ -205,7 +205,7 @@ describe("addCustomInstructions", () => {
 			undefined, // experiments
 			true, // enableMcpServerCreation
 			undefined, // language
-			undefined, // rooIgnoreInstructions
+			undefined, // darbotIgnoreInstructions
 			undefined, // partialReadsEnabled
 		)
 
@@ -228,7 +228,7 @@ describe("addCustomInstructions", () => {
 			undefined, // experiments
 			true, // enableMcpServerCreation
 			undefined, // language
-			undefined, // rooIgnoreInstructions
+			undefined, // darbotIgnoreInstructions
 			undefined, // partialReadsEnabled
 		)
 
@@ -253,7 +253,7 @@ describe("addCustomInstructions", () => {
 			undefined, // experiments
 			true, // enableMcpServerCreation
 			undefined, // language
-			undefined, // rooIgnoreInstructions
+			undefined, // darbotIgnoreInstructions
 			undefined, // partialReadsEnabled
 		)
 
@@ -279,7 +279,7 @@ describe("addCustomInstructions", () => {
 			undefined, // experiments
 			false, // enableMcpServerCreation
 			undefined, // language
-			undefined, // rooIgnoreInstructions
+			undefined, // darbotIgnoreInstructions
 			undefined, // partialReadsEnabled
 		)
 
@@ -303,7 +303,7 @@ describe("addCustomInstructions", () => {
 			undefined, // experiments
 			true, // enableMcpServerCreation
 			undefined, // language
-			undefined, // rooIgnoreInstructions
+			undefined, // darbotIgnoreInstructions
 			true, // partialReadsEnabled
 		)
 

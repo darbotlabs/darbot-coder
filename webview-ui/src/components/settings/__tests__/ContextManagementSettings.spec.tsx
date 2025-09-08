@@ -18,7 +18,7 @@ vitest.mock("@/utils/vscode", () => ({
 }))
 
 // Mock VSCode components to behave like standard HTML elements
-vitest.mock("@vscode/webview-ui-toolkit/react", () => ({
+vitest.mock("darbot-webview-ui/react", () => ({
 	VSCodeCheckbox: ({ checked, onChange, children, "data-testid": dataTestId, ...props }: any) => (
 		<div>
 			<input
@@ -46,7 +46,7 @@ describe("ContextManagementSettings", () => {
 		listApiConfigMeta: [],
 		maxOpenTabsContext: 20,
 		maxWorkspaceFiles: 200,
-		showRooIgnoredFiles: false,
+		showIgnoredFiles: false,
 		setCachedStateField: vitest.fn(),
 		profileThresholds: {},
 	}
@@ -66,10 +66,10 @@ describe("ContextManagementSettings", () => {
 		const workspaceFilesSlider = screen.getByTestId("workspace-files-limit-slider")
 		expect(workspaceFilesSlider).toBeInTheDocument()
 
-		// Show .rooignore'd files
-		const showRooIgnoredFilesCheckbox = screen.getByTestId("show-rooignored-files-checkbox")
-		expect(showRooIgnoredFilesCheckbox).toBeInTheDocument()
-		expect(screen.getByTestId("show-rooignored-files-checkbox")).not.toBeChecked()
+		// Show .darbotignore'd files
+		const showIgnoredFilesCheckbox = screen.getByTestId("show-darbotignored-files-checkbox")
+		expect(showIgnoredFilesCheckbox).toBeInTheDocument()
+		expect(screen.getByTestId("show-darbotignored-files-checkbox")).not.toBeChecked()
 	})
 
 	it("updates open tabs context limit", () => {
@@ -110,13 +110,13 @@ describe("ContextManagementSettings", () => {
 		expect(mockSetCachedStateField).toHaveBeenCalledWith("maxWorkspaceFiles", 201)
 	})
 
-	it("updates show rooignored files setting", () => {
+	it("updates show darbotignored files setting", () => {
 		render(<ContextManagementSettings {...defaultProps} />)
 
-		const checkbox = screen.getByTestId("show-rooignored-files-checkbox")
+		const checkbox = screen.getByTestId("show-darbotignored-files-checkbox")
 		fireEvent.click(checkbox)
 
-		expect(defaultProps.setCachedStateField).toHaveBeenCalledWith("showRooIgnoredFiles", true)
+		expect(defaultProps.setCachedStateField).toHaveBeenCalledWith("showIgnoredFiles", true)
 	})
 
 	it("renders max read file line controls", () => {
@@ -309,7 +309,7 @@ describe("ContextManagementSettings", () => {
 		it("handles undefined optional props gracefully", () => {
 			const propsWithUndefined = {
 				...defaultProps,
-				showRooIgnoredFiles: undefined,
+				showIgnoredFiles: undefined,
 				maxReadFileLine: undefined,
 			}
 
@@ -361,12 +361,12 @@ describe("ContextManagementSettings", () => {
 			// Check that labels are present
 			expect(screen.getByText("settings:contextManagement.openTabs.label")).toBeInTheDocument()
 			expect(screen.getByText("settings:contextManagement.workspaceFiles.label")).toBeInTheDocument()
-			expect(screen.getByText("settings:contextManagement.rooignore.label")).toBeInTheDocument()
+			expect(screen.getByText("settings:contextManagement.darbotignore.label")).toBeInTheDocument()
 
 			// Check that descriptions are present
 			expect(screen.getByText("settings:contextManagement.openTabs.description")).toBeInTheDocument()
 			expect(screen.getByText("settings:contextManagement.workspaceFiles.description")).toBeInTheDocument()
-			expect(screen.getByText("settings:contextManagement.rooignore.description")).toBeInTheDocument()
+			expect(screen.getByText("settings:contextManagement.darbotignore.description")).toBeInTheDocument()
 		})
 
 		it("has proper test ids for all interactive elements", () => {
@@ -378,7 +378,7 @@ describe("ContextManagementSettings", () => {
 
 			expect(screen.getByTestId("open-tabs-limit-slider")).toBeInTheDocument()
 			expect(screen.getByTestId("workspace-files-limit-slider")).toBeInTheDocument()
-			expect(screen.getByTestId("show-rooignored-files-checkbox")).toBeInTheDocument()
+			expect(screen.getByTestId("show-darbotignored-files-checkbox")).toBeInTheDocument()
 			expect(screen.getByTestId("max-read-file-line-input")).toBeInTheDocument()
 			expect(screen.getByTestId("max-read-file-always-full-checkbox")).toBeInTheDocument()
 		})
@@ -393,7 +393,7 @@ describe("ContextManagementSettings", () => {
 			expect(screen.getByText("settings:contextManagement.description")).toBeInTheDocument()
 			expect(screen.getByText("settings:contextManagement.openTabs.label")).toBeInTheDocument()
 			expect(screen.getByText("settings:contextManagement.workspaceFiles.label")).toBeInTheDocument()
-			expect(screen.getByText("settings:contextManagement.rooignore.label")).toBeInTheDocument()
+			expect(screen.getByText("settings:contextManagement.darbotignore.label")).toBeInTheDocument()
 		})
 	})
 })

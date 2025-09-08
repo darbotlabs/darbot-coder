@@ -26,7 +26,7 @@ vi.mock("../../../utils/fs", () => ({
 vi.mock("../../prompts/responses", () => ({
 	formatResponse: {
 		toolError: vi.fn((msg) => `Error: ${msg}`),
-		rooIgnoreError: vi.fn((path) => `Access denied: ${path}`),
+		darbotIgnoreError: vi.fn((path) => `Access denied: ${path}`),
 		createPrettyPatch: vi.fn((_path, original, updated) => `Diff: ${original} -> ${updated}`),
 	},
 }))
@@ -35,8 +35,8 @@ vi.mock("../../../utils/path", () => ({
 	getReadablePath: vi.fn().mockReturnValue("test/path.txt"),
 }))
 
-vi.mock("../../ignore/RooIgnoreController", () => ({
-	RooIgnoreController: class {
+vi.mock("../../ignore/DarbotIgnoreController", () => ({
+	DarbotIgnoreController: class {
 		initialize() {
 			return Promise.resolve()
 		}
@@ -54,7 +54,7 @@ describe("insertContentTool", () => {
 	const mockedFileExistsAtPath = fileExistsAtPath as MockedFunction<typeof fileExistsAtPath>
 	const mockedFsReadFile = fs.readFile as MockedFunction<typeof fs.readFile>
 
-	let mockCline: any
+	let mockDarbot: any
 	let mockAskApproval: ReturnType<typeof vi.fn>
 	let mockHandleError: ReturnType<typeof vi.fn>
 	let mockPushToolResult: ReturnType<typeof vi.fn>
@@ -67,7 +67,7 @@ describe("insertContentTool", () => {
 		mockedFileExistsAtPath.mockResolvedValue(true) // Assume file exists by default for insert
 		mockedFsReadFile.mockResolvedValue("") // Default empty file content
 
-		mockCline = {
+		mockDarbot = {
 			cwd: "/",
 			consecutiveMistakeCount: 0,
 			didEditFile: false,
@@ -79,7 +79,7 @@ describe("insertContentTool", () => {
 					}),
 				}),
 			},
-			rooIgnoreController: {
+			darbotIgnoreController: {
 				validateAccess: vi.fn().mockReturnValue(true),
 			},
 			diffViewProvider: {
@@ -138,8 +138,8 @@ describe("insertContentTool", () => {
 
 		mockedFileExistsAtPath.mockResolvedValue(fileExists)
 		mockedFsReadFile.mockResolvedValue(fileContent)
-		mockCline.darbotIgnoreController.validateAccess.mockReturnValue(accessAllowed)
-		mockCline.ask.mockResolvedValue({ response: options.askApprovalResponse ?? "yesButtonClicked" })
+		mockDarbot.darbotIgnoreController.validateAccess.mockReturnValue(accessAllowed)
+		mockDarbot.ask.mockResolvedValue({ response: options.askApprovalResponse ?? "yesButtonClicked" })
 
 		const toolUse: ToolUse = {
 			type: "tool_use",
@@ -154,7 +154,7 @@ describe("insertContentTool", () => {
 		}
 
 		await insertContentTool(
-			mockCline,
+			mockDarbot,
 			toolUse,
 			mockAskApproval,
 			mockHandleError,
@@ -179,9 +179,9 @@ describe("insertContentTool", () => {
 			const calledPath = mockedFileExistsAtPath.mock.calls[0][0]
 			expect(toPosix(calledPath)).toContain(testFilePath)
 			expect(mockedFsReadFile).not.toHaveBeenCalled() // Should not read if file doesn't exist
-			expect(mockCline.diffViewProvider.update).toHaveBeenCalledWith(contentToInsert, true)
-			expect(mockCline.diffViewProvider.editType).toBe("create")
-			expect(mockCline.diffViewProvider.pushToolWriteResult).toHaveBeenCalledWith(mockCline, mockCline.cwd, true)
+			expect(mockDarbot.diffViewProvider.update).toHaveBeenCalledWith(contentToInsert, true)
+			expect(mockDarbot.diffViewProvider.editType).toBe("create")
+			expect(mockDarbot.diffViewProvider.pushToolWriteResult).toHaveBeenCalledWith(mockDarbot, mockDarbot.cwd, true)
 		})
 
 		it("creates a new file and inserts content at line 1 (beginning)", async () => {
@@ -195,9 +195,9 @@ describe("insertContentTool", () => {
 			const calledPath = mockedFileExistsAtPath.mock.calls[0][0]
 			expect(toPosix(calledPath)).toContain(testFilePath)
 			expect(mockedFsReadFile).not.toHaveBeenCalled()
-			expect(mockCline.diffViewProvider.update).toHaveBeenCalledWith(contentToInsert, true)
-			expect(mockCline.diffViewProvider.editType).toBe("create")
-			expect(mockCline.diffViewProvider.pushToolWriteResult).toHaveBeenCalledWith(mockCline, mockCline.cwd, true)
+			expect(mockDarbot.diffViewProvider.update).toHaveBeenCalledWith(contentToInsert, true)
+			expect(mockDarbot.diffViewProvider.editType).toBe("create")
+			expect(mockDarbot.diffViewProvider.pushToolWriteResult).toHaveBeenCalledWith(mockDarbot, mockDarbot.cwd, true)
 		})
 
 		it("creates an empty new file if content is empty string", async () => {
@@ -207,9 +207,9 @@ describe("insertContentTool", () => {
 			const calledPath = mockedFileExistsAtPath.mock.calls[0][0]
 			expect(toPosix(calledPath)).toContain(testFilePath)
 			expect(mockedFsReadFile).not.toHaveBeenCalled()
-			expect(mockCline.diffViewProvider.update).toHaveBeenCalledWith("", true)
-			expect(mockCline.diffViewProvider.editType).toBe("create")
-			expect(mockCline.diffViewProvider.pushToolWriteResult).toHaveBeenCalledWith(mockCline, mockCline.cwd, true)
+			expect(mockDarbot.diffViewProvider.update).toHaveBeenCalledWith("", true)
+			expect(mockDarbot.diffViewProvider.editType).toBe("create")
+			expect(mockDarbot.diffViewProvider.pushToolWriteResult).toHaveBeenCalledWith(mockDarbot, mockDarbot.cwd, true)
 		})
 
 		it("returns an error when inserting content at an arbitrary line number into a new file", async () => {
@@ -223,11 +223,11 @@ describe("insertContentTool", () => {
 			const calledPath = mockedFileExistsAtPath.mock.calls[0][0]
 			expect(toPosix(calledPath)).toContain(testFilePath)
 			expect(mockedFsReadFile).not.toHaveBeenCalled()
-			expect(mockCline.consecutiveMistakeCount).toBe(1)
-			expect(mockCline.recordToolError).toHaveBeenCalledWith("insert_content")
-			expect(mockCline.say).toHaveBeenCalledWith("error", expect.stringContaining("non-existent file"))
-			expect(mockCline.diffViewProvider.update).not.toHaveBeenCalled()
-			expect(mockCline.diffViewProvider.pushToolWriteResult).not.toHaveBeenCalled()
+			expect(mockDarbot.consecutiveMistakeCount).toBe(1)
+			expect(mockDarbot.recordToolError).toHaveBeenCalledWith("insert_content")
+			expect(mockDarbot.say).toHaveBeenCalledWith("error", expect.stringContaining("non-existent file"))
+			expect(mockDarbot.diffViewProvider.update).not.toHaveBeenCalled()
+			expect(mockDarbot.diffViewProvider.pushToolWriteResult).not.toHaveBeenCalled()
 		})
 	})
 })

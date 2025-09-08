@@ -7,9 +7,9 @@ import { SYSTEM_PROMPT } from "../prompts/system"
 import { MultiSearchReplaceDiffStrategy } from "../diff/strategies/multi-search-replace"
 import { MultiFileSearchReplaceDiffStrategy } from "../diff/strategies/multi-file-search-replace"
 
-import { ClineProvider } from "./ClineProvider"
+import { DarbotProvider } from "./DarbotProvider"
 
-export const generateSystemPrompt = async (provider: ClineProvider, message: WebviewMessage) => {
+export const generateSystemPrompt = async (provider: DarbotProvider, message: WebviewMessage) => {
 	const {
 		apiConfiguration,
 		customModePrompts,
@@ -41,13 +41,13 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 	const mode = message.mode ?? defaultModeSlug
 	const customModes = await provider.customModesManager.getCustomModes()
 
-	const rooIgnoreInstructions = provider.getCurrentCline()?.darbotIgnoreController?.getInstructions()
+	const darbotIgnoreInstructions = provider.getCurrentDarbot()?.darbotIgnoreController?.getInstructions()
 
 	// Determine if browser tools can be used based on model support, mode, and user settings
 	let modelSupportsComputerUse = false
 
 	// Create a temporary API handler to check if the model supports computer use
-	// This avoids relying on an active Cline instance which might not exist during preview
+	// This avoids relying on an active darbot instance which might not exist during preview
 	try {
 		const tempApiHandler = buildApiHandler(apiConfiguration)
 		modelSupportsComputerUse = tempApiHandler.getModel().info.supportsComputerUse ?? false
@@ -78,7 +78,7 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 		experiments,
 		enableMcpServerCreation,
 		language,
-		rooIgnoreInstructions,
+		darbotIgnoreInstructions,
 		maxReadFileLine !== -1,
 		{
 			maxConcurrentFileReads,
@@ -87,3 +87,4 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 
 	return systemPrompt
 }
+

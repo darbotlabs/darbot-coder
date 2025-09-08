@@ -1,4 +1,4 @@
-import { VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeProgressRing } from "../vscode-components"
 
 export const ProgressIndicator = () => (
 	<div

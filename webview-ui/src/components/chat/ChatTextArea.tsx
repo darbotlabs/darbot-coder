@@ -85,7 +85,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			pinnedApiConfigs,
 			togglePinnedApiConfig,
 			taskHistory,
-			clineMessages,
+			darbotMessages,
 		} = useExtensionState()
 
 		// Find the ID and display text for the currently selected API configuration
@@ -183,7 +183,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 		// Use custom hook for prompt history navigation
 		const { handleHistoryNavigation, resetHistoryNavigation, resetOnInputChange } = usePromptHistory({
-			clineMessages,
+			darbotMessages,
 			taskHistory,
 			cwd,
 			inputValue,

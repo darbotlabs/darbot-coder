@@ -1,10 +1,10 @@
-import { ClineAskUseMcpServer } from "../../shared/ExtensionMessage"
+import { DarbotAskUseMcpServer } from "../../shared/ExtensionMessage"
 import { ToolUse, RemoveClosingTag, AskApproval, HandleError, PushToolResult } from "../../shared/tools"
 import { Task } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
 
 export async function accessMcpResourceTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -20,32 +20,32 @@ export async function accessMcpResourceTool(
 				type: "access_mcp_resource",
 				serverName: removeClosingTag("server_name", server_name),
 				uri: removeClosingTag("uri", uri),
-			} satisfies ClineAskUseMcpServer)
+			} satisfies DarbotAskUseMcpServer)
 
-			await cline.ask("use_mcp_server", partialMessage, block.partial).catch(() => {})
+			await darbot.ask("use_mcp_server", partialMessage, block.partial).catch(() => {})
 			return
 		} else {
 			if (!server_name) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("access_mcp_resource")
-				pushToolResult(await cline.sayAndCreateMissingParamError("access_mcp_resource", "server_name"))
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("access_mcp_resource")
+				pushToolResult(await darbot.sayAndCreateMissingParamError("access_mcp_resource", "server_name"))
 				return
 			}
 
 			if (!uri) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("access_mcp_resource")
-				pushToolResult(await cline.sayAndCreateMissingParamError("access_mcp_resource", "uri"))
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("access_mcp_resource")
+				pushToolResult(await darbot.sayAndCreateMissingParamError("access_mcp_resource", "uri"))
 				return
 			}
 
-			cline.consecutiveMistakeCount = 0
+			darbot.consecutiveMistakeCount = 0
 
 			const completeMessage = JSON.stringify({
 				type: "access_mcp_resource",
 				serverName: server_name,
 				uri,
-			} satisfies ClineAskUseMcpServer)
+			} satisfies DarbotAskUseMcpServer)
 
 			const didApprove = await askApproval("use_mcp_server", completeMessage)
 
@@ -54,8 +54,8 @@ export async function accessMcpResourceTool(
 			}
 
 			// Now execute the tool
-			await cline.say("mcp_server_request_started")
-			const resourceResult = await cline.providerRef.deref()?.getMcpHub()?.readResource(server_name, uri)
+			await darbot.say("mcp_server_request_started")
+			const resourceResult = await darbot.providerRef.deref()?.getMcpHub()?.readResource(server_name, uri)
 
 			const resourceResultPretty =
 				resourceResult?.contents
@@ -81,7 +81,7 @@ export async function accessMcpResourceTool(
 				}
 			})
 
-			await cline.say("mcp_server_response", resourceResultPretty, images)
+			await darbot.say("mcp_server_response", resourceResultPretty, images)
 			pushToolResult(formatResponse.toolResult(resourceResultPretty, images))
 
 			return

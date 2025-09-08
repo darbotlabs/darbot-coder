@@ -1,34 +1,34 @@
 import EventEmitter from "events"
 
-export type RooTerminalProvider = "vscode" | "execa"
+export type DarbotTerminalProvider = "vscode" | "execa"
 
-export interface RooTerminal {
-	provider: RooTerminalProvider
+export interface DarbotTerminal {
+	provider: DarbotTerminalProvider
 	id: number
 	busy: boolean
 	running: boolean
 	taskId?: string
-	process?: RooTerminalProcess
+	process?: DarbotTerminalProcess
 	getCurrentWorkingDirectory(): string
 	isClosed: () => boolean
-	runCommand: (command: string, callbacks: RooTerminalCallbacks) => RooTerminalProcessResultPromise
+	runCommand: (command: string, callbacks: DarbotTerminalCallbacks) => DarbotTerminalProcessResultPromise
 	setActiveStream(stream: AsyncIterable<string> | undefined, pid?: number): void
 	shellExecutionComplete(exitDetails: ExitCodeDetails): void
-	getProcessesWithOutput(): RooTerminalProcess[]
+	getProcessesWithOutput(): DarbotTerminalProcess[]
 	getUnretrievedOutput(): string
 	getLastCommand(): string
 	cleanCompletedProcessQueue(): void
 }
 
-export interface RooTerminalCallbacks {
-	onLine: (line: string, process: RooTerminalProcess) => void
-	onCompleted: (output: string | undefined, process: RooTerminalProcess) => void
-	onShellExecutionStarted: (pid: number | undefined, process: RooTerminalProcess) => void
-	onShellExecutionComplete: (details: ExitCodeDetails, process: RooTerminalProcess) => void
-	onNoShellIntegration?: (message: string, process: RooTerminalProcess) => void
+export interface DarbotTerminalCallbacks {
+	onLine: (line: string, process: DarbotTerminalProcess) => void
+	onCompleted: (output: string | undefined, process: DarbotTerminalProcess) => void
+	onShellExecutionStarted: (pid: number | undefined, process: DarbotTerminalProcess) => void
+	onShellExecutionComplete: (details: ExitCodeDetails, process: DarbotTerminalProcess) => void
+	onNoShellIntegration?: (message: string, process: DarbotTerminalProcess) => void
 }
 
-export interface RooTerminalProcess extends EventEmitter<RooTerminalProcessEvents> {
+export interface DarbotTerminalProcess extends EventEmitter<DarbotTerminalProcessEvents> {
 	command: string
 	isHot: boolean
 	run: (command: string) => Promise<void>
@@ -38,9 +38,9 @@ export interface RooTerminalProcess extends EventEmitter<RooTerminalProcessEvent
 	getUnretrievedOutput: () => string
 }
 
-export type RooTerminalProcessResultPromise = RooTerminalProcess & Promise<void>
+export type DarbotTerminalProcessResultPromise = DarbotTerminalProcess & Promise<void>
 
-export interface RooTerminalProcessEvents {
+export interface DarbotTerminalProcessEvents {
 	line: [line: string]
 	continue: []
 	completed: [output?: string]

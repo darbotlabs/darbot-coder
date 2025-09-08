@@ -67,7 +67,7 @@ const mockPostMessage = (state: any) => {
 			type: "state",
 			state: {
 				version: "1.0.0",
-				clineMessages: [],
+				darbotMessages: [],
 				taskHistory: [],
 				shouldShowAnnouncement: false,
 				allowedCommands: [],
@@ -115,7 +115,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				alwaysAllowExecute: false,
 				alwaysAllowBrowser: false,
 				alwaysAllowModeSwitch: false,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -133,7 +133,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				alwaysAllowExecute: false,
 				alwaysAllowBrowser: false,
 				alwaysAllowModeSwitch: false,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -167,7 +167,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				alwaysAllowReadOnly: false,
 				alwaysAllowWrite: false, // Write is not enabled
 				writeDelayMs: 0,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -183,7 +183,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				alwaysAllowReadOnly: false,
 				alwaysAllowWrite: false,
 				writeDelayMs: 0,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -215,7 +215,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 			mockPostMessage({
 				autoApprovalEnabled: true, // Master is enabled
 				alwaysAllowBrowser: false, // Browser is not enabled
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -229,7 +229,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 			mockPostMessage({
 				autoApprovalEnabled: true,
 				alwaysAllowBrowser: false,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -264,7 +264,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				autoApprovalEnabled: true,
 				alwaysAllowReadOnly: true, // At least one sub-option is enabled
 				alwaysAllowWrite: false,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -279,7 +279,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				autoApprovalEnabled: true,
 				alwaysAllowReadOnly: true,
 				alwaysAllowWrite: false,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -315,7 +315,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				alwaysAllowWrite: true,
 				alwaysAllowExecute: true,
 				writeDelayMs: 0,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -332,7 +332,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				alwaysAllowWrite: true,
 				alwaysAllowExecute: true,
 				writeDelayMs: 0,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -367,7 +367,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 			mockPostMessage({
 				autoApprovalEnabled: true,
 				alwaysAllowReadOnly: true,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -385,7 +385,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				alwaysAllowExecute: false,
 				alwaysAllowBrowser: false,
 				alwaysAllowModeSwitch: false,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -423,7 +423,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				alwaysAllowExecute: false,
 				alwaysAllowBrowser: false,
 				alwaysAllowModeSwitch: false,
-				clineMessages: [
+				darbotMessages: [
 					{
 						type: "say",
 						say: "task",
@@ -451,7 +451,7 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 					alwaysAllowExecute: false,
 					alwaysAllowBrowser: false,
 					alwaysAllowModeSwitch: false,
-					clineMessages: [
+					darbotMessages: [
 						{
 							type: "say",
 							say: "task",

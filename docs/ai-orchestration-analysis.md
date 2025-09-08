@@ -30,7 +30,7 @@ After comprehensive analysis of the darbot-coder codebase, we've discovered that
 - ✅ **Task Persistence**: Conversation state and context preservation
 - ✅ **Checkpoint System**: Save/restore task states for complex workflows
 - ✅ **MCP Integration**: Extensible tool system via Model Context Protocol
-- ✅ **Safety Features**: RooIgnore and RooProtected controllers
+- ✅ **Safety Features**: DarbotIgnore and DarbotProtected controllers
 
 ### 🔍 **Current Workflow Example: PR Review Orchestration**
 
@@ -130,7 +130,7 @@ class ValidationOrchestrator {
 
 ### **Phase 4: Workflow Template Engine**
 
-**Implementation**: Extend the existing .roo XML system with template library
+**Implementation**: Extend the existing .darbot XML system with template library
 
 ```xml
 <workflow_template name="feature_development">
@@ -175,7 +175,7 @@ src/core/orchestration/
 - **Task.ts**: Extend with parallel execution support
 - **Workflow System**: Enhance XML processing for templates
 
-**3. New Workflow Templates** (.roo/templates/)
+**3. New Workflow Templates** (.darbot/templates/)
 ```
 templates/
 ├── feature-development.xml

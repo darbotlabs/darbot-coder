@@ -6,14 +6,14 @@ import { getReadablePath } from "../../utils/path"
 import { Task } from "../task/Task"
 import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../shared/tools"
 import { formatResponse } from "../prompts/responses"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
+import { DarbotSayTool } from "../../shared/ExtensionMessage"
 import { RecordSource } from "../context-tracking/FileContextTrackerTypes"
 import { fileExistsAtPath } from "../../utils/fs"
 import { insertGroups } from "../diff/insert-groups"
 import { DEFAULT_WRITE_DELAY_MS } from "@darbot-code/types"
 
 export async function insertContentTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -24,57 +24,57 @@ export async function insertContentTool(
 	const line: string | undefined = block.params.line
 	const content: string | undefined = block.params.content
 
-	const sharedMessageProps: ClineSayTool = {
+	const sharedMessageProps: DarbotSayTool = {
 		tool: "insertContent",
-		path: getReadablePath(cline.cwd, removeClosingTag("path", relPath)),
+		path: getReadablePath(darbot.cwd, removeClosingTag("path", relPath)),
 		diff: content,
 		lineNumber: line ? parseInt(line, 10) : undefined,
 	}
 
 	try {
 		if (block.partial) {
-			await cline.ask("tool", JSON.stringify(sharedMessageProps), block.partial).catch(() => {})
+			await darbot.ask("tool", JSON.stringify(sharedMessageProps), block.partial).catch(() => {})
 			return
 		}
 
 		// Validate required parameters
 		if (!relPath) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("insert_content")
-			pushToolResult(await cline.sayAndCreateMissingParamError("insert_content", "path"))
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("insert_content")
+			pushToolResult(await darbot.sayAndCreateMissingParamError("insert_content", "path"))
 			return
 		}
 
 		if (!line) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("insert_content")
-			pushToolResult(await cline.sayAndCreateMissingParamError("insert_content", "line"))
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("insert_content")
+			pushToolResult(await darbot.sayAndCreateMissingParamError("insert_content", "line"))
 			return
 		}
 
 		if (content === undefined) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("insert_content")
-			pushToolResult(await cline.sayAndCreateMissingParamError("insert_content", "content"))
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("insert_content")
+			pushToolResult(await darbot.sayAndCreateMissingParamError("insert_content", "content"))
 			return
 		}
 
-		const accessAllowed = cline.darbotIgnoreController?.validateAccess(relPath)
+		const accessAllowed = darbot.darbotIgnoreController?.validateAccess(relPath)
 
 		if (!accessAllowed) {
-			await cline.say("rooignore_error", relPath)
+			await darbot.say("darbotignore_error", relPath)
 			pushToolResult(formatResponse.toolError(formatResponse.darbotIgnoreError(relPath)))
 			return
 		}
 
 		// Check if file is write-protected
-		const isWriteProtected = cline.darbotProtectedController?.isWriteProtected(relPath) || false
+		const isWriteProtected = darbot.darbotProtectedController?.isWriteProtected(relPath) || false
 
-		const absolutePath = path.resolve(cline.cwd, relPath)
+		const absolutePath = path.resolve(darbot.cwd, relPath)
 		const lineNumber = parseInt(line, 10)
 		if (isNaN(lineNumber) || lineNumber < 0) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("insert_content")
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("insert_content")
 			pushToolResult(formatResponse.toolError("Invalid line number. Must be a non-negative integer."))
 			return
 		}
@@ -83,10 +83,10 @@ export async function insertContentTool(
 		let fileContent: string = ""
 		if (!fileExists) {
 			if (lineNumber > 1) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("insert_content")
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("insert_content")
 				const formattedError = `Cannot insert content at line ${lineNumber} into a non-existent file. For new files, 'line' must be 0 (to append) or 1 (to insert at the beginning).`
-				await cline.say("error", formattedError)
+				await darbot.say("error", formattedError)
 				pushToolResult(formattedError)
 				return
 			}
@@ -94,10 +94,10 @@ export async function insertContentTool(
 			fileContent = await fs.readFile(absolutePath, "utf8")
 		}
 
-		cline.consecutiveMistakeCount = 0
+		darbot.consecutiveMistakeCount = 0
 
-		cline.diffViewProvider.editType = fileExists ? "modify" : "create"
-		cline.diffViewProvider.originalContent = fileContent
+		darbot.diffViewProvider.editType = fileExists ? "modify" : "create"
+		darbot.diffViewProvider.originalContent = fileContent
 		const lines = fileExists ? fileContent.split("\n") : []
 
 		const updatedContent = insertGroups(lines, [
@@ -108,12 +108,12 @@ export async function insertContentTool(
 		]).join("\n")
 
 		// Show changes in diff view
-		if (!cline.diffViewProvider.isEditing) {
-			await cline.ask("tool", JSON.stringify(sharedMessageProps), true).catch(() => {})
+		if (!darbot.diffViewProvider.isEditing) {
+			await darbot.ask("tool", JSON.stringify(sharedMessageProps), true).catch(() => {})
 			// First open with original content
-			await cline.diffViewProvider.open(relPath)
-			await cline.diffViewProvider.update(fileContent, false)
-			cline.diffViewProvider.scrollToFirstDiff()
+			await darbot.diffViewProvider.open(relPath)
+			await darbot.diffViewProvider.update(fileContent, false)
+			darbot.diffViewProvider.scrollToFirstDiff()
 			await delay(200)
 		}
 
@@ -135,7 +135,7 @@ export async function insertContentTool(
 			approvalContent = updatedContent
 		}
 
-		await cline.diffViewProvider.update(updatedContent, true)
+		await darbot.diffViewProvider.update(updatedContent, true)
 
 		const completeMessage = JSON.stringify({
 			...sharedMessageProps,
@@ -143,40 +143,41 @@ export async function insertContentTool(
 			content: approvalContent,
 			lineNumber: lineNumber,
 			isProtected: isWriteProtected,
-		} satisfies ClineSayTool)
+		} satisfies DarbotSayTool)
 
-		const didApprove = await cline
+		const didApprove = await darbot
 			.ask("tool", completeMessage, isWriteProtected)
 			.then((response) => response.response === "yesButtonClicked")
 
 		if (!didApprove) {
-			await cline.diffViewProvider.revertChanges()
+			await darbot.diffViewProvider.revertChanges()
 			pushToolResult("Changes were rejected by the user.")
 			return
 		}
 
 		// Call saveChanges to update the DiffViewProvider properties
-		const provider = cline.providerRef.deref()
+		const provider = darbot.providerRef.deref()
 		const state = await provider?.getState()
 		const diagnosticsEnabled = state?.diagnosticsEnabled ?? true
 		const writeDelayMs = state?.writeDelayMs ?? DEFAULT_WRITE_DELAY_MS
-		await cline.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
+		await darbot.diffViewProvider.saveChanges(diagnosticsEnabled, writeDelayMs)
 
 		// Track file edit operation
 		if (relPath) {
-			await cline.fileContextTracker.trackFileContext(relPath, "roo_edited" as RecordSource)
+			await darbot.fileContextTracker.trackFileContext(relPath, "darbot_edited" as RecordSource)
 		}
 
-		cline.didEditFile = true
+		darbot.didEditFile = true
 
 		// Get the formatted response message
-		const message = await cline.diffViewProvider.pushToolWriteResult(cline, cline.cwd, !fileExists)
+		const message = await darbot.diffViewProvider.pushToolWriteResult(darbot, darbot.cwd, !fileExists)
 
 		pushToolResult(message)
 
-		await cline.diffViewProvider.reset()
+		await darbot.diffViewProvider.reset()
 	} catch (error) {
 		handleError("insert content", error)
-		await cline.diffViewProvider.reset()
+		await darbot.diffViewProvider.reset()
 	}
 }
+

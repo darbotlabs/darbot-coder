@@ -55,7 +55,7 @@ async function generatePrompt(
 	experiments?: Record<string, boolean>,
 	enableMcpServerCreation?: boolean,
 	language?: string,
-	rooIgnoreInstructions?: string,
+	darbotIgnoreInstructions?: string,
 	partialReadsEnabled?: boolean,
 	settings?: Record<string, any>,
 	todoList?: TodoItem[],
@@ -119,7 +119,7 @@ ${getSystemInfoSection(cwd)}
 
 ${getObjectiveSection(codeIndexManager, experiments)}
 
-${await addCustomInstructions(baseInstructions, globalCustomInstructions || "", cwd, mode, { language: language ?? formatLanguage(vscode.env.language), rooIgnoreInstructions })}`
+${await addCustomInstructions(baseInstructions, globalCustomInstructions || "", cwd, mode, { language: language ?? formatLanguage(vscode.env.language), darbotIgnoreInstructions })}`
 
 	return basePrompt
 }
@@ -139,7 +139,7 @@ export const SYSTEM_PROMPT = async (
 	experiments?: Record<string, boolean>,
 	enableMcpServerCreation?: boolean,
 	language?: string,
-	rooIgnoreInstructions?: string,
+	darbotIgnoreInstructions?: string,
 	partialReadsEnabled?: boolean,
 	settings?: Record<string, any>,
 	todoList?: TodoItem[],
@@ -177,7 +177,7 @@ export const SYSTEM_PROMPT = async (
 			globalCustomInstructions || "",
 			cwd,
 			mode,
-			{ language: language ?? formatLanguage(vscode.env.language), rooIgnoreInstructions },
+			{ language: language ?? formatLanguage(vscode.env.language), darbotIgnoreInstructions },
 		)
 
 		// For file-based prompts, don't include the tool sections
@@ -206,7 +206,7 @@ ${customInstructions}`
 		experiments,
 		enableMcpServerCreation,
 		language,
-		rooIgnoreInstructions,
+		darbotIgnoreInstructions,
 		partialReadsEnabled,
 		settings,
 		todoList,

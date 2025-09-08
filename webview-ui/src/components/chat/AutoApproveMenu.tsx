@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { Trans } from "react-i18next"
-import { VSCodeCheckbox, VSCodeLink, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox, VSCodeLink, VSCodeTextField } from "../vscode-components"
 
 import { vscode } from "@src/utils/vscode"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
@@ -248,7 +248,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 
 					<AutoApproveToggle {...toggles} onToggle={onAutoApproveToggle} />
 
-					{/* Auto-approve API request count limit input row inspired by Cline */}
+					{/* Auto-approve API request count limit input row inspired by darbot */}
 					<div
 						style={{
 							display: "flex",
@@ -291,3 +291,4 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 }
 
 export default AutoApproveMenu
+

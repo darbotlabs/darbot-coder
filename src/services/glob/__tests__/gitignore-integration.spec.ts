@@ -35,7 +35,7 @@ describe("list-files gitignore integration", () => {
 		vi.clearAllMocks()
 
 		// Create a temporary directory for testing
-		tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "roo-gitignore-test-"))
+		tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "darbot-gitignore-test-"))
 		originalCwd = process.cwd()
 	})
 

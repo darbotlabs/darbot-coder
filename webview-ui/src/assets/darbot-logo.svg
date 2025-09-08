@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="darbot-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40">
+  <defs>
+    <style>
+      .logo-text { fill: #00FF66; font-family: 'Courier New', monospace; font-weight: bold; font-size: 12px; }
+      .logo-icon { fill: #00FF66; stroke: #00FF66; }
+      .terminal-bg { fill: none; stroke: #00FF66; stroke-width: 1.5; }
+    </style>
+  </defs>
+  
+  <!-- Terminal icon -->
+  <rect class="terminal-bg" x="2" y="8" width="24" height="16" rx="2"/>
+  <rect class="logo-icon" x="2" y="8" width="24" height="4" rx="2"/>
+  <circle fill="#1a1a1a" cx="6" cy="10" r="0.8"/>
+  <circle fill="#1a1a1a" cx="9" cy="10" r="0.8"/>
+  <circle fill="#1a1a1a" cx="12" cy="10" r="0.8"/>
+  <text class="logo-icon" x="5" y="19" font-family="monospace" font-size="4">></text>
+  <text class="logo-icon" x="9" y="19" font-family="monospace" font-size="3">_</text>
+  
+  <!-- Ghost/bot -->
+  <circle class="logo-icon" cx="14" cy="32" r="3"/>
+  <path class="logo-icon" d="M12,32 Q12,30 13,30 L15,30 Q16,30 16,32 L16,35 L15,34 L14,35 L13,34 L12,35 Z"/>
+  
+  <!-- Text -->
+  <text class="logo-text" x="32" y="16">DARBOT</text>
+  <text class="logo-text" x="32" y="28">CODER</text>
+</svg>

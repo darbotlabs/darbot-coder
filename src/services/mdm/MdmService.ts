@@ -160,8 +160,8 @@ export class MdmService {
 
 			case "linux":
 			default:
-				// Linux: /etc/roo-code/mdm.json or mdm.dev.json
-				return `/etc/roo-code/${configFileName}`
+				// Linux: /etc/darbot-coder/mdm.json or mdm.dev.json
+				return `/etc/darbot-coder/${configFileName}`
 		}
 	}
 

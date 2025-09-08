@@ -14,12 +14,12 @@ export class ShellIntegrationManager {
 		// Create a temporary directory with the sticky bit set for security
 		const os = require("os")
 		const path = require("path")
-		const tmpDir = path.join(os.tmpdir(), `roo-zdotdir-${Math.random().toString(36).substring(2, 15)}`)
+		const tmpDir = path.join(os.tmpdir(), `darbot-zdotdir-${Math.random().toString(36).substring(2, 15)}`)
 		console.info(`[TerminalRegistry] Creating temporary directory for ZDOTDIR: ${tmpDir}`)
 
-		// Save original ZDOTDIR as ROO_ZDOTDIR
+		// Save original ZDOTDIR as DARBOT_ZDOTDIR
 		if (process.env.ZDOTDIR) {
-			env.ROO_ZDOTDIR = process.env.ZDOTDIR
+			env.DARBOT_ZDOTDIR = process.env.ZDOTDIR
 		}
 
 		// Create the temporary directory
@@ -36,8 +36,8 @@ export class ShellIntegrationManager {
 
 				const zshrcContent = `
 	source "${shellIntegrationPath}"
-	ZDOTDIR=\${ROO_ZDOTDIR:-$HOME}
-	unset ROO_ZDOTDIR
+	ZDOTDIR=\${DARBOT_ZDOTDIR:-$HOME}
+	unset DARBOT_ZDOTDIR
 	[ -f "$ZDOTDIR/.zshenv" ] && source "$ZDOTDIR/.zshenv"
 	[ -f "$ZDOTDIR/.zprofile" ] && source "$ZDOTDIR/.zprofile"
 	[ -f "$ZDOTDIR/.zshrc" ] && source "$ZDOTDIR/.zshrc"

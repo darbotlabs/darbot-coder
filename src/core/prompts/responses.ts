@@ -1,8 +1,8 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import * as path from "path"
 import * as diff from "diff"
-import { RooIgnoreController, LOCK_TEXT_SYMBOL } from "../ignore/RooIgnoreController"
-import { RooProtectedController } from "../protect/RooProtectedController"
+import { DarbotIgnoreController, LOCK_TEXT_SYMBOL } from "../ignore/DarbotIgnoreController"
+import { DarbotProtectedController } from "../protect/DarbotProtectedController"
 
 export const formatResponse = {
 	toolDenied: () => `The user denied this operation.`,
@@ -15,7 +15,7 @@ export const formatResponse = {
 
 	toolError: (error?: string) => `The tool execution failed with the following error:\n<error>\n${error}\n</error>`,
 
-	rooIgnoreError: (path: string) =>
+	darbotIgnoreError: (path: string) =>
 		`Access to ${path} is blocked by the .darbotignore file settings. You must try to continue in the task without using this file, or ask the user to update the .darbotignore file.`,
 
 	noToolsUsed: () =>
@@ -94,9 +94,9 @@ Otherwise, if you have not completed the task and do not need additional informa
 		absolutePath: string,
 		files: string[],
 		didHitLimit: boolean,
-		rooIgnoreController: RooIgnoreController | undefined,
-		showRooIgnoredFiles: boolean,
-		rooProtectedController?: RooProtectedController,
+		darbotIgnoreController: DarbotIgnoreController | undefined,
+		showDarbotIgnoredFiles: boolean,
+		darbotProtectedController?: DarbotProtectedController,
 	): string => {
 		const sorted = files
 			.map((file) => {
@@ -104,7 +104,7 @@ Otherwise, if you have not completed the task and do not need additional informa
 				const relativePath = path.relative(absolutePath, file).toPosix()
 				return file.endsWith("/") ? relativePath + "/" : relativePath
 			})
-			// Sort so files are listed under their respective directories to make it clear what files are children of what directories. Since we build file list top down, even if file list is truncated it will show directories that cline can then explore further.
+			// Sort so files are listed under their respective directories to make it clear what files are children of what directories. Since we build file list top down, even if file list is truncated it will show directories that darbot can then explore further.
 			.sort((a, b) => {
 				const aParts = a.split("/") // only works if we use toPosix first
 				const bParts = b.split("/")
@@ -126,43 +126,43 @@ Otherwise, if you have not completed the task and do not need additional informa
 				return aParts.length - bParts.length
 			})
 
-		let rooIgnoreParsed: string[] = sorted
+		let darbotIgnoreParsed: string[] = sorted
 
-		if (rooIgnoreController) {
-			rooIgnoreParsed = []
+		if (darbotIgnoreController) {
+			darbotIgnoreParsed = []
 			for (const filePath of sorted) {
 				// path is relative to absolute path, not cwd
 				// validateAccess expects either path relative to cwd or absolute path
 				// otherwise, for validating against ignore patterns like "assets/icons", we would end up with just "icons", which would result in the path not being ignored.
 				const absoluteFilePath = path.resolve(absolutePath, filePath)
-				const isIgnored = !rooIgnoreController.validateAccess(absoluteFilePath)
+				const isIgnored = !darbotIgnoreController.validateAccess(absoluteFilePath)
 
 				if (isIgnored) {
 					// If file is ignored and we're not showing ignored files, skip it
-					if (!showRooIgnoredFiles) {
+					if (!showDarbotIgnoredFiles) {
 						continue
 					}
 					// Otherwise, mark it with a lock symbol
-					rooIgnoreParsed.push(LOCK_TEXT_SYMBOL + " " + filePath)
+					darbotIgnoreParsed.push(LOCK_TEXT_SYMBOL + " " + filePath)
 				} else {
 					// Check if file is write-protected (only for non-ignored files)
-					const isWriteProtected = rooProtectedController?.isWriteProtected(absoluteFilePath) || false
+					const isWriteProtected = darbotProtectedController?.isWriteProtected(absoluteFilePath) || false
 					if (isWriteProtected) {
-						rooIgnoreParsed.push("🛡️ " + filePath)
+						darbotIgnoreParsed.push("🛡️ " + filePath)
 					} else {
-						rooIgnoreParsed.push(filePath)
+						darbotIgnoreParsed.push(filePath)
 					}
 				}
 			}
 		}
 		if (didHitLimit) {
-			return `${rooIgnoreParsed.join(
+			return `${darbotIgnoreParsed.join(
 				"\n",
 			)}\n\n(File list truncated. Use list_files on specific subdirectories if you need to explore further.)`
-		} else if (rooIgnoreParsed.length === 0 || (rooIgnoreParsed.length === 1 && rooIgnoreParsed[0] === "")) {
+		} else if (darbotIgnoreParsed.length === 0 || (darbotIgnoreParsed.length === 1 && darbotIgnoreParsed[0] === "")) {
 			return "No files found."
 		} else {
-			return rooIgnoreParsed.join("\n")
+			return darbotIgnoreParsed.join("\n")
 		}
 	},
 

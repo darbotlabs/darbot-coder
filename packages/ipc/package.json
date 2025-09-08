@@ -1,6 +1,6 @@
 {
 	"name": "@darbot-code/ipc",
-	"description": "IPC server and client for remote Roo Code access.",
+	"description": "IPC server and client for remote darbot-coder access.",
 	"version": "0.0.0",
 	"type": "module",
 	"exports": "./src/index.ts",

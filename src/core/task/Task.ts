@@ -14,9 +14,9 @@ import {
 	type ToolUsage,
 	type ToolName,
 	type ContextCondense,
-	type ClineAsk,
-	type ClineMessage,
-	type ClineSay,
+	type DarbotAsk,
+	type DarbotMessage,
+	type DarbotSay,
 	type ToolProgressStatus,
 	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 	type HistoryItem,
@@ -37,9 +37,9 @@ import { findLastIndex } from "../../shared/array"
 import { combineApiRequests } from "../../shared/combineApiRequests"
 import { combineCommandSequences } from "../../shared/combineCommandSequences"
 import { t } from "../../i18n"
-import { ClineApiReqCancelReason, ClineApiReqInfo } from "../../shared/ExtensionMessage"
+import { DarbotApiReqCancelReason, DarbotApiReqInfo } from "../../shared/ExtensionMessage"
 import { getApiMetrics } from "../../shared/getApiMetrics"
-import { ClineAskResponse } from "../../shared/WebviewMessage"
+import { DarbotAskResponse } from "../../shared/WebviewMessage"
 import { defaultModeSlug } from "../../shared/modes"
 import { DiffStrategy } from "../../shared/tools"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
@@ -55,7 +55,7 @@ import { RepoPerTaskCheckpointService } from "../../services/checkpoints"
 // integrations
 import { DiffViewProvider } from "../../integrations/editor/DiffViewProvider"
 import { findToolName, formatContentBlockToMarkdown } from "../../integrations/misc/export-markdown"
-import { RooTerminalProcess } from "../../integrations/terminal/types"
+import { DarbotTerminalProcess } from "../../integrations/terminal/types"
 import { TerminalRegistry } from "../../integrations/terminal/TerminalRegistry"
 
 // utils
@@ -69,11 +69,11 @@ import { SYSTEM_PROMPT } from "../prompts/system"
 // core modules
 import { ToolRepetitionDetector } from "../tools/ToolRepetitionDetector"
 import { FileContextTracker } from "../context-tracking/FileContextTracker"
-import { RooIgnoreController } from "../ignore/RooIgnoreController"
-import { RooProtectedController } from "../protect/RooProtectedController"
+import { DarbotIgnoreController } from "../ignore/DarbotIgnoreController"
+import { DarbotProtectedController } from "../protect/DarbotProtectedController"
 import { type AssistantMessageContent, parseAssistantMessage, presentAssistantMessage } from "../assistant-message"
 import { truncateConversationIfNeeded } from "../sliding-window"
-import { ClineProvider } from "../webview/ClineProvider"
+import { DarbotProvider } from "../webview/DarbotProvider"
 import { MultiSearchReplaceDiffStrategy } from "../diff/strategies/multi-search-replace"
 import { MultiFileSearchReplaceDiffStrategy } from "../diff/strategies/multi-file-search-replace"
 import { readApiMessages, saveApiMessages, readTaskMessages, saveTaskMessages, taskMetadata } from "../task-persistence"
@@ -95,8 +95,8 @@ import { restoreTodoListForTask } from "../tools/updateTodoListTool"
 // Constants
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
 
-export type ClineEvents = {
-	message: [{ action: "created" | "updated"; message: ClineMessage }]
+export type DarbotEvents = {
+	message: [{ action: "created" | "updated"; message: DarbotMessage }]
 	taskStarted: []
 	taskModeSwitched: [taskId: string, mode: string]
 	taskPaused: []
@@ -110,7 +110,7 @@ export type ClineEvents = {
 }
 
 export type TaskOptions = {
-	provider: ClineProvider
+	provider: DarbotProvider
 	apiConfiguration: ProviderSettings
 	enableDiff?: boolean
 	enableCheckpoints?: boolean
@@ -124,10 +124,10 @@ export type TaskOptions = {
 	rootTask?: Task
 	parentTask?: Task
 	taskNumber?: number
-	onCreated?: (cline: Task) => void
+	onCreated?: (darbot: Task) => void
 }
 
-export class Task extends EventEmitter<ClineEvents> {
+export class Task extends EventEmitter<DarbotEvents> {
 	todoList?: TodoItem[]
 	readonly taskId: string
 	readonly instanceId: string
@@ -137,7 +137,7 @@ export class Task extends EventEmitter<ClineEvents> {
 	readonly taskNumber: number
 	readonly workspacePath: string
 
-	providerRef: WeakRef<ClineProvider>
+	providerRef: WeakRef<DarbotProvider>
 	private readonly globalStoragePath: string
 	abort: boolean = false
 	didFinishAbortingStream = false
@@ -162,11 +162,11 @@ export class Task extends EventEmitter<ClineEvents> {
 	}
 
 	toolRepetitionDetector: ToolRepetitionDetector
-	rooIgnoreController?: RooIgnoreController
-	rooProtectedController?: RooProtectedController
+	darbotIgnoreController?: DarbotIgnoreController
+	darbotProtectedController?: DarbotProtectedController
 	fileContextTracker: FileContextTracker
 	urlContentFetcher: UrlContentFetcher
-	terminalProcess?: RooTerminalProcess
+	terminalProcess?: DarbotTerminalProcess
 
 	// Computer User
 	browserSession: BrowserSession
@@ -192,10 +192,10 @@ export class Task extends EventEmitter<ClineEvents> {
 
 	// LLM Messages & Chat Messages
 	apiConversationHistory: ApiMessage[] = []
-	clineMessages: ClineMessage[] = []
+	darbotMessages: DarbotMessage[] = []
 
 	// Ask
-	private askResponse?: ClineAskResponse
+	private askResponse?: DarbotAskResponse
 	private askResponseText?: string
 	private askResponseImages?: string[]
 	public lastMessageTs?: number
@@ -254,12 +254,12 @@ export class Task extends EventEmitter<ClineEvents> {
 		this.instanceId = crypto.randomUUID().slice(0, 8)
 		this.taskNumber = -1
 
-		this.darbotIgnoreController = new RooIgnoreController(this.cwd)
-		this.darbotProtectedController = new RooProtectedController(this.cwd)
+		this.darbotIgnoreController = new DarbotIgnoreController(this.cwd)
+		this.darbotProtectedController = new DarbotProtectedController(this.cwd)
 		this.fileContextTracker = new FileContextTracker(provider, this.taskId)
 
 		this.darbotIgnoreController.initialize().catch((error) => {
-			console.error("Failed to initialize RooIgnoreController:", error)
+			console.error("Failed to initialize DarbotIgnoreController:", error)
 		})
 
 		this.apiConfiguration = apiConfiguration
@@ -275,7 +275,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		this.diffViewProvider = new DiffViewProvider(this.cwd)
 		this.enableCheckpoints = enableCheckpoints
 
-		this.darbottTask = rootTask
+		this.darbotTask = rootTask
 		this.parentTask = parentTask
 		this.taskNumber = taskNumber
 
@@ -364,18 +364,18 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 	}
 
-	// Cline Messages
+	// darbot Messages
 
-	private async getSavedClineMessages(): Promise<ClineMessage[]> {
+	private async getSavedDarbotMessages(): Promise<DarbotMessage[]> {
 		return readTaskMessages({ taskId: this.taskId, globalStoragePath: this.globalStoragePath })
 	}
 
-	private async addToClineMessages(message: ClineMessage) {
-		this.clineMessages.push(message)
+	private async addToDarbotMessages(message: DarbotMessage) {
+		this.darbotMessages.push(message)
 		const provider = this.providerRef.deref()
 		await provider?.postStateToWebview()
 		this.emit("message", { action: "created", message })
-		await this.saveClineMessages()
+		await this.saveDarbotMessages()
 
 		const shouldCaptureMessage = message.partial !== true && CloudService.isEnabled()
 
@@ -387,15 +387,15 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 	}
 
-	public async overwriteClineMessages(newMessages: ClineMessage[]) {
-		this.clineMessages = newMessages
+	public async overwriteDarbotMessages(newMessages: DarbotMessage[]) {
+		this.darbotMessages = newMessages
 		restoreTodoListForTask(this)
-		await this.saveClineMessages()
+		await this.saveDarbotMessages()
 	}
 
-	private async updateClineMessage(message: ClineMessage) {
+	private async updateDarbotMessage(message: DarbotMessage) {
 		const provider = this.providerRef.deref()
-		await provider?.postMessageToWebview({ type: "messageUpdated", clineMessage: message })
+		await provider?.postMessageToWebview({ type: "messageUpdated", darbotMessage: message })
 		this.emit("message", { action: "updated", message })
 
 		const shouldCaptureMessage = message.partial !== true && CloudService.isEnabled()
@@ -408,16 +408,16 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 	}
 
-	private async saveClineMessages() {
+	private async saveDarbotMessages() {
 		try {
 			await saveTaskMessages({
-				messages: this.clineMessages,
+				messages: this.darbotMessages,
 				taskId: this.taskId,
 				globalStoragePath: this.globalStoragePath,
 			})
 
 			const { historyItem, tokenUsage } = await taskMetadata({
-				messages: this.clineMessages,
+				messages: this.darbotMessages,
 				taskId: this.taskId,
 				taskNumber: this.taskNumber,
 				globalStoragePath: this.globalStoragePath,
@@ -428,7 +428,7 @@ export class Task extends EventEmitter<ClineEvents> {
 
 			await this.providerRef.deref()?.updateTaskHistory(historyItem)
 		} catch (error) {
-			console.error("Failed to save Roo messages:", error)
+			console.error("Failed to save darbot messages:", error)
 		}
 	}
 
@@ -436,18 +436,18 @@ export class Task extends EventEmitter<ClineEvents> {
 	// false (completion of partial message), undefined (individual complete
 	// message).
 	async ask(
-		type: ClineAsk,
+		type: DarbotAsk,
 		text?: string,
 		partial?: boolean,
 		progressStatus?: ToolProgressStatus,
 		isProtected?: boolean,
-	): Promise<{ response: ClineAskResponse; text?: string; images?: string[] }> {
-		// If this Cline instance was aborted by the provider, then the only
+	): Promise<{ response: DarbotAskResponse; text?: string; images?: string[] }> {
+		// If this darbot instance was aborted by the provider, then the only
 		// thing keeping us alive is a promise still running in the background,
 		// in which case we don't want to send its result to the webview as it
-		// is attached to a new instance of Cline now. So we can safely ignore
+		// is attached to a new instance of darbot now. So we can safely ignore
 		// the result of any active promises, and this class will be
-		// deallocated. (Although we set Cline = undefined in provider, that
+		// deallocated. (Although we set darbot = undefined in provider, that
 		// simply removes the reference to this instance, but the instance is
 		// still alive until this promise resolves or rejects.)
 		if (this.abort) {
@@ -457,7 +457,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		let askTs: number
 
 		if (partial !== undefined) {
-			const lastMessage = this.clineMessages.at(-1)
+			const lastMessage = this.darbotMessages.at(-1)
 
 			const isUpdatingPreviousPartial =
 				lastMessage && lastMessage.partial && lastMessage.type === "ask" && lastMessage.ask === type
@@ -473,14 +473,14 @@ export class Task extends EventEmitter<ClineEvents> {
 					// data or one whole message at a time so ignore partial for
 					// saves, and only post parts of partial message instead of
 					// whole array in new listener.
-					this.updateClineMessage(lastMessage)
+					this.updateDarbotMessage(lastMessage)
 					throw new Error("Current ask promise was ignored (#1)")
 				} else {
 					// This is a new partial message, so add it with partial
 					// state.
 					askTs = Date.now()
 					this.lastMessageTs = askTs
-					await this.addToClineMessages({ ts: askTs, type: "ask", ask: type, text, partial, isProtected })
+					await this.addToDarbotMessages({ ts: askTs, type: "ask", ask: type, text, partial, isProtected })
 					throw new Error("Current ask promise was ignored (#2)")
 				}
 			} else {
@@ -508,8 +508,8 @@ export class Task extends EventEmitter<ClineEvents> {
 					lastMessage.partial = false
 					lastMessage.progressStatus = progressStatus
 					lastMessage.isProtected = isProtected
-					await this.saveClineMessages()
-					this.updateClineMessage(lastMessage)
+					await this.saveDarbotMessages()
+					this.updateDarbotMessage(lastMessage)
 				} else {
 					// This is a new and complete message, so add it like normal.
 					this.askResponse = undefined
@@ -517,7 +517,7 @@ export class Task extends EventEmitter<ClineEvents> {
 					this.askResponseImages = undefined
 					askTs = Date.now()
 					this.lastMessageTs = askTs
-					await this.addToClineMessages({ ts: askTs, type: "ask", ask: type, text, isProtected })
+					await this.addToDarbotMessages({ ts: askTs, type: "ask", ask: type, text, isProtected })
 				}
 			}
 		} else {
@@ -527,7 +527,7 @@ export class Task extends EventEmitter<ClineEvents> {
 			this.askResponseImages = undefined
 			askTs = Date.now()
 			this.lastMessageTs = askTs
-			await this.addToClineMessages({ ts: askTs, type: "ask", ask: type, text, isProtected })
+			await this.addToDarbotMessages({ ts: askTs, type: "ask", ask: type, text, isProtected })
 		}
 
 		await pWaitFor(() => this.askResponse !== undefined || this.lastMessageTs !== askTs, { interval: 100 })
@@ -547,7 +547,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		return result
 	}
 
-	async handleWebviewAskResponse(askResponse: ClineAskResponse, text?: string, images?: string[]) {
+	async handleWebviewAskResponse(askResponse: DarbotAskResponse, text?: string, images?: string[]) {
 		this.askResponse = askResponse
 		this.askResponseText = text
 		this.askResponseImages = images
@@ -631,7 +631,7 @@ export class Task extends EventEmitter<ClineEvents> {
 	}
 
 	async say(
-		type: ClineSay,
+		type: DarbotSay,
 		text?: string,
 		images?: string[],
 		partial?: boolean,
@@ -647,7 +647,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 
 		if (partial !== undefined) {
-			const lastMessage = this.clineMessages.at(-1)
+			const lastMessage = this.darbotMessages.at(-1)
 
 			const isUpdatingPreviousPartial =
 				lastMessage && lastMessage.partial && lastMessage.type === "say" && lastMessage.say === type
@@ -659,7 +659,7 @@ export class Task extends EventEmitter<ClineEvents> {
 					lastMessage.images = images
 					lastMessage.partial = partial
 					lastMessage.progressStatus = progressStatus
-					this.updateClineMessage(lastMessage)
+					this.updateDarbotMessage(lastMessage)
 				} else {
 					// This is a new partial message, so add it with partial state.
 					const sayTs = Date.now()
@@ -668,7 +668,7 @@ export class Task extends EventEmitter<ClineEvents> {
 						this.lastMessageTs = sayTs
 					}
 
-					await this.addToClineMessages({
+					await this.addToDarbotMessages({
 						ts: sayTs,
 						type: "say",
 						say: type,
@@ -694,10 +694,10 @@ export class Task extends EventEmitter<ClineEvents> {
 
 					// Instead of streaming partialMessage events, we do a save
 					// and post like normal to persist to disk.
-					await this.saveClineMessages()
+					await this.saveDarbotMessages()
 
 					// More performant than an entire `postStateToWebview`.
-					this.updateClineMessage(lastMessage)
+					this.updateDarbotMessage(lastMessage)
 				} else {
 					// This is a new and complete message, so add it like normal.
 					const sayTs = Date.now()
@@ -706,7 +706,7 @@ export class Task extends EventEmitter<ClineEvents> {
 						this.lastMessageTs = sayTs
 					}
 
-					await this.addToClineMessages({ ts: sayTs, type: "say", say: type, text, images, contextCondense })
+					await this.addToDarbotMessages({ ts: sayTs, type: "say", say: type, text, images, contextCondense })
 				}
 			}
 		} else {
@@ -721,7 +721,7 @@ export class Task extends EventEmitter<ClineEvents> {
 				this.lastMessageTs = sayTs
 			}
 
-			await this.addToClineMessages({
+			await this.addToDarbotMessages({
 				ts: sayTs,
 				type: "say",
 				say: type,
@@ -736,7 +736,7 @@ export class Task extends EventEmitter<ClineEvents> {
 	async sayAndCreateMissingParamError(toolName: ToolName, paramName: string, relPath?: string) {
 		await this.say(
 			"error",
-			`Roo tried to use ${toolName}${
+			`darbot tried to use ${toolName}${
 				relPath ? ` for '${relPath.toPosix()}'` : ""
 			} without value for required parameter '${paramName}'. Retrying...`,
 		)
@@ -746,13 +746,13 @@ export class Task extends EventEmitter<ClineEvents> {
 	// Start / Abort / Resume
 
 	private async startTask(task?: string, images?: string[]): Promise<void> {
-		// `conversationHistory` (for API) and `clineMessages` (for webview)
+		// `conversationHistory` (for API) and `darbotMessages` (for webview)
 		// need to be in sync.
 		// If the extension process were killed, then on restart the
-		// `clineMessages` might not be empty, so we need to set it to [] when
-		// we create a new Cline client (otherwise webview would show stale
+		// `darbotMessages` might not be empty, so we need to set it to [] when
+		// we create a new Darbot client (otherwise webview would show stale
 		// messages from previous session).
-		this.clineMessages = []
+		this.darbotMessages = []
 		this.apiConversationHistory = []
 		await this.providerRef.deref()?.postStateToWebview()
 
@@ -773,7 +773,7 @@ export class Task extends EventEmitter<ClineEvents> {
 	}
 
 	public async resumePausedTask(lastMessage: string) {
-		// Release this Cline instance from paused state.
+		// Release this darbot instance from paused state.
 		this.isPaused = false
 		this.emit("taskUnpaused")
 
@@ -797,36 +797,36 @@ export class Task extends EventEmitter<ClineEvents> {
 	}
 
 	private async resumeTaskFromHistory() {
-		const modifiedClineMessages = await this.getSavedClineMessages()
+		const modifiedDarbotMessages = await this.getSavedDarbotMessages()
 
 		// Remove any resume messages that may have been added before
 		const lastRelevantMessageIndex = findLastIndex(
-			modifiedClineMessages,
+			modifiedDarbotMessages,
 			(m) => !(m.ask === "resume_task" || m.ask === "resume_completed_task"),
 		)
 
 		if (lastRelevantMessageIndex !== -1) {
-			modifiedClineMessages.splice(lastRelevantMessageIndex + 1)
+			modifiedDarbotMessages.splice(lastRelevantMessageIndex + 1)
 		}
 
 		// since we don't use api_req_finished anymore, we need to check if the last api_req_started has a cost value, if it doesn't and no cancellation reason to present, then we remove it since it indicates an api request without any partial content streamed
 		const lastApiReqStartedIndex = findLastIndex(
-			modifiedClineMessages,
+			modifiedDarbotMessages,
 			(m) => m.type === "say" && m.say === "api_req_started",
 		)
 
 		if (lastApiReqStartedIndex !== -1) {
-			const lastApiReqStarted = modifiedClineMessages[lastApiReqStartedIndex]
-			const { cost, cancelReason }: ClineApiReqInfo = JSON.parse(lastApiReqStarted.text || "{}")
+			const lastApiReqStarted = modifiedDarbotMessages[lastApiReqStartedIndex]
+			const { cost, cancelReason }: DarbotApiReqInfo = JSON.parse(lastApiReqStarted.text || "{}")
 			if (cost === undefined && cancelReason === undefined) {
-				modifiedClineMessages.splice(lastApiReqStartedIndex, 1)
+				modifiedDarbotMessages.splice(lastApiReqStartedIndex, 1)
 			}
 		}
 
-		await this.overwriteClineMessages(modifiedClineMessages)
-		this.clineMessages = await this.getSavedClineMessages()
+		await this.overwriteDarbotMessages(modifiedDarbotMessages)
+		this.darbotMessages = await this.getSavedDarbotMessages()
 
-		// Now present the cline messages to the user and ask if they want to
+		// Now present the darbot messages to the user and ask if they want to
 		// resume (NOTE: we ran into a bug before where the
 		// apiConversationHistory wouldn't be initialized when opening a old
 		// task, and it was because we were waiting for resume).
@@ -834,13 +834,13 @@ export class Task extends EventEmitter<ClineEvents> {
 		// the task first.
 		this.apiConversationHistory = await this.getSavedApiConversationHistory()
 
-		const lastClineMessage = this.clineMessages
+		const lastDarbotMessage = this.darbotMessages
 			.slice()
 			.reverse()
 			.find((m) => !(m.ask === "resume_task" || m.ask === "resume_completed_task")) // could be multiple resume tasks
 
-		let askType: ClineAsk
-		if (lastClineMessage?.ask === "completion_result") {
+		let askType: DarbotAsk
+		if (lastDarbotMessage?.ask === "completion_result") {
 			askType = "resume_completed_task"
 		} else {
 			askType = "resume_task"
@@ -858,7 +858,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 
 		// Make sure that the api conversation history can be resumed by the API,
-		// even if it goes out of sync with cline messages.
+		// even if it goes out of sync with darbot messages.
 		let existingApiConversationHistory: ApiMessage[] = await this.getSavedApiConversationHistory()
 
 		// v2.0 xml tags refactor caveat: since we don't use tools anymore, we need to replace all tool use blocks with a text block since the API disallows conversations with tool uses and no tool schema
@@ -981,7 +981,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		let newUserContent: Anthropic.Messages.ContentBlockParam[] = [...modifiedOldUserContent]
 
 		const agoText = ((): string => {
-			const timestamp = lastClineMessage?.ts ?? Date.now()
+			const timestamp = lastDarbotMessage?.ts ?? Date.now()
 			const now = Date.now()
 			const diff = now - timestamp
 			const minutes = Math.floor(diff / 60000)
@@ -1007,7 +1007,7 @@ export class Task extends EventEmitter<ClineEvents> {
 			newUserContent.splice(lastTaskResumptionIndex, newUserContent.length - lastTaskResumptionIndex)
 		}
 
-		const wasRecent = lastClineMessage?.ts && Date.now() - lastClineMessage.ts < 30_000
+		const wasRecent = lastDarbotMessage?.ts && Date.now() - lastDarbotMessage.ts < 30_000
 
 		newUserContent.push({
 			type: "text",
@@ -1066,7 +1066,7 @@ export class Task extends EventEmitter<ClineEvents> {
 				this.darbotIgnoreController = undefined
 			}
 		} catch (error) {
-			console.error("Error disposing RooIgnoreController:", error)
+			console.error("Error disposing DarbotIgnoreController:", error)
 			// This is the critical one for the leak fix
 		}
 
@@ -1106,7 +1106,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		// Save the countdown message in the automatic retry or other content.
 		try {
 			// Save the countdown message in the automatic retry or other content.
-			await this.saveClineMessages()
+			await this.saveDarbotMessages()
 		} catch (error) {
 			console.error(`Error saving messages during abort for task ${this.taskId}.${this.instanceId}:`, error)
 		}
@@ -1140,10 +1140,10 @@ export class Task extends EventEmitter<ClineEvents> {
 		this.emit("taskStarted")
 
 		while (!this.abort) {
-			const didEndLoop = await this.recursivelyMakeClineRequests(nextUserContent, includeFileDetails)
+			const didEndLoop = await this.recursivelyMakeDarbotRequests(nextUserContent, includeFileDetails)
 			includeFileDetails = false // we only need file details the first time
 
-			// The way this agentic loop works is that cline will be given a
+			// The way this agentic loop works is that darbot will be given a
 			// task that he then calls tools to complete. Unless there's an
 			// attempt_completion call, we keep responding back to him with his
 			// tool's responses until he either attempt_completion or does not
@@ -1151,7 +1151,7 @@ export class Task extends EventEmitter<ClineEvents> {
 			// to consider if he's completed the task and then call
 			// attempt_completion, otherwise proceed with completing the task.
 			// There is a MAX_REQUESTS_PER_TASK limit to prevent infinite
-			// requests, but Cline is prompted to finish the task as efficiently
+			// requests, but darbot is prompted to finish the task as efficiently
 			// as he can.
 
 			if (didEndLoop) {
@@ -1165,12 +1165,12 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 	}
 
-	public async recursivelyMakeClineRequests(
+	public async recursivelyMakeDarbotRequests(
 		userContent: Anthropic.Messages.ContentBlockParam[],
 		includeFileDetails: boolean = false,
 	): Promise<boolean> {
 		if (this.abort) {
-			throw new Error(`[DarbotCode#recursivelyMakeRooRequests] task ${this.taskId}.${this.instanceId} aborted`)
+			throw new Error(`[DarbotCode#recursivelyMakeDarbotRequests] task ${this.taskId}.${this.instanceId} aborted`)
 		}
 
 		if (this.consecutiveMistakeLimit > 0 && this.consecutiveMistakeCount >= this.consecutiveMistakeLimit) {
@@ -1196,7 +1196,7 @@ export class Task extends EventEmitter<ClineEvents> {
 			this.consecutiveMistakeCount = 0
 		}
 
-		// In this Cline request loop, we need to check if this task instance
+		// In this darbot request loop, we need to check if this task instance
 		// has been asked to wait for a subtask to finish before continuing.
 		const provider = this.providerRef.deref()
 
@@ -1237,15 +1237,15 @@ export class Task extends EventEmitter<ClineEvents> {
 			}),
 		)
 
-		const { showRooIgnoredFiles = true } = (await this.providerRef.deref()?.getState()) ?? {}
+		const { showDarbotIgnoredFiles = true } = (await this.providerRef.deref()?.getState()) ?? {}
 
 		const parsedUserContent = await processUserContentMentions({
 			userContent,
 			cwd: this.cwd,
 			urlContentFetcher: this.urlContentFetcher,
 			fileContextTracker: this.fileContextTracker,
-			rooIgnoreController: this.darbotIgnoreController,
-			showRooIgnoredFiles,
+			darbotIgnoreController: this.darbotIgnoreController,
+			showDarbotIgnoredFiles,
 		})
 
 		const environmentDetails = await getEnvironmentDetails(this, includeFileDetails)
@@ -1261,14 +1261,14 @@ export class Task extends EventEmitter<ClineEvents> {
 		// webview while waiting to actually start the API request (to load
 		// potential details for example), we need to update the text of that
 		// message.
-		const lastApiReqIndex = findLastIndex(this.clineMessages, (m) => m.say === "api_req_started")
+		const lastApiReqIndex = findLastIndex(this.darbotMessages, (m) => m.say === "api_req_started")
 
-		this.clineMessages[lastApiReqIndex].text = JSON.stringify({
+		this.darbotMessages[lastApiReqIndex].text = JSON.stringify({
 			request: finalUserContent.map((block) => formatContentBlockToMarkdown(block)).join("\n\n"),
 			apiProtocol,
-		} satisfies ClineApiReqInfo)
+		} satisfies DarbotApiReqInfo)
 
-		await this.saveClineMessages()
+		await this.saveDarbotMessages()
 		await provider?.postStateToWebview()
 
 		try {
@@ -1285,9 +1285,9 @@ export class Task extends EventEmitter<ClineEvents> {
 			// anyways, so it remains solely for legacy purposes to keep track
 			// of prices in tasks from history (it's worth removing a few months
 			// from now).
-			const updateApiReqMsg = (cancelReason?: ClineApiReqCancelReason, streamingFailedMessage?: string) => {
-				const existingData = JSON.parse(this.clineMessages[lastApiReqIndex].text || "{}")
-				this.clineMessages[lastApiReqIndex].text = JSON.stringify({
+			const updateApiReqMsg = (cancelReason?: DarbotApiReqCancelReason, streamingFailedMessage?: string) => {
+				const existingData = JSON.parse(this.darbotMessages[lastApiReqIndex].text || "{}")
+				this.darbotMessages[lastApiReqIndex].text = JSON.stringify({
 					...existingData,
 					tokensIn: inputTokens,
 					tokensOut: outputTokens,
@@ -1304,23 +1304,23 @@ export class Task extends EventEmitter<ClineEvents> {
 						),
 					cancelReason,
 					streamingFailedMessage,
-				} satisfies ClineApiReqInfo)
+				} satisfies DarbotApiReqInfo)
 			}
 
-			const abortStream = async (cancelReason: ClineApiReqCancelReason, streamingFailedMessage?: string) => {
+			const abortStream = async (cancelReason: DarbotApiReqCancelReason, streamingFailedMessage?: string) => {
 				if (this.diffViewProvider.isEditing) {
 					await this.diffViewProvider.revertChanges() // closes diff view
 				}
 
 				// if last message is a partial we need to update and save it
-				const lastMessage = this.clineMessages.at(-1)
+				const lastMessage = this.darbotMessages.at(-1)
 
 				if (lastMessage && lastMessage.partial) {
 					// lastMessage.ts = Date.now() DO NOT update ts since it is used as a key for virtuoso list
 					lastMessage.partial = false
 					// instead of streaming partialMessage events, we do a save and post like normal to persist to disk
 					console.log("updating partial message", lastMessage)
-					// await this.saveClineMessages()
+					// await this.saveDarbotMessages()
 				}
 
 				// Let assistant know their response was interrupted for when task is resumed
@@ -1343,7 +1343,7 @@ export class Task extends EventEmitter<ClineEvents> {
 				// Update `api_req_started` to have cancelled and cost, so that
 				// we can display the cost of the partial stream.
 				updateApiReqMsg(cancelReason, streamingFailedMessage)
-				await this.saveClineMessages()
+				await this.saveDarbotMessages()
 
 				// Signals to provider that it can retrieve the saved messages
 				// from disk, as abortTask can not be awaited on in nature.
@@ -1417,7 +1417,7 @@ export class Task extends EventEmitter<ClineEvents> {
 							// Only need to gracefully abort if this instance
 							// isn't abandoned (sometimes OpenRouter stream
 							// hangs, in which case this would affect future
-							// instances of Cline).
+							// instances of darbot).
 							await abortStream("user_cancelled")
 						}
 
@@ -1447,7 +1447,7 @@ export class Task extends EventEmitter<ClineEvents> {
 				}
 			} catch (error) {
 				// Abandoned happens when extension is no longer waiting for the
-				// Cline instance to finish aborting (error is thrown here when
+				// darbot instance to finish aborting (error is thrown here when
 				// any function in the for loop throws due to this.abort).
 				if (!this.abandoned) {
 					// If the stream failed, there's various states the task
@@ -1469,7 +1469,7 @@ export class Task extends EventEmitter<ClineEvents> {
 					const history = await provider?.getTaskWithId(this.taskId)
 
 					if (history) {
-						await provider?.initClineWithHistoryItem(history.historyItem)
+						await provider?.initDarbotWithHistoryItem(history.historyItem)
 					}
 				}
 			} finally {
@@ -1496,7 +1496,7 @@ export class Task extends EventEmitter<ClineEvents> {
 
 			// Need to call here in case the stream was aborted.
 			if (this.abort || this.abandoned) {
-				throw new Error(`[DarbotCode#recursivelyMakeRooRequests] task ${this.taskId}.${this.instanceId} aborted`)
+				throw new Error(`[DarbotCode#recursivelyMakeDarbotRequests] task ${this.taskId}.${this.instanceId} aborted`)
 			}
 
 			this.didCompleteReadingStream = true
@@ -1524,7 +1524,7 @@ export class Task extends EventEmitter<ClineEvents> {
 			}
 
 			updateApiReqMsg()
-			await this.saveClineMessages()
+			await this.saveDarbotMessages()
 			await this.providerRef.deref()?.postStateToWebview()
 
 			// Now add to apiConversationHistory.
@@ -1568,7 +1568,7 @@ export class Task extends EventEmitter<ClineEvents> {
 					this.consecutiveMistakeCount++
 				}
 
-				const recDidEndLoop = await this.recursivelyMakeClineRequests(this.userMessageContent)
+				const recDidEndLoop = await this.recursivelyMakeDarbotRequests(this.userMessageContent)
 				didEndLoop = recDidEndLoop
 			} else {
 				// If there's no assistant_responses, that means we got no text
@@ -1620,7 +1620,7 @@ export class Task extends EventEmitter<ClineEvents> {
 			})
 		}
 
-		const rooIgnoreInstructions = this.darbotIgnoreController?.getInstructions()
+		const darbotIgnoreInstructions = this.darbotIgnoreController?.getInstructions()
 
 		const state = await this.providerRef.deref()?.getState()
 
@@ -1660,7 +1660,7 @@ export class Task extends EventEmitter<ClineEvents> {
 				experiments,
 				enableMcpServerCreation,
 				language,
-				rooIgnoreInstructions,
+				darbotIgnoreInstructions,
 				maxReadFileLine !== -1,
 				{
 					maxConcurrentFileReads,
@@ -1921,12 +1921,12 @@ export class Task extends EventEmitter<ClineEvents> {
 
 	// Metrics
 
-	public combineMessages(messages: ClineMessage[]) {
+	public combineMessages(messages: DarbotMessage[]) {
 		return combineApiRequests(combineCommandSequences(messages))
 	}
 
 	public getTokenUsage(): TokenUsage {
-		return getApiMetrics(this.combineMessages(this.clineMessages.slice(1)))
+		return getApiMetrics(this.combineMessages(this.darbotMessages.slice(1)))
 	}
 
 	public recordToolUsage(toolName: ToolName) {
@@ -2187,3 +2187,5 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 	}
 }
+
+

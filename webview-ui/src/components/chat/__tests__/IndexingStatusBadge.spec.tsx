@@ -69,7 +69,7 @@ vi.mock("@/hooks/useTooltip", () => ({
 vi.mock("@/context/ExtensionStateContext", () => ({
 	useExtensionState: () => ({
 		version: "1.0.0",
-		clineMessages: [],
+		darbotMessages: [],
 		taskHistory: [],
 		shouldShowAnnouncement: false,
 		language: "en",

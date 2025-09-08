@@ -64,7 +64,7 @@ export interface ExtensionStateContextType extends ExtensionState {
 	setAlwaysAllowModeSwitch: (value: boolean) => void
 	setAlwaysAllowSubtasks: (value: boolean) => void
 	setBrowserToolEnabled: (value: boolean) => void
-	setShowRooIgnoredFiles: (value: boolean) => void
+	setShowDarbotIgnoredFiles: (value: boolean) => void
 	setShowAnnouncement: (value: boolean) => void
 	setAllowedCommands: (value: string[]) => void
 	setDeniedCommands: (value: string[]) => void
@@ -161,7 +161,7 @@ export const mergeExtensionState = (prevState: ExtensionState, newState: Extensi
 export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [state, setState] = useState<ExtensionState & { organizationAllowList?: OrganizationAllowList }>({
 		version: "",
-		clineMessages: [],
+		darbotMessages: [],
 		taskHistory: [],
 		shouldShowAnnouncement: false,
 		allowedCommands: [],
@@ -201,7 +201,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		cwd: "",
 		browserToolEnabled: true,
 		telemetrySetting: "unset",
-		showRooIgnoredFiles: true, // Default to showing .rooignore'd files with lock symbol (current behavior).
+		showDarbotIgnoredFiles: true, // Default to showing .darbotignore'd files with lock symbol (current behavior).
 		renderContext: "sidebar",
 		maxReadFileLine: -1, // Default max read file line limit
 		pinnedApiConfigs: {}, // Empty object for pinned API configs
@@ -303,14 +303,14 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 					break
 				}
 				case "messageUpdated": {
-					const clineMessage = message.clineMessage!
+					const darbotMessage = message.darbotMessage!
 					setState((prevState) => {
 						// worth noting it will never be possible for a more up-to-date message to be sent here or in normal messages post since the presentAssistantContent function uses lock
-						const lastIndex = findLastIndex(prevState.clineMessages, (msg) => msg.ts === clineMessage.ts)
+						const lastIndex = findLastIndex(prevState.darbotMessages, (msg) => msg.ts === darbotMessage.ts)
 						if (lastIndex !== -1) {
-							const newClineMessages = [...prevState.clineMessages]
-							newClineMessages[lastIndex] = clineMessage
-							return { ...prevState, clineMessages: newClineMessages }
+							const newDarbotMessages = [...prevState.darbotMessages]
+							newDarbotMessages[lastIndex] = darbotMessage
+							return { ...prevState, darbotMessages: newDarbotMessages }
 						}
 						return prevState
 					})
@@ -438,7 +438,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		setMaxWorkspaceFiles: (value) => setState((prevState) => ({ ...prevState, maxWorkspaceFiles: value })),
 		setBrowserToolEnabled: (value) => setState((prevState) => ({ ...prevState, browserToolEnabled: value })),
 		setTelemetrySetting: (value) => setState((prevState) => ({ ...prevState, telemetrySetting: value })),
-		setShowRooIgnoredFiles: (value) => setState((prevState) => ({ ...prevState, showRooIgnoredFiles: value })),
+		setShowDarbotIgnoredFiles: (value) => setState((prevState) => ({ ...prevState, showDarbotIgnoredFiles: value })),
 		setRemoteBrowserEnabled: (value) => setState((prevState) => ({ ...prevState, remoteBrowserEnabled: value })),
 		setAwsUsePromptCache: (value) => setState((prevState) => ({ ...prevState, awsUsePromptCache: value })),
 		setMaxReadFileLine: (value) => setState((prevState) => ({ ...prevState, maxReadFileLine: value })),

@@ -57,7 +57,7 @@
         4. Impact on system architecture
         5. Consistency with architectural patterns
         
-        Save your findings to: .roo/temp/pr-[PR_NUMBER]/architecture-review.md
+        Save your findings to: .darbot/temp/pr-[PR_NUMBER]/architecture-review.md
         
         Format as:
         ## Architecture Review for PR #[PR_NUMBER]
@@ -88,7 +88,7 @@
         
         Compare with similar existing tests in the codebase.
         
-        Save analysis to: .roo/temp/pr-[PR_NUMBER]/test-analysis.md
+        Save analysis to: .darbot/temp/pr-[PR_NUMBER]/test-analysis.md
         
         Format as:
         ## Test Analysis for PR #[PR_NUMBER]
@@ -117,7 +117,7 @@
         4. i18n implementation
         5. Component reusability
         
-        Save findings to: .roo/temp/pr-[PR_NUMBER]/ui-review.md
+        Save findings to: .darbot/temp/pr-[PR_NUMBER]/ui-review.md
       </task_template>
     </strategy>
   </delegation_strategies>
@@ -125,7 +125,7 @@
   <context_preservation>
     <principle name="use_temp_files">
       <description>Always save delegation results to temp files</description>
-      <pattern>.roo/temp/pr-[PR_NUMBER]/[analysis-type].md</pattern>
+      <pattern>.darbot/temp/pr-[PR_NUMBER]/[analysis-type].md</pattern>
     </principle>
 
     <principle name="structured_output">

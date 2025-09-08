@@ -4,16 +4,16 @@ import debounce from "debounce"
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso"
 import removeMd from "remove-markdown"
 import { Trans } from "react-i18next"
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeButton } from "../vscode-components"
 import useSound from "use-sound"
 import { LRUCache } from "lru-cache"
 
 import { useDebounceEffect } from "@src/utils/useDebounceEffect"
 import { appendImages } from "@src/utils/imageUtils"
 
-import type { ClineAsk, ClineMessage } from "@darbot-code/types"
+import type { DarbotAsk, DarbotMessage } from "@darbot-code/types"
 
-import { ClineSayBrowserAction, ClineSayTool, ExtensionMessage } from "@darbot/ExtensionMessage"
+import { DarbotSayBrowserAction, DarbotSayTool, ExtensionMessage } from "@darbot/ExtensionMessage"
 import { McpServer, McpTool } from "@darbot/mcp"
 import { findLast } from "@darbot/array"
 import { FollowUpData, SuggestionItem } from "@darbot-code/types"
@@ -36,8 +36,8 @@ import { buildDocLink } from "@src/utils/docLinks"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { useSelectedModel } from "@src/components/ui/hooks/useSelectedModel"
-import RooHero from "@src/components/welcome/RooHero"
-import RooTips from "@src/components/welcome/RooTips"
+import DarbotHero from "@src/components/welcome/DarbotHero"
+import DarbotTips from "@src/components/welcome/DarbotTips"
 import { StandardTooltip } from "@src/components/ui"
 import { useAutoApprovalState } from "@src/hooks/useAutoApprovalState"
 import { useAutoApprovalToggles } from "@src/hooks/useAutoApprovalToggles"
@@ -84,7 +84,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const { t: tSettings } = useTranslation("settings")
 	const modeShortcutText = `${isMac ? "⌘" : "Ctrl"} + . ${t("chat:forNextMode")}, ${isMac ? "⌘" : "Ctrl"} + Shift + . ${t("chat:forPreviousMode")}`
 	const {
-		clineMessages: messages,
+		darbotMessages: messages,
 		currentTaskItem,
 		taskHistory,
 		apiConfiguration,
@@ -138,7 +138,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	// Leaving this less safe version here since if the first message is not a
 	// task, then the extension is in a bad state and needs to be debugged (see
-	// Cline.abort).
+	// Darbot.abort).
 	const task = useMemo(() => messages.at(0), [messages])
 
 	const latestTodos = useMemo(() => {
@@ -156,7 +156,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const [selectedImages, setSelectedImages] = useState<string[]>([])
 
 	// we need to hold on to the ask because useEffect > lastMessage will always let us know when an ask comes in and handle it, but by the time handleMessage is called, the last message might not be the ask anymore (it could be a say that followed)
-	const [clineAsk, setClineAsk] = useState<ClineAsk | undefined>(undefined)
+	const [darbotAsk, setDarbotAsk] = useState<DarbotAsk | undefined>(undefined)
 	const [enableButtons, setEnableButtons] = useState<boolean>(false)
 	const [primaryButtonText, setPrimaryButtonText] = useState<string | undefined>(undefined)
 	const [secondaryButtonText, setSecondaryButtonText] = useState<string | undefined>(undefined)
@@ -183,10 +183,10 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const userRespondedRef = useRef<boolean>(false)
 	const [currentFollowUpTs, setCurrentFollowUpTs] = useState<number | null>(null)
 
-	const clineAskRef = useRef(clineAsk)
+	const darbotAskRef = useRef(darbotAsk)
 	useEffect(() => {
-		clineAskRef.current = clineAsk
-	}, [clineAsk])
+		darbotAskRef.current = darbotAsk
+	}, [darbotAsk])
 
 	useEffect(() => {
 		isMountedRef.current = true
@@ -258,7 +258,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						case "api_req_failed":
 							playSound("progress_loop")
 							setSendingDisabled(true)
-							setClineAsk("api_req_failed")
+							setDarbotAsk("api_req_failed")
 							setEnableButtons(true)
 							setPrimaryButtonText(t("chat:retry.title"))
 							setSecondaryButtonText(t("chat:startNewTask.title"))
@@ -266,7 +266,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						case "mistake_limit_reached":
 							playSound("progress_loop")
 							setSendingDisabled(false)
-							setClineAsk("mistake_limit_reached")
+							setDarbotAsk("mistake_limit_reached")
 							setEnableButtons(true)
 							setPrimaryButtonText(t("chat:proceedAnyways.title"))
 							setSecondaryButtonText(t("chat:startNewTask.title"))
@@ -276,7 +276,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								playSound("notification")
 							}
 							setSendingDisabled(isPartial)
-							setClineAsk("followup")
+							setDarbotAsk("followup")
 							// setting enable buttons to `false` would trigger a focus grab when
 							// the text area is enabled which is undesirable.
 							// We have no buttons for this tool, so no problem having them "enabled"
@@ -290,9 +290,9 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								playSound("notification")
 							}
 							setSendingDisabled(isPartial)
-							setClineAsk("tool")
+							setDarbotAsk("tool")
 							setEnableButtons(!isPartial)
-							const tool = JSON.parse(lastMessage.text || "{}") as ClineSayTool
+							const tool = JSON.parse(lastMessage.text || "{}") as DarbotSayTool
 							switch (tool.tool) {
 								case "editedExistingFile":
 								case "appliedDiff":
@@ -325,7 +325,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								playSound("notification")
 							}
 							setSendingDisabled(isPartial)
-							setClineAsk("browser_action_launch")
+							setDarbotAsk("browser_action_launch")
 							setEnableButtons(!isPartial)
 							setPrimaryButtonText(t("chat:approve.title"))
 							setSecondaryButtonText(t("chat:reject.title"))
@@ -335,14 +335,14 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								playSound("notification")
 							}
 							setSendingDisabled(isPartial)
-							setClineAsk("command")
+							setDarbotAsk("command")
 							setEnableButtons(!isPartial)
 							setPrimaryButtonText(t("chat:runCommand.title"))
 							setSecondaryButtonText(t("chat:reject.title"))
 							break
 						case "command_output":
 							setSendingDisabled(false)
-							setClineAsk("command_output")
+							setDarbotAsk("command_output")
 							setEnableButtons(true)
 							setPrimaryButtonText(t("chat:proceedWhileRunning.title"))
 							setSecondaryButtonText(t("chat:killCommand.title"))
@@ -352,7 +352,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								playSound("notification")
 							}
 							setSendingDisabled(isPartial)
-							setClineAsk("use_mcp_server")
+							setDarbotAsk("use_mcp_server")
 							setEnableButtons(!isPartial)
 							setPrimaryButtonText(t("chat:approve.title"))
 							setSecondaryButtonText(t("chat:reject.title"))
@@ -363,14 +363,14 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								playSound("celebration")
 							}
 							setSendingDisabled(isPartial)
-							setClineAsk("completion_result")
+							setDarbotAsk("completion_result")
 							setEnableButtons(!isPartial)
 							setPrimaryButtonText(t("chat:startNewTask.title"))
 							setSecondaryButtonText(undefined)
 							break
 						case "resume_task":
 							setSendingDisabled(false)
-							setClineAsk("resume_task")
+							setDarbotAsk("resume_task")
 							setEnableButtons(true)
 							setPrimaryButtonText(t("chat:resumeTask.title"))
 							setSecondaryButtonText(t("chat:terminate.title"))
@@ -378,7 +378,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							break
 						case "resume_completed_task":
 							setSendingDisabled(false)
-							setClineAsk("resume_completed_task")
+							setDarbotAsk("resume_completed_task")
 							setEnableButtons(true)
 							setPrimaryButtonText(t("chat:startNewTask.title"))
 							setSecondaryButtonText(undefined)
@@ -397,7 +397,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							if (secondLastMessage?.ask === "command_output") {
 								setSendingDisabled(true)
 								setSelectedImages([])
-								setClineAsk(undefined)
+								setDarbotAsk(undefined)
 								setEnableButtons(false)
 							}
 							break
@@ -420,7 +420,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	useEffect(() => {
 		if (messages.length === 0) {
 			setSendingDisabled(false)
-			setClineAsk(undefined)
+			setDarbotAsk(undefined)
 			setEnableButtons(false)
 			setPrimaryButtonText(undefined)
 			setSecondaryButtonText(undefined)
@@ -470,8 +470,8 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	}, [expandedRows])
 
 	const isStreaming = useMemo(() => {
-		// Checking clineAsk isn't enough since messages effect may be called
-		// again for a tool for example, set clineAsk to its value, and if the
+		// Checking darbotAsk isn't enough since messages effect may be called
+		// again for a tool for example, set darbotAsk to its value, and if the
 		// next message is not an ask then it doesn't reset. This is likely due
 		// to how much more often we're updating messages as compared to before,
 		// and should be resolved with optimizations as it's likely a rendering
@@ -480,7 +480,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		const isLastAsk = !!modifiedMessages.at(-1)?.ask
 
 		const isToolCurrentlyAsking =
-			isLastAsk && clineAsk !== undefined && enableButtons && primaryButtonText !== undefined
+			isLastAsk && darbotAsk !== undefined && enableButtons && primaryButtonText !== undefined
 
 		if (isToolCurrentlyAsking) {
 			return false
@@ -508,7 +508,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		}
 
 		return false
-	}, [modifiedMessages, clineAsk, enableButtons, primaryButtonText])
+	}, [modifiedMessages, darbotAsk, enableButtons, primaryButtonText])
 
 	const markFollowUpAsAnswered = useCallback(() => {
 		const lastFollowUpMessage = messagesRef.current.findLast((msg) => msg.ask === "followup")
@@ -530,7 +530,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		setInputValue("")
 		setSendingDisabled(true)
 		setSelectedImages([])
-		setClineAsk(undefined)
+		setDarbotAsk(undefined)
 		setEnableButtons(false)
 		// Do not reset mode here as it should persist.
 		// setPrimaryButtonText(undefined)
@@ -548,14 +548,14 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 				if (messagesRef.current.length === 0) {
 					vscode.postMessage({ type: "newTask", text, images })
-				} else if (clineAskRef.current) {
-					if (clineAskRef.current === "followup") {
+				} else if (darbotAskRef.current) {
+					if (darbotAskRef.current === "followup") {
 						markFollowUpAsAnswered()
 					}
 
-					// Use clineAskRef.current
+					// Use darbotAskRef.current
 					switch (
-						clineAskRef.current // Use clineAskRef.current
+						darbotAskRef.current // Use darbotAskRef.current
 					) {
 						case "followup":
 						case "tool":
@@ -576,7 +576,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				handleChatReset()
 			}
 		},
-		[handleChatReset, markFollowUpAsAnswered], // messagesRef and clineAskRef are stable
+		[handleChatReset, markFollowUpAsAnswered], // messagesRef and darbotAskRef are stable
 	)
 
 	const handleSetChatBoxMessage = useCallback(
@@ -596,7 +596,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	const startNewTask = useCallback(() => vscode.postMessage({ type: "clearTask" }), [])
 
-	// This logic depends on the useEffect[messages] above to set clineAsk,
+	// This logic depends on the useEffect[messages] above to set darbotAsk,
 	// after which buttons are shown and we then send an askResponse to the
 	// extension.
 	const handlePrimaryButtonClick = useCallback(
@@ -606,7 +606,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 			const trimmedInput = text?.trim()
 
-			switch (clineAsk) {
+			switch (darbotAsk) {
 				case "api_req_failed":
 				case "command":
 				case "tool":
@@ -640,10 +640,10 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			}
 
 			setSendingDisabled(true)
-			setClineAsk(undefined)
+			setDarbotAsk(undefined)
 			setEnableButtons(false)
 		},
-		[clineAsk, startNewTask],
+		[darbotAsk, startNewTask],
 	)
 
 	const handleSecondaryButtonClick = useCallback(
@@ -659,7 +659,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				return
 			}
 
-			switch (clineAsk) {
+			switch (darbotAsk) {
 				case "api_req_failed":
 				case "mistake_limit_reached":
 				case "resume_task":
@@ -690,10 +690,10 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					break
 			}
 			setSendingDisabled(true)
-			setClineAsk(undefined)
+			setDarbotAsk(undefined)
 			setEnableButtons(false)
 		},
-		[clineAsk, startNewTask, isStreaming],
+		[darbotAsk, startNewTask, isStreaming],
 	)
 
 	const handleTaskCloseButtonClick = useCallback(() => startNewTask(), [startNewTask])
@@ -797,7 +797,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			if (everVisibleMessagesTsRef.current.has(message.ts)) {
 				// If it was ever visible, and it's not one of the types that should always be hidden once processed, keep it.
 				// This helps prevent flickering for messages like 'api_req_retry_delayed' if they are no longer the absolute last.
-				const alwaysHiddenOnceProcessedAsk: ClineAsk[] = [
+				const alwaysHiddenOnceProcessedAsk: DarbotAsk[] = [
 					"api_req_failed",
 					"resume_task",
 					"resume_completed_task",
@@ -857,7 +857,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		return newVisibleMessages
 	}, [modifiedMessages])
 
-	const isReadOnlyToolAction = useCallback((message: ClineMessage | undefined) => {
+	const isReadOnlyToolAction = useCallback((message: DarbotMessage | undefined) => {
 		if (message?.type === "ask") {
 			if (!message.text) {
 				return true
@@ -879,7 +879,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		return false
 	}, [])
 
-	const isWriteToolAction = useCallback((message: ClineMessage | undefined) => {
+	const isWriteToolAction = useCallback((message: DarbotMessage | undefined) => {
 		if (message?.type === "ask") {
 			if (!message.text) {
 				return true
@@ -900,7 +900,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	}, [])
 
 	const isMcpToolAlwaysAllowed = useCallback(
-		(message: ClineMessage | undefined) => {
+		(message: DarbotMessage | undefined) => {
 			if (message?.type === "ask" && message.ask === "use_mcp_server") {
 				if (!message.text) {
 					return true
@@ -922,7 +922,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	// Get the command decision using unified validation logic
 	const getCommandDecisionForMessage = useCallback(
-		(message: ClineMessage | undefined): CommandDecision => {
+		(message: DarbotMessage | undefined): CommandDecision => {
 			if (message?.type !== "ask") return "ask_user"
 			return getCommandDecision(message.text || "", allowedCommands || [], deniedCommands || [])
 		},
@@ -931,7 +931,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	// Check if a command message should be auto-approved.
 	const isAllowedCommand = useCallback(
-		(message: ClineMessage | undefined): boolean => {
+		(message: DarbotMessage | undefined): boolean => {
 			return getCommandDecisionForMessage(message) === "auto_approve"
 		},
 		[getCommandDecisionForMessage],
@@ -939,7 +939,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	// Check if a command message should be auto-denied.
 	const isDeniedCommand = useCallback(
-		(message: ClineMessage | undefined): boolean => {
+		(message: DarbotMessage | undefined): boolean => {
 			return getCommandDecisionForMessage(message) === "auto_deny"
 		},
 		[getCommandDecisionForMessage],
@@ -969,7 +969,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const { hasEnabledOptions } = useAutoApprovalState(autoApprovalToggles, autoApprovalEnabled)
 
 	const isAutoApproved = useCallback(
-		(message: ClineMessage | undefined) => {
+		(message: DarbotMessage | undefined) => {
 			// First check if auto-approval is enabled AND we have at least one permission
 			if (!autoApprovalEnabled || !message || message.type !== "ask") {
 				return false
@@ -1106,7 +1106,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		setWasStreaming(isStreaming)
 	}, [isStreaming, lastMessage, wasStreaming, isAutoApproved, messages.length])
 
-	const isBrowserSessionMessage = (message: ClineMessage): boolean => {
+	const isBrowserSessionMessage = (message: DarbotMessage): boolean => {
 		// Which of visible messages are browser session messages, see above.
 		if (message.type === "ask") {
 			return ["browser_action_launch"].includes(message.ask!)
@@ -1120,8 +1120,8 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	}
 
 	const groupedMessages = useMemo(() => {
-		const result: (ClineMessage | ClineMessage[])[] = []
-		let currentGroup: ClineMessage[] = []
+		const result: (DarbotMessage | DarbotMessage[])[] = []
+		let currentGroup: DarbotMessage[] = []
 		let isInBrowserSession = false
 
 		const endBrowserSession = () => {
@@ -1165,7 +1165,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 					// Check if this is a close action
 					if (message.say === "browser_action") {
-						const browserAction = JSON.parse(message.text || "{}") as ClineSayBrowserAction
+						const browserAction = JSON.parse(message.text || "{}") as DarbotSayBrowserAction
 						if (browserAction.action === "close") {
 							endBrowserSession()
 						}
@@ -1324,7 +1324,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			}
 
 			// Mark the current follow-up question as answered when a suggestion is clicked
-			if (clineAsk === "followup" && !event?.shiftKey) {
+			if (darbotAsk === "followup" && !event?.shiftKey) {
 				markFollowUpAsAnswered()
 			}
 
@@ -1347,7 +1347,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				handleSendMessage(suggestion.answer, [])
 			}
 		},
-		[handleSendMessage, setInputValue, switchToMode, alwaysAllowModeSwitch, clineAsk, markFollowUpAsAnswered],
+		[handleSendMessage, setInputValue, switchToMode, alwaysAllowModeSwitch, darbotAsk, markFollowUpAsAnswered],
 	)
 
 	const handleBatchFileResponse = useCallback((response: { [key: string]: boolean }) => {
@@ -1362,7 +1362,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	}, [])
 
 	const itemContent = useCallback(
-		(index: number, messageOrGroup: ClineMessage | ClineMessage[]) => {
+		(index: number, messageOrGroup: DarbotMessage | DarbotMessage[]) => {
 			// browser session group
 			if (Array.isArray(messageOrGroup)) {
 				return (
@@ -1442,7 +1442,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			autoApproveTimeoutRef.current = null
 		}
 
-		if (!clineAsk || !enableButtons) {
+		if (!darbotAsk || !enableButtons) {
 			return
 		}
 
@@ -1471,7 +1471,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				}
 
 				setSendingDisabled(true)
-				setClineAsk(undefined)
+				setDarbotAsk(undefined)
 				setEnableButtons(false)
 				return
 			}
@@ -1522,7 +1522,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				vscode.postMessage({ type: "askResponse", askResponse: "yesButtonClicked" })
 
 				setSendingDisabled(true)
-				setClineAsk(undefined)
+				setDarbotAsk(undefined)
 				setEnableButtons(false)
 			}
 		}
@@ -1535,7 +1535,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			}
 		}
 	}, [
-		clineAsk,
+		darbotAsk,
 		enableButtons,
 		handlePrimaryButtonClick,
 		alwaysAllowBrowser,
@@ -1694,7 +1694,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							className="absolute top-2 right-3 z-10"
 						/>
 
-						<RooHero />
+						<DarbotHero />
 						{telemetrySetting === "unset" && <TelemetryBanner />}
 						<p className="text-vscode-editor-foreground leading-tight font-vscode-font-family text-center text-balance max-w-[380px] mx-auto my-0">
 							<Trans
@@ -1709,7 +1709,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							/>
 						</p>
 						<div className="mb-2.5">
-							<RooTips cycle={false} />
+							   <DarbotTips cycle={false} />
 						</div>
 						{/* Show the task history preview if expanded and tasks exist */}
 						{taskHistory.length > 0 && isExpanded && <HistoryPreview />}
@@ -1852,7 +1852,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				inputValue={inputValue}
 				setInputValue={setInputValue}
 				sendingDisabled={sendingDisabled || isProfileDisabled}
-				selectApiConfigDisabled={sendingDisabled && clineAsk !== "api_req_failed"}
+				selectApiConfigDisabled={sendingDisabled && darbotAsk !== "api_req_failed"}
 				placeholderText={placeholderText}
 				selectedImages={selectedImages}
 				setSelectedImages={setSelectedImages}
@@ -1875,7 +1875,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				</div>
 			)}
 
-			<div id="roo-portal" />
+			<div id="darbot-portal" />
 		</div>
 	)
 }
@@ -1883,3 +1883,4 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 const ChatView = forwardRef(ChatViewComponent)
 
 export default ChatView
+

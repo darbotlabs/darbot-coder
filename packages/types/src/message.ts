@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 /**
- * ClineAsk
+ * DarbotAsk
  */
 
 /**
@@ -25,7 +25,7 @@ import { z } from "zod"
  * - `use_mcp_server`: Permission to use Model Context Protocol (MCP) server functionality
  * - `auto_approval_max_req_reached`: Auto-approval limit has been reached, manual approval required
  */
-export const clineAsks = [
+export const darbotAsks = [
 	"followup",
 	"command",
 	"command_output",
@@ -40,12 +40,12 @@ export const clineAsks = [
 	"auto_approval_max_req_reached",
 ] as const
 
-export const clineAskSchema = z.enum(clineAsks)
+export const darbotAskSchema = z.enum(darbotAsks)
 
-export type ClineAsk = z.infer<typeof clineAskSchema>
+export type DarbotAsk = z.infer<typeof darbotAskSchema>
 
 /**
- * ClineSay
+ * DarbotSay
  */
 
 /**
@@ -75,13 +75,13 @@ export type ClineAsk = z.infer<typeof clineAskSchema>
  * - `mcp_server_response`: Response received from MCP server
  * - `subtask_result`: Result of a completed subtask
  * - `checkpoint_saved`: Indicates a checkpoint has been saved
- * - `rooignore_error`: Error related to .rooignore file processing
+ * - `darbotignore_error`: Error related to .darbotignore file processing
  * - `diff_error`: Error occurred while applying a diff/patch
  * - `condense_context`: Context condensation/summarization has started
  * - `condense_context_error`: Error occurred during context condensation
  * - `codebase_search_result`: Results from searching the codebase
  */
-export const clineSays = [
+export const darbotSays = [
 	"error",
 	"api_req_started",
 	"api_req_finished",
@@ -101,7 +101,7 @@ export const clineSays = [
 	"mcp_server_response",
 	"subtask_result",
 	"checkpoint_saved",
-	"rooignore_error",
+	"darbotignore_error",
 	"diff_error",
 	"condense_context",
 	"condense_context_error",
@@ -109,9 +109,9 @@ export const clineSays = [
 	"user_edit_todos",
 ] as const
 
-export const clineSaySchema = z.enum(clineSays)
+export const darbotSaySchema = z.enum(darbotSays)
 
-export type ClineSay = z.infer<typeof clineSaySchema>
+export type DarbotSay = z.infer<typeof darbotSaySchema>
 
 /**
  * ToolProgressStatus
@@ -138,14 +138,14 @@ export const contextCondenseSchema = z.object({
 export type ContextCondense = z.infer<typeof contextCondenseSchema>
 
 /**
- * ClineMessage
+ * DarbotMessage
  */
 
-export const clineMessageSchema = z.object({
+export const darbotMessageSchema = z.object({
 	ts: z.number(),
 	type: z.union([z.literal("ask"), z.literal("say")]),
-	ask: clineAskSchema.optional(),
-	say: clineSaySchema.optional(),
+	ask: darbotAskSchema.optional(),
+	say: darbotSaySchema.optional(),
 	text: z.string().optional(),
 	images: z.array(z.string()).optional(),
 	partial: z.boolean().optional(),
@@ -158,7 +158,7 @@ export const clineMessageSchema = z.object({
 	apiProtocol: z.union([z.literal("openai"), z.literal("anthropic")]).optional(),
 })
 
-export type ClineMessage = z.infer<typeof clineMessageSchema>
+export type DarbotMessage = z.infer<typeof darbotMessageSchema>
 
 /**
  * TokenUsage

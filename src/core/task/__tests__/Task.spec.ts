@@ -10,7 +10,7 @@ import type { GlobalState, ProviderSettings, ModelInfo } from "@darbot-code/type
 import { TelemetryService } from "@darbot-code/telemetry"
 
 import { Task } from "../Task"
-import { ClineProvider } from "../../webview/ClineProvider"
+import { DarbotProvider } from "../../webview/DarbotProvider"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { ContextProxy } from "../../config/ContextProxy"
 import { processUserContentMentions } from "../../mentions/processUserContentMentions"
@@ -146,7 +146,7 @@ vi.mock("../../environment/getEnvironmentDetails", () => ({
 	getEnvironmentDetails: vi.fn().mockResolvedValue(""),
 }))
 
-vi.mock("../../ignore/RooIgnoreController")
+vi.mock("../../ignore/DarbotIgnoreController")
 
 // Mock storagePathManager to prevent dynamic import issues.
 vi.mock("../../../utils/storage", () => ({
@@ -173,7 +173,7 @@ const mockMessages = [
 	},
 ]
 
-describe("Cline", () => {
+describe("Darbot", () => {
 	let mockProvider: any
 	let mockApiConfig: ProviderSettings
 	let mockOutputChannel: any
@@ -245,7 +245,7 @@ describe("Cline", () => {
 		}
 
 		// Setup mock provider with output channel
-		mockProvider = new ClineProvider(
+		mockProvider = new DarbotProvider(
 			mockExtensionContext,
 			mockOutputChannel,
 			"sidebar",
@@ -293,7 +293,7 @@ describe("Cline", () => {
 
 	describe("constructor", () => {
 		it("should respect provided settings", async () => {
-			const cline = new Task({
+			const darbot = new Task({
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				fuzzyMatchThreshold: 0.95,
@@ -301,11 +301,11 @@ describe("Cline", () => {
 				startTask: false,
 			})
 
-			expect(cline.diffEnabled).toBe(false)
+			expect(darbot.diffEnabled).toBe(false)
 		})
 
 		it("should use default fuzzy match threshold when not provided", async () => {
-			const cline = new Task({
+			const darbot = new Task({
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				enableDiff: true,
@@ -314,25 +314,25 @@ describe("Cline", () => {
 				startTask: false,
 			})
 
-			expect(cline.diffEnabled).toBe(true)
+			expect(darbot.diffEnabled).toBe(true)
 
 			// The diff strategy should be created with default threshold (1.0).
-			expect(cline.diffStrategy).toBeDefined()
+			expect(darbot.diffStrategy).toBeDefined()
 		})
 
 		it("should use default consecutiveMistakeLimit when not provided", () => {
-			const cline = new Task({
+			const darbot = new Task({
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
 				startTask: false,
 			})
 
-			expect(cline.consecutiveMistakeLimit).toBe(3)
+			expect(darbot.consecutiveMistakeLimit).toBe(3)
 		})
 
 		it("should respect provided consecutiveMistakeLimit", () => {
-			const cline = new Task({
+			const darbot = new Task({
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				consecutiveMistakeLimit: 5,
@@ -340,11 +340,11 @@ describe("Cline", () => {
 				startTask: false,
 			})
 
-			expect(cline.consecutiveMistakeLimit).toBe(5)
+			expect(darbot.consecutiveMistakeLimit).toBe(5)
 		})
 
 		it("should keep consecutiveMistakeLimit of 0 as 0 for unlimited", () => {
-			const cline = new Task({
+			const darbot = new Task({
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				consecutiveMistakeLimit: 0,
@@ -352,11 +352,11 @@ describe("Cline", () => {
 				startTask: false,
 			})
 
-			expect(cline.consecutiveMistakeLimit).toBe(0)
+			expect(darbot.consecutiveMistakeLimit).toBe(0)
 		})
 
 		it("should pass 0 to ToolRepetitionDetector for unlimited mode", () => {
-			const cline = new Task({
+			const darbot = new Task({
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				consecutiveMistakeLimit: 0,
@@ -365,13 +365,13 @@ describe("Cline", () => {
 			})
 
 			// The toolRepetitionDetector should be initialized with 0 for unlimited mode
-			expect(cline.toolRepetitionDetector).toBeDefined()
+			expect(darbot.toolRepetitionDetector).toBeDefined()
 			// Verify the limit remains as 0
-			expect(cline.consecutiveMistakeLimit).toBe(0)
+			expect(darbot.consecutiveMistakeLimit).toBe(0)
 		})
 
 		it("should pass consecutiveMistakeLimit to ToolRepetitionDetector", () => {
-			const cline = new Task({
+			const darbot = new Task({
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				consecutiveMistakeLimit: 5,
@@ -380,8 +380,8 @@ describe("Cline", () => {
 			})
 
 			// The toolRepetitionDetector should be initialized with the same limit
-			expect(cline.toolRepetitionDetector).toBeDefined()
-			expect(cline.consecutiveMistakeLimit).toBe(5)
+			expect(darbot.toolRepetitionDetector).toBeDefined()
+			expect(darbot.consecutiveMistakeLimit).toBe(5)
 		})
 
 		it("should require either task or historyItem", () => {
@@ -394,14 +394,14 @@ describe("Cline", () => {
 	describe("getEnvironmentDetails", () => {
 		describe("API conversation handling", () => {
 			it.skip("should clean conversation history before sending to API", async () => {
-				// Cline.create will now use our mocked getEnvironmentDetails
-				const [cline, task] = Task.create({
+				// Darbot.create will now use our mocked getEnvironmentDetails
+				const [darbot, task] = Task.create({
 					provider: mockProvider,
 					apiConfiguration: mockApiConfig,
 					task: "test task",
 				})
 
-				cline.abandoned = true
+				darbot.abandoned = true
 				await task
 
 				// Set up mock stream.
@@ -411,10 +411,10 @@ describe("Cline", () => {
 
 				// Set up spy.
 				const cleanMessageSpy = vi.fn().mockReturnValue(mockStreamForClean)
-				vi.spyOn(cline.api, "createMessage").mockImplementation(cleanMessageSpy)
+				vi.spyOn(darbot.api, "createMessage").mockImplementation(cleanMessageSpy)
 
 				// Add test message to conversation history.
-				cline.apiConversationHistory = [
+				darbot.apiConversationHistory = [
 					{
 						role: "user" as const,
 						content: [{ type: "text" as const, text: "test message" }],
@@ -423,7 +423,7 @@ describe("Cline", () => {
 				]
 
 				// Mock abort state
-				Object.defineProperty(cline, "abort", {
+				Object.defineProperty(darbot, "abort", {
 					get: () => false,
 					set: () => {},
 					configurable: true,
@@ -437,10 +437,10 @@ describe("Cline", () => {
 					extraProp: "should be removed",
 				}
 
-				cline.apiConversationHistory = [messageWithExtra]
+				darbot.apiConversationHistory = [messageWithExtra]
 
 				// Trigger an API request
-				await cline.recursivelyMakeClineRequests([{ type: "text", text: "test request" }], false)
+				await darbot.recursivelyMakeDarbotRequests([{ type: "text", text: "test request" }], false)
 
 				// Get the conversation history from the first API call
 				expect(cleanMessageSpy.mock.calls.length).toBeGreaterThan(0)
@@ -504,14 +504,14 @@ describe("Cline", () => {
 				]
 
 				// Test with model that supports images
-				const [clineWithImages, taskWithImages] = Task.create({
+				const [darbotWithImages, taskWithImages] = Task.create({
 					provider: mockProvider,
 					apiConfiguration: configWithImages,
 					task: "test task",
 				})
 
 				// Mock the model info to indicate image support
-				vi.spyOn(clineWithImages.api, "getModel").mockReturnValue({
+				vi.spyOn(darbotWithImages.api, "getModel").mockReturnValue({
 					id: "claude-3-sonnet",
 					info: {
 						supportsImages: true,
@@ -524,17 +524,17 @@ describe("Cline", () => {
 					} as ModelInfo,
 				})
 
-				clineWithImages.apiConversationHistory = conversationHistory
+				darbotWithImages.apiConversationHistory = conversationHistory
 
 				// Test with model that doesn't support images
-				const [clineWithoutImages, taskWithoutImages] = Task.create({
+				const [darbotWithoutImages, taskWithoutImages] = Task.create({
 					provider: mockProvider,
 					apiConfiguration: configWithoutImages,
 					task: "test task",
 				})
 
 				// Mock the model info to indicate no image support
-				vi.spyOn(clineWithoutImages.api, "getModel").mockReturnValue({
+				vi.spyOn(darbotWithoutImages.api, "getModel").mockReturnValue({
 					id: "gpt-3.5-turbo",
 					info: {
 						supportsImages: false,
@@ -547,16 +547,16 @@ describe("Cline", () => {
 					} as ModelInfo,
 				})
 
-				clineWithoutImages.apiConversationHistory = conversationHistory
+				darbotWithoutImages.apiConversationHistory = conversationHistory
 
 				// Mock abort state for both instances
-				Object.defineProperty(clineWithImages, "abort", {
+				Object.defineProperty(darbotWithImages, "abort", {
 					get: () => false,
 					set: () => {},
 					configurable: true,
 				})
 
-				Object.defineProperty(clineWithoutImages, "abort", {
+				Object.defineProperty(darbotWithoutImages, "abort", {
 					get: () => false,
 					set: () => {},
 					configurable: true,
@@ -575,11 +575,11 @@ describe("Cline", () => {
 				const imagesSpy = vi.fn().mockReturnValue(mockStreamWithImages)
 				const noImagesSpy = vi.fn().mockReturnValue(mockStreamWithoutImages)
 
-				vi.spyOn(clineWithImages.api, "createMessage").mockImplementation(imagesSpy)
-				vi.spyOn(clineWithoutImages.api, "createMessage").mockImplementation(noImagesSpy)
+				vi.spyOn(darbotWithImages.api, "createMessage").mockImplementation(imagesSpy)
+				vi.spyOn(darbotWithoutImages.api, "createMessage").mockImplementation(noImagesSpy)
 
 				// Set up conversation history with images
-				clineWithImages.apiConversationHistory = [
+				darbotWithImages.apiConversationHistory = [
 					{
 						role: "user",
 						content: [
@@ -589,15 +589,15 @@ describe("Cline", () => {
 					},
 				]
 
-				clineWithImages.abandoned = true
+				darbotWithImages.abandoned = true
 				await taskWithImages.catch(() => {})
 
-				clineWithoutImages.abandoned = true
+				darbotWithoutImages.abandoned = true
 				await taskWithoutImages.catch(() => {})
 
 				// Trigger API requests
-				await clineWithImages.recursivelyMakeClineRequests([{ type: "text", text: "test request" }])
-				await clineWithoutImages.recursivelyMakeClineRequests([{ type: "text", text: "test request" }])
+				await darbotWithImages.recursivelyMakeDarbotRequests([{ type: "text", text: "test request" }])
+				await darbotWithoutImages.recursivelyMakeDarbotRequests([{ type: "text", text: "test request" }])
 
 				// Get the calls
 				const imagesCalls = imagesSpy.mock.calls
@@ -624,7 +624,7 @@ describe("Cline", () => {
 			})
 
 			it.skip("should handle API retry with countdown", async () => {
-				const [cline, task] = Task.create({
+				const [darbot, task] = Task.create({
 					provider: mockProvider,
 					apiConfiguration: mockApiConfig,
 					task: "test task",
@@ -635,7 +635,7 @@ describe("Cline", () => {
 				vi.spyOn(await import("delay"), "default").mockImplementation(mockDelay)
 
 				// Mock say to track messages
-				const saySpy = vi.spyOn(cline, "say")
+				const saySpy = vi.spyOn(darbot, "say")
 
 				// Create a stream that fails on first chunk
 				const mockError = new Error("API Error")
@@ -679,7 +679,7 @@ describe("Cline", () => {
 
 				// Mock createMessage to fail first then succeed
 				let firstAttempt = true
-				vi.spyOn(cline.api, "createMessage").mockImplementation(() => {
+				vi.spyOn(darbot.api, "createMessage").mockImplementation(() => {
 					if (firstAttempt) {
 						firstAttempt = false
 						return mockFailedStream
@@ -694,7 +694,7 @@ describe("Cline", () => {
 				})
 
 				// Mock previous API request message
-				cline.clineMessages = [
+				darbot.darbotMessages = [
 					{
 						ts: Date.now(),
 						type: "say",
@@ -710,7 +710,7 @@ describe("Cline", () => {
 				]
 
 				// Trigger API request
-				const iterator = cline.attemptApiRequest(0)
+				const iterator = darbot.attemptApiRequest(0)
 				await iterator.next()
 
 				// Calculate expected delay for first retry
@@ -744,12 +744,12 @@ describe("Cline", () => {
 					`${mockError.message}\n\nRetry attempt 1\nRetrying in ${baseDelay} seconds...`,
 				)
 
-				await cline.abortTask(true)
+				await darbot.abortTask(true)
 				await task.catch(() => {})
 			})
 
 			it.skip("should not apply retry delay twice", async () => {
-				const [cline, task] = Task.create({
+				const [darbot, task] = Task.create({
 					provider: mockProvider,
 					apiConfiguration: mockApiConfig,
 					task: "test task",
@@ -760,7 +760,7 @@ describe("Cline", () => {
 				vi.spyOn(await import("delay"), "default").mockImplementation(mockDelay)
 
 				// Mock say to track messages
-				const saySpy = vi.spyOn(cline, "say")
+				const saySpy = vi.spyOn(darbot, "say")
 
 				// Create a stream that fails on first chunk
 				const mockError = new Error("API Error")
@@ -804,7 +804,7 @@ describe("Cline", () => {
 
 				// Mock createMessage to fail first then succeed
 				let firstAttempt = true
-				vi.spyOn(cline.api, "createMessage").mockImplementation(() => {
+				vi.spyOn(darbot.api, "createMessage").mockImplementation(() => {
 					if (firstAttempt) {
 						firstAttempt = false
 						return mockFailedStream
@@ -819,7 +819,7 @@ describe("Cline", () => {
 				})
 
 				// Mock previous API request message
-				cline.clineMessages = [
+				darbot.darbotMessages = [
 					{
 						ts: Date.now(),
 						type: "say",
@@ -835,7 +835,7 @@ describe("Cline", () => {
 				]
 
 				// Trigger API request
-				const iterator = cline.attemptApiRequest(0)
+				const iterator = darbot.attemptApiRequest(0)
 				await iterator.next()
 
 				// Verify delay is only applied for the countdown
@@ -868,13 +868,13 @@ describe("Cline", () => {
 					false,
 				)
 
-				await cline.abortTask(true)
+				await darbot.abortTask(true)
 				await task.catch(() => {})
 			})
 
 			describe("processUserContentMentions", () => {
 				it("should process mentions in task and feedback tags", async () => {
-					const [cline, task] = Task.create({
+					const [darbot, task] = Task.create({
 						provider: mockProvider,
 						apiConfiguration: mockApiConfig,
 						task: "test task",
@@ -913,9 +913,9 @@ describe("Cline", () => {
 
 					const processedContent = await processUserContentMentions({
 						userContent,
-						cwd: cline.cwd,
-						urlContentFetcher: cline.urlContentFetcher,
-						fileContextTracker: cline.fileContextTracker,
+						cwd: darbot.cwd,
+						urlContentFetcher: darbot.urlContentFetcher,
+						fileContextTracker: darbot.fileContextTracker,
 					})
 
 					// Regular text should not be processed
@@ -944,7 +944,7 @@ describe("Cline", () => {
 						"Regular tool result with 'path' (see below for file content)",
 					)
 
-					await cline.abortTask(true)
+					await darbot.abortTask(true)
 					await task.catch(() => {})
 				})
 			})

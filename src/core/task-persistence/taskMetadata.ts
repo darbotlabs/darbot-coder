@@ -1,7 +1,7 @@
 import NodeCache from "node-cache"
 import getFolderSize from "get-folder-size"
 
-import type { ClineMessage, HistoryItem } from "@darbot-code/types"
+import type { DarbotMessage, HistoryItem } from "@darbot-code/types"
 
 import { combineApiRequests } from "../../shared/combineApiRequests"
 import { combineCommandSequences } from "../../shared/combineCommandSequences"
@@ -13,7 +13,7 @@ import { t } from "../../i18n"
 const taskSizeCache = new NodeCache({ stdTTL: 30, checkperiod: 5 * 60 })
 
 export type TaskMetadataOptions = {
-	messages: ClineMessage[]
+	messages: DarbotMessage[]
 	taskId: string
 	taskNumber: number
 	globalStoragePath: string
@@ -36,7 +36,7 @@ export async function taskMetadata({
 	let timestamp: number
 	let tokenUsage: ReturnType<typeof getApiMetrics>
 	let taskDirSize: number
-	let taskMessage: ClineMessage | undefined
+	let taskMessage: DarbotMessage | undefined
 
 	if (!hasMessages) {
 		// Handle no messages case
@@ -96,3 +96,4 @@ export async function taskMetadata({
 
 	return { historyItem, tokenUsage }
 }
+

@@ -8,13 +8,13 @@ After comprehensive analysis of the darbot-coder codebase, we've discovered that
 
 ### 🎯 **Existing Orchestration Infrastructure (80% Complete)**
 
-#### 1. **Custom Modes System** (.roomodes)
+#### 1. **Custom Modes System** (.darbotmodes)
 - ✅ **Specialized AI Personas**: 10+ pre-built modes (code, architect, test, debug, etc.)
 - ✅ **Role-Based Permissions**: Tool groups and file restrictions per mode
 - ✅ **When-to-Use Logic**: Each mode defines its optimal use cases
 - ✅ **Dynamic Configuration**: YAML-based mode definitions
 
-#### 2. **Workflow System** (.roo/ directory)
+#### 2. **Workflow System** (.darbot/ directory)
 - ✅ **XML-Based Workflows**: Sophisticated multi-step processes
 - ✅ **Task Delegation**: Modes can delegate subtasks to other modes
 - ✅ **Structured Analysis**: Pattern analysis → synthesis → reporting
@@ -30,7 +30,7 @@ After comprehensive analysis of the darbot-coder codebase, we've discovered that
 - ✅ **Task Persistence**: Conversation state and context preservation
 - ✅ **Checkpoint System**: Save/restore task states for complex workflows
 - ✅ **MCP Integration**: Extensible tool system via Model Context Protocol
-- ✅ **Safety Features**: RooIgnore and RooProtected controllers
+- ✅ **Safety Features**: DarbotIgnore and DarbotProtected controllers
 
 ### 🔍 **Current Workflow Example: PR Review Orchestration**
 

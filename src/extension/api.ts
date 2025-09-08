@@ -21,21 +21,21 @@ import { IpcServer } from "@darbot-code/ipc"
 
 import { Package } from "../shared/package"
 import { getWorkspacePath } from "../utils/path"
-import { ClineProvider } from "../core/webview/ClineProvider"
-import { openClineInNewTab } from "../activate/registerCommands"
+import { DarbotProvider } from "../core/webview/DarbotProvider"
+import { openDarbotInNewTab } from "../activate/registerCommands"
 
 export class API extends EventEmitter<DarbotCodeEvents> implements DarbotCodeAPI {
 	private readonly outputChannel: vscode.OutputChannel
-	private readonly sidebarProvider: ClineProvider
+	private readonly sidebarProvider: DarbotProvider
 	private readonly context: vscode.ExtensionContext
 	private readonly ipc?: IpcServer
-	private readonly taskMap = new Map<string, ClineProvider>()
+	private readonly taskMap = new Map<string, DarbotProvider>()
 	private readonly log: (...args: unknown[]) => void
 	private logfile?: string
 
 	constructor(
 		outputChannel: vscode.OutputChannel,
-		provider: ClineProvider,
+		provider: DarbotProvider,
 		socketPath?: string,
 		enableLogging = false,
 	) {
@@ -51,7 +51,7 @@ export class API extends EventEmitter<DarbotCodeEvents> implements DarbotCodeAPI
 				console.log(args)
 			}
 
-			this.logfile = path.join(os.tmpdir(), "roo-code-messages.log")
+			this.logfile = path.join(os.tmpdir(), "darbot-coder-messages.log")
 		} else {
 			this.log = () => {}
 		}
@@ -104,13 +104,13 @@ export class API extends EventEmitter<DarbotCodeEvents> implements DarbotCodeAPI
 		images?: string[]
 		newTab?: boolean
 	}) {
-		let provider: ClineProvider
+		let provider: DarbotProvider
 
 		if (newTab) {
 			await vscode.commands.executeCommand("workbench.action.files.revert")
 			await vscode.commands.executeCommand("workbench.action.closeAllEditors")
 
-			provider = await openClineInNewTab({ context: this.context, outputChannel: this.outputChannel })
+			provider = await openDarbotInNewTab({ context: this.context, outputChannel: this.outputChannel })
 			this.registerListeners(provider)
 		} else {
 			await vscode.commands.executeCommand(`${Package.name}.SidebarProvider.focus`)
@@ -144,25 +144,25 @@ export class API extends EventEmitter<DarbotCodeEvents> implements DarbotCodeAPI
 			}
 		}
 
-		await provider.removeClineFromStack()
+		await provider.removeDarbotFromStack()
 		await provider.postStateToWebview()
 		await provider.postMessageToWebview({ type: "action", action: "chatButtonClicked" })
 		await provider.postMessageToWebview({ type: "invoke", invoke: "newChat", text, images })
 
-		const cline = await provider.initClineWithTask(text, images, undefined, {
+		const darbot = await provider.initDarbotWithTask(text, images, undefined, {
 			consecutiveMistakeLimit: Number.MAX_SAFE_INTEGER,
 		})
 
-		if (!cline) {
+		if (!darbot) {
 			throw new Error("Failed to create task due to policy restrictions")
 		}
 
-		return cline.taskId
+		return darbot.taskId
 	}
 
 	public async resumeTask(taskId: string): Promise<void> {
 		const { historyItem } = await this.sidebarProvider.getTaskWithId(taskId)
-		await this.sidebarProvider.initClineWithHistoryItem(historyItem)
+		await this.sidebarProvider.initDarbotWithHistoryItem(historyItem)
 		await this.sidebarProvider.postMessageToWebview({ type: "action", action: "chatButtonClicked" })
 	}
 
@@ -213,59 +213,59 @@ export class API extends EventEmitter<DarbotCodeEvents> implements DarbotCodeAPI
 		return this.sidebarProvider.viewLaunched
 	}
 
-	private registerListeners(provider: ClineProvider) {
-		provider.on("clineCreated", (cline) => {
-			cline.on("taskStarted", async () => {
-				this.emit(DarbotCodeEventName.TaskStarted, cline.taskId)
-				this.taskMap.set(cline.taskId, provider)
-				await this.fileLog(`[${new Date().toISOString()}] taskStarted -> ${cline.taskId}\n`)
+	private registerListeners(provider: DarbotProvider) {
+		provider.on("darbotCreated", (darbot) => {
+			darbot.on("taskStarted", async () => {
+				this.emit(DarbotCodeEventName.TaskStarted, darbot.taskId)
+				this.taskMap.set(darbot.taskId, provider)
+				await this.fileLog(`[${new Date().toISOString()}] taskStarted -> ${darbot.taskId}\n`)
 			})
 
-			cline.on("message", async (message) => {
-				this.emit(DarbotCodeEventName.Message, { taskId: cline.taskId, ...message })
+			darbot.on("message", async (message) => {
+				this.emit(DarbotCodeEventName.Message, { taskId: darbot.taskId, ...message })
 
 				if (message.message.partial !== true) {
 					await this.fileLog(`[${new Date().toISOString()}] ${JSON.stringify(message.message, null, 2)}\n`)
 				}
 			})
 
-			cline.on("taskModeSwitched", (taskId, mode) => this.emit(DarbotCodeEventName.TaskModeSwitched, taskId, mode))
+			darbot.on("taskModeSwitched", (taskId, mode) => this.emit(DarbotCodeEventName.TaskModeSwitched, taskId, mode))
 
-			cline.on("taskAskResponded", () => this.emit(DarbotCodeEventName.TaskAskResponded, cline.taskId))
+			darbot.on("taskAskResponded", () => this.emit(DarbotCodeEventName.TaskAskResponded, darbot.taskId))
 
-			cline.on("taskAborted", () => {
-				this.emit(DarbotCodeEventName.TaskAborted, cline.taskId)
-				this.taskMap.delete(cline.taskId)
+			darbot.on("taskAborted", () => {
+				this.emit(DarbotCodeEventName.TaskAborted, darbot.taskId)
+				this.taskMap.delete(darbot.taskId)
 			})
 
-			cline.on("taskCompleted", async (_, tokenUsage, toolUsage) => {
+			darbot.on("taskCompleted", async (_, tokenUsage, toolUsage) => {
 				let isSubtask = false
 
-				if (cline.darbottTask != undefined) {
+				if (darbot.darbottTask != undefined) {
 					isSubtask = true
 				}
 
-				this.emit(DarbotCodeEventName.TaskCompleted, cline.taskId, tokenUsage, toolUsage, { isSubtask: isSubtask })
-				this.taskMap.delete(cline.taskId)
+				this.emit(DarbotCodeEventName.TaskCompleted, darbot.taskId, tokenUsage, toolUsage, { isSubtask: isSubtask })
+				this.taskMap.delete(darbot.taskId)
 
 				await this.fileLog(
-					`[${new Date().toISOString()}] taskCompleted -> ${cline.taskId} | ${JSON.stringify(tokenUsage, null, 2)} | ${JSON.stringify(toolUsage, null, 2)}\n`,
+					`[${new Date().toISOString()}] taskCompleted -> ${darbot.taskId} | ${JSON.stringify(tokenUsage, null, 2)} | ${JSON.stringify(toolUsage, null, 2)}\n`,
 				)
 			})
 
-			cline.on("taskSpawned", (childTaskId) => this.emit(DarbotCodeEventName.TaskSpawned, cline.taskId, childTaskId))
-			cline.on("taskPaused", () => this.emit(DarbotCodeEventName.TaskPaused, cline.taskId))
-			cline.on("taskUnpaused", () => this.emit(DarbotCodeEventName.TaskUnpaused, cline.taskId))
+			darbot.on("taskSpawned", (childTaskId) => this.emit(DarbotCodeEventName.TaskSpawned, darbot.taskId, childTaskId))
+			darbot.on("taskPaused", () => this.emit(DarbotCodeEventName.TaskPaused, darbot.taskId))
+			darbot.on("taskUnpaused", () => this.emit(DarbotCodeEventName.TaskUnpaused, darbot.taskId))
 
-			cline.on("taskTokenUsageUpdated", (_, usage) =>
-				this.emit(DarbotCodeEventName.TaskTokenUsageUpdated, cline.taskId, usage),
+			darbot.on("taskTokenUsageUpdated", (_, usage) =>
+				this.emit(DarbotCodeEventName.TaskTokenUsageUpdated, darbot.taskId, usage),
 			)
 
-			cline.on("taskToolFailed", (taskId, tool, error) =>
+			darbot.on("taskToolFailed", (taskId, tool, error) =>
 				this.emit(DarbotCodeEventName.TaskToolFailed, taskId, tool, error),
 			)
 
-			this.emit(DarbotCodeEventName.TaskCreated, cline.taskId)
+			this.emit(DarbotCodeEventName.TaskCreated, darbot.taskId)
 		})
 	}
 
@@ -413,3 +413,4 @@ export class API extends EventEmitter<DarbotCodeEvents> implements DarbotCodeAPI
 		return this.getActiveProfile()
 	}
 }
+

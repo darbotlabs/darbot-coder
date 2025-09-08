@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from "react"
 import { Checkbox } from "vscrui"
-import { VSCodeTextField, VSCodeRadio, VSCodeRadioGroup } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeTextField, VSCodeRadio, VSCodeRadioGroup } from "../../vscode-components"
 
 import { type ProviderSettings, type ModelInfo, BEDROCK_REGIONS } from "@darbot-code/types"
 

@@ -21,30 +21,30 @@ import { formatResponse } from "../prompts/responses"
 import { Task } from "../task/Task"
 import { formatReminderSection } from "./reminder"
 
-export async function getEnvironmentDetails(cline: Task, includeFileDetails: boolean = false) {
+export async function getEnvironmentDetails(darbot: Task, includeFileDetails: boolean = false) {
 	let details = ""
 
-	const clineProvider = cline.providerRef.deref()
-	const state = await clineProvider?.getState()
+	const darbotProvider = darbot.providerRef.deref()
+	const state = await darbotProvider?.getState()
 	const {
 		terminalOutputLineLimit = 500,
 		terminalOutputCharacterLimit = DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
 		maxWorkspaceFiles = 200,
 	} = state ?? {}
 
-	// It could be useful for cline to know if the user went from one or no
+	// It could be useful for darbot to know if the user went from one or no
 	// file to another between messages, so we always include this context.
 	details += "\n\n# VSCode Visible Files"
 
 	const visibleFilePaths = vscode.window.visibleTextEditors
 		?.map((editor) => editor.document?.uri?.fsPath)
 		.filter(Boolean)
-		.map((absolutePath) => path.relative(cline.cwd, absolutePath))
+		.map((absolutePath) => path.relative(darbot.cwd, absolutePath))
 		.slice(0, maxWorkspaceFiles)
 
-	// Filter paths through rooIgnoreController
-	const allowedVisibleFiles = cline.darbotIgnoreController
-		? cline.darbotIgnoreController.filterPaths(visibleFilePaths)
+	// Filter paths through darbotIgnoreController
+	const allowedVisibleFiles = darbot.darbotIgnoreController
+		? darbot.darbotIgnoreController.filterPaths(visibleFilePaths)
 		: visibleFilePaths.map((p) => p.toPosix()).join("\n")
 
 	if (allowedVisibleFiles) {
@@ -60,12 +60,12 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 		.flatMap((group) => group.tabs)
 		.map((tab) => (tab.input as vscode.TabInputText)?.uri?.fsPath)
 		.filter(Boolean)
-		.map((absolutePath) => path.relative(cline.cwd, absolutePath).toPosix())
+		.map((absolutePath) => path.relative(darbot.cwd, absolutePath).toPosix())
 		.slice(0, maxTabs)
 
-	// Filter paths through rooIgnoreController
-	const allowedOpenTabs = cline.darbotIgnoreController
-		? cline.darbotIgnoreController.filterPaths(openTabPaths)
+	// Filter paths through darbotIgnoreController
+	const allowedOpenTabs = darbot.darbotIgnoreController
+		? darbot.darbotIgnoreController.filterPaths(openTabPaths)
 		: openTabPaths.map((p) => p.toPosix()).join("\n")
 
 	if (allowedOpenTabs) {
@@ -76,17 +76,17 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 
 	// Get task-specific and background terminals.
 	const busyTerminals = [
-		...TerminalRegistry.getTerminals(true, cline.taskId),
+		...TerminalRegistry.getTerminals(true, darbot.taskId),
 		...TerminalRegistry.getBackgroundTerminals(true),
 	]
 
 	const inactiveTerminals = [
-		...TerminalRegistry.getTerminals(false, cline.taskId),
+		...TerminalRegistry.getTerminals(false, darbot.taskId),
 		...TerminalRegistry.getBackgroundTerminals(false),
 	]
 
 	if (busyTerminals.length > 0) {
-		if (cline.didEditFile) {
+		if (darbot.didEditFile) {
 			await delay(300) // Delay after saving file to let terminals catch up.
 		}
 
@@ -98,7 +98,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	}
 
 	// Reset, this lets us know when to wait for saved files to update terminals.
-	cline.didEditFile = false
+	darbot.didEditFile = false
 
 	// Waiting for updated diagnostics lets terminal output be the most
 	// up-to-date possible.
@@ -175,7 +175,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	// console.log(`[Task#getEnvironmentDetails] terminalDetails: ${terminalDetails}`)
 
 	// Add recently modified files section.
-	const recentlyModifiedFiles = cline.fileContextTracker.getAndClearRecentlyModifiedFiles()
+	const recentlyModifiedFiles = darbot.fileContextTracker.getAndClearRecentlyModifiedFiles()
 
 	if (recentlyModifiedFiles.length > 0) {
 		details +=
@@ -200,8 +200,8 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	details += `\n\n# Current Time\nCurrent time in ISO 8601 UTC format: ${now.toISOString()}\nUser time zone: ${timeZone}, UTC${timeZoneOffsetStr}`
 
 	// Add context tokens information.
-	const { contextTokens, totalCost } = getApiMetrics(cline.clineMessages)
-	const { id: modelId } = cline.api.getModel()
+	const { contextTokens, totalCost } = getApiMetrics(darbot.darbotMessages)
+	const { id: modelId } = darbot.api.getModel()
 
 	details += `\n\n# Current Cost\n${totalCost !== null ? `$${totalCost.toFixed(2)}` : "(Not available)"}`
 
@@ -218,7 +218,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	const currentMode = mode ?? defaultModeSlug
 
 	const modeDetails = await getFullModeDetails(currentMode, customModes, customModePrompts, {
-		cwd: cline.cwd,
+		cwd: darbot.cwd,
 		globalCustomInstructions,
 		language: language ?? formatLanguage(vscode.env.language),
 	})
@@ -237,8 +237,8 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	}
 
 	if (includeFileDetails) {
-		details += `\n\n# Current Workspace Directory (${cline.cwd.toPosix()}) Files\n`
-		const isDesktop = arePathsEqual(cline.cwd, path.join(os.homedir(), "Desktop"))
+		details += `\n\n# Current Workspace Directory (${darbot.cwd.toPosix()}) Files\n`
+		const isDesktop = arePathsEqual(darbot.cwd, path.join(os.homedir(), "Desktop"))
 
 		if (isDesktop) {
 			// Don't want to immediately access desktop since it would show
@@ -251,15 +251,15 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 			if (maxFiles === 0) {
 				details += "(Workspace files context disabled. Use list_files to explore if needed.)"
 			} else {
-				const [files, didHitLimit] = await listFiles(cline.cwd, true, maxFiles)
-				const { showRooIgnoredFiles = true } = state ?? {}
+				const [files, didHitLimit] = await listFiles(darbot.cwd, true, maxFiles)
+				const { showDarbotIgnoredFiles = true } = state ?? {}
 
 				const result = formatResponse.formatFilesList(
-					cline.cwd,
+					darbot.cwd,
 					files,
 					didHitLimit,
-					cline.darbotIgnoreController,
-					showRooIgnoredFiles,
+					darbot.darbotIgnoreController,
+					showDarbotIgnoredFiles,
 				)
 
 				details += result
@@ -267,6 +267,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 		}
 	}
 
-	const reminderSection = formatReminderSection(cline.todoList)
+	const reminderSection = formatReminderSection(darbot.todoList)
 	return `<environment_details>\n${details.trim()}\n${reminderSection}\n</environment_details>`
 }
+

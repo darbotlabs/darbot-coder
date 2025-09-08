@@ -4,7 +4,7 @@ import { useEvent } from "react-use"
 import { useTranslation } from "react-i18next"
 
 import { McpExecutionStatus, mcpExecutionStatusSchema } from "@darbot-code/types"
-import { ExtensionMessage, ClineAskUseMcpServer } from "../../../../src/shared/ExtensionMessage"
+import { ExtensionMessage, DarbotAskUseMcpServer } from "../../../../src/shared/ExtensionMessage"
 import { safeJsonParse } from "../../../../src/shared/safeJsonParse"
 import { cn } from "@src/lib/utils"
 import { Button } from "@src/components/ui"
@@ -26,7 +26,7 @@ interface McpExecutionProps {
 		}>
 		source?: "global" | "project"
 	}
-	useMcpServer?: ClineAskUseMcpServer
+	useMcpServer?: DarbotAskUseMcpServer
 	alwaysAllowMcp?: boolean
 }
 
@@ -328,3 +328,4 @@ const ResponseContainerInternal = ({
 }
 
 const ResponseContainer = memo(ResponseContainerInternal)
+

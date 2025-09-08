@@ -1,5 +1,5 @@
 import { Trans } from "react-i18next"
-import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeLink } from "../vscode-components"
 
 export const CheckpointWarning = () => {
 	return (

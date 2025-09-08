@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="darbot-coder-favicon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .icon-fill {
+        fill: #00FF66;
+        stroke-width: 0px;
+      }
+      .icon-bg {
+        fill: #1a1a1a;
+        stroke-width: 0px;
+      }
+    </style>
+  </defs>
+  <!-- Background circle -->
+  <circle class="icon-bg" cx="16" cy="16" r="15"/>
+  <!-- Terminal window outline -->
+  <rect class="icon-fill" x="6" y="8" width="20" height="16" rx="2" fill="none" stroke="#00FF66" stroke-width="1"/>
+  <!-- Terminal header bar -->
+  <rect class="icon-fill" x="6" y="8" width="20" height="3" rx="2"/>
+  <!-- Terminal dots -->
+  <circle fill="#1a1a1a" cx="8" cy="9.5" r="0.5"/>
+  <circle fill="#1a1a1a" cx="10" cy="9.5" r="0.5"/>
+  <circle fill="#1a1a1a" cx="12" cy="9.5" r="0.5"/>
+  <!-- Code/prompt symbol -->
+  <text class="icon-fill" x="8" y="18" font-family="monospace" font-size="4" fill="#00FF66">></text>
+  <text class="icon-fill" x="11" y="18" font-family="monospace" font-size="3" fill="#00FF66">_</text>
+  <!-- Ghost/bot elements -->
+  <circle class="icon-fill" cx="16" cy="27" r="3"/>
+  <path class="icon-fill" d="M14,27 Q14,25 15,25 L17,25 Q18,25 18,27 L18,29 L17,28 L16,29 L15,28 L14,29 Z"/>
+</svg>

@@ -17,7 +17,7 @@ vi.mock("../ApiConfigManager", () => ({
 	),
 }))
 
-vi.mock("@vscode/webview-ui-toolkit/react", () => ({
+vi.mock("darbot-webview-ui/react", () => ({
 	VSCodeButton: ({ children, onClick, appearance, "data-testid": dataTestId }: any) =>
 		appearance === "icon" ? (
 			<button
@@ -212,7 +212,7 @@ const mockPostMessage = (state: any) => {
 			type: "state",
 			state: {
 				version: "1.0.0",
-				clineMessages: [],
+				darbotMessages: [],
 				taskHistory: [],
 				shouldShowAnnouncement: false,
 				allowedCommands: [],

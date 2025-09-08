@@ -18,7 +18,7 @@ import { formatResponse } from "../prompts/responses"
 import { Package } from "../../shared/package"
 
 export async function attemptCompletionTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -36,11 +36,11 @@ export async function attemptCompletionTool(
 		.get<boolean>("preventCompletionWithOpenTodos", false)
 
 	// Check if there are incomplete todos (only if the setting is enabled)
-	const hasIncompleteTodos = cline.todoList && cline.todoList.some((todo) => todo.status !== "completed")
+	const hasIncompleteTodos = darbot.todoList && darbot.todoList.some((todo) => todo.status !== "completed")
 
 	if (preventCompletionWithOpenTodos && hasIncompleteTodos) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("attempt_completion")
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("attempt_completion")
 		pushToolResult(
 			formatResponse.toolError(
 				"Cannot complete task while there are incomplete todos. Please finish all todos before attempting completion.",
@@ -50,49 +50,49 @@ export async function attemptCompletionTool(
 	}
 
 	try {
-		const lastMessage = cline.clineMessages.at(-1)
+		const lastMessage = darbot.darbotMessages.at(-1)
 
 		if (block.partial) {
 			if (command) {
 				// the attempt_completion text is done, now we're getting command
 				// remove the previous partial attempt_completion ask, replace with say, post state to webview, then stream command
 
-				// const secondLastMessage = cline.clineMessages.at(-2)
+				// const secondLastMessage = darbot.darbotMessages.at(-2)
 				if (lastMessage && lastMessage.ask === "command") {
 					// update command
-					await cline.ask("command", removeClosingTag("command", command), block.partial).catch(() => {})
+					await darbot.ask("command", removeClosingTag("command", command), block.partial).catch(() => {})
 				} else {
 					// last message is completion_result
 					// we have command string, which means we have the result as well, so finish it (doesnt have to exist yet)
-					await cline.say("completion_result", removeClosingTag("result", result), undefined, false)
+					await darbot.say("completion_result", removeClosingTag("result", result), undefined, false)
 
-					TelemetryService.instance.captureTaskCompleted(cline.taskId)
-					cline.emit("taskCompleted", cline.taskId, cline.getTokenUsage(), cline.toolUsage)
+					TelemetryService.instance.captureTaskCompleted(darbot.taskId)
+					darbot.emit("taskCompleted", darbot.taskId, darbot.getTokenUsage(), darbot.toolUsage)
 
-					await cline.ask("command", removeClosingTag("command", command), block.partial).catch(() => {})
+					await darbot.ask("command", removeClosingTag("command", command), block.partial).catch(() => {})
 				}
 			} else {
 				// no command, still outputting partial result
-				await cline.say("completion_result", removeClosingTag("result", result), undefined, block.partial)
+				await darbot.say("completion_result", removeClosingTag("result", result), undefined, block.partial)
 			}
 			return
 		} else {
 			if (!result) {
-				cline.consecutiveMistakeCount++
-				cline.recordToolError("attempt_completion")
-				pushToolResult(await cline.sayAndCreateMissingParamError("attempt_completion", "result"))
+				darbot.consecutiveMistakeCount++
+				darbot.recordToolError("attempt_completion")
+				pushToolResult(await darbot.sayAndCreateMissingParamError("attempt_completion", "result"))
 				return
 			}
 
-			cline.consecutiveMistakeCount = 0
+			darbot.consecutiveMistakeCount = 0
 
 			// Command execution is permanently disabled in attempt_completion
 			// Users must use execute_command tool separately before attempt_completion
-			await cline.say("completion_result", result, undefined, false)
-			TelemetryService.instance.captureTaskCompleted(cline.taskId)
-			cline.emit("taskCompleted", cline.taskId, cline.getTokenUsage(), cline.toolUsage)
+			await darbot.say("completion_result", result, undefined, false)
+			TelemetryService.instance.captureTaskCompleted(darbot.taskId)
+			darbot.emit("taskCompleted", darbot.taskId, darbot.getTokenUsage(), darbot.toolUsage)
 
-			if (cline.parentTask) {
+			if (darbot.parentTask) {
 				const didApprove = await askFinishSubTaskApproval()
 
 				if (!didApprove) {
@@ -100,24 +100,24 @@ export async function attemptCompletionTool(
 				}
 
 				// tell the provider to remove the current subtask and resume the previous task in the stack
-				await cline.providerRef.deref()?.finishSubTask(result)
+				await darbot.providerRef.deref()?.finishSubTask(result)
 				return
 			}
 
 			// We already sent completion_result says, an
 			// empty string asks relinquishes control over
 			// button and field.
-			const { response, text, images } = await cline.ask("completion_result", "", false)
+			const { response, text, images } = await darbot.ask("completion_result", "", false)
 
 			// Signals to recursive loop to stop (for now
-			// cline never happens since yesButtonClicked
+			// darbot never happens since yesButtonClicked
 			// will trigger a new task).
 			if (response === "yesButtonClicked") {
 				pushToolResult("")
 				return
 			}
 
-			await cline.say("user_feedback", text ?? "", images)
+			await darbot.say("user_feedback", text ?? "", images)
 			const toolResults: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam)[] = []
 
 			toolResults.push({
@@ -126,8 +126,8 @@ export async function attemptCompletionTool(
 			})
 
 			toolResults.push(...formatResponse.imageBlocks(images))
-			cline.userMessageContent.push({ type: "text", text: `${toolDescription()} Result:` })
-			cline.userMessageContent.push(...toolResults)
+			darbot.userMessageContent.push({ type: "text", text: `${toolDescription()} Result:` })
+			darbot.userMessageContent.push(...toolResults)
 
 			return
 		}

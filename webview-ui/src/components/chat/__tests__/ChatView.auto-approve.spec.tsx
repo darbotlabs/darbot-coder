@@ -67,7 +67,7 @@ const mockPostMessage = (state: any) => {
 			type: "state",
 			state: {
 				version: "1.0.0",
-				clineMessages: [],
+				darbotMessages: [],
 				taskHistory: [],
 				shouldShowAnnouncement: false,
 				allowedCommands: [],
@@ -110,7 +110,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowReadOnly: true,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -124,7 +124,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowReadOnly: true,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -158,7 +158,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowReadOnly: true,
 			alwaysAllowReadOnlyOutsideWorkspace: true,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -173,7 +173,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowReadOnly: true,
 			alwaysAllowReadOnlyOutsideWorkspace: true,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -200,7 +200,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowReadOnlyOutsideWorkspace: true,
 			autoApprovalEnabled: true,
 			filePaths: ["/workspace/root", "/another/workspace"],
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -238,7 +238,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowReadOnlyOutsideWorkspace: false, // No permission for outside workspace
 			autoApprovalEnabled: true,
 			filePaths: ["/workspace/root", "/another/workspace"], // Same workspace paths as before
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -253,7 +253,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowReadOnly: true,
 			alwaysAllowReadOnlyOutsideWorkspace: false,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -289,7 +289,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowReadOnly: true,
 			autoApprovalEnabled: false,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -303,7 +303,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowReadOnly: true,
 			autoApprovalEnabled: false,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -335,7 +335,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowWrite: true,
 			autoApprovalEnabled: true,
 			writeDelayMs: 0,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -350,7 +350,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowWrite: true,
 			autoApprovalEnabled: true,
 			writeDelayMs: 0,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -386,7 +386,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			autoApprovalEnabled: true,
 			writeDelayMs: 0, // Set to 0 for testing
 			filePaths: ["/workspace/root", "/another/workspace"], // Define workspace paths for testing
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -402,7 +402,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowWriteOutsideWorkspace: true,
 			autoApprovalEnabled: true,
 			writeDelayMs: 0,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -442,7 +442,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			autoApprovalEnabled: true,
 			writeDelayMs: 0,
 			filePaths: ["/workspace/root", "/another/workspace"], // Define workspace paths for testing
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -458,7 +458,7 @@ describe("ChatView - Auto Approval Tests", () => {
 			alwaysAllowWriteOutsideWorkspace: false,
 			autoApprovalEnabled: true,
 			writeDelayMs: 0,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -495,7 +495,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowBrowser: true,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -509,7 +509,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowBrowser: true,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -542,7 +542,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowModeSwitch: true,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -556,7 +556,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowModeSwitch: true,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -589,7 +589,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowModeSwitch: false,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -603,7 +603,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowModeSwitch: false,
 			autoApprovalEnabled: true,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -634,7 +634,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowModeSwitch: true,
 			autoApprovalEnabled: false,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",
@@ -648,7 +648,7 @@ describe("ChatView - Auto Approval Tests", () => {
 		mockPostMessage({
 			alwaysAllowModeSwitch: true,
 			autoApprovalEnabled: false,
-			clineMessages: [
+			darbotMessages: [
 				{
 					type: "say",
 					say: "task",

@@ -1,7 +1,7 @@
 import { Task } from "../task/Task"
 import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../shared/tools"
 import { formatResponse } from "../prompts/responses"
-import { ClineAskUseMcpServer } from "../../shared/ExtensionMessage"
+import { DarbotAskUseMcpServer } from "../../shared/ExtensionMessage"
 import { McpExecutionStatus } from "@darbot-code/types"
 import { t } from "../../i18n"
 
@@ -21,7 +21,7 @@ type ValidationResult =
 	  }
 
 async function handlePartialRequest(
-	cline: Task,
+	darbot: Task,
 	params: McpToolParams,
 	removeClosingTag: RemoveClosingTag,
 ): Promise<void> {
@@ -30,27 +30,27 @@ async function handlePartialRequest(
 		serverName: removeClosingTag("server_name", params.server_name),
 		toolName: removeClosingTag("tool_name", params.tool_name),
 		arguments: removeClosingTag("arguments", params.arguments),
-	} satisfies ClineAskUseMcpServer)
+	} satisfies DarbotAskUseMcpServer)
 
-	await cline.ask("use_mcp_server", partialMessage, true).catch(() => {})
+	await darbot.ask("use_mcp_server", partialMessage, true).catch(() => {})
 }
 
 async function validateParams(
-	cline: Task,
+	darbot: Task,
 	params: McpToolParams,
 	pushToolResult: PushToolResult,
 ): Promise<ValidationResult> {
 	if (!params.server_name) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("use_mcp_tool")
-		pushToolResult(await cline.sayAndCreateMissingParamError("use_mcp_tool", "server_name"))
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("use_mcp_tool")
+		pushToolResult(await darbot.sayAndCreateMissingParamError("use_mcp_tool", "server_name"))
 		return { isValid: false }
 	}
 
 	if (!params.tool_name) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("use_mcp_tool")
-		pushToolResult(await cline.sayAndCreateMissingParamError("use_mcp_tool", "tool_name"))
+		darbot.consecutiveMistakeCount++
+		darbot.recordToolError("use_mcp_tool")
+		pushToolResult(await darbot.sayAndCreateMissingParamError("use_mcp_tool", "tool_name"))
 		return { isValid: false }
 	}
 
@@ -60,9 +60,9 @@ async function validateParams(
 		try {
 			parsedArguments = JSON.parse(params.arguments)
 		} catch (error) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("use_mcp_tool")
-			await cline.say("error", t("mcp:errors.invalidJsonArgument", { toolName: params.tool_name }))
+			darbot.consecutiveMistakeCount++
+			darbot.recordToolError("use_mcp_tool")
+			await darbot.say("error", t("mcp:errors.invalidJsonArgument", { toolName: params.tool_name }))
 
 			pushToolResult(
 				formatResponse.toolError(
@@ -81,9 +81,9 @@ async function validateParams(
 	}
 }
 
-async function sendExecutionStatus(cline: Task, status: McpExecutionStatus): Promise<void> {
-	const clineProvider = await cline.providerRef.deref()
-	clineProvider?.postMessageToWebview({
+async function sendExecutionStatus(darbot: Task, status: McpExecutionStatus): Promise<void> {
+	const darbotProvider = await darbot.providerRef.deref()
+	darbotProvider?.postMessageToWebview({
 		type: "mcpExecutionStatus",
 		text: JSON.stringify(status),
 	})
@@ -110,24 +110,24 @@ function processToolContent(toolResult: any): string {
 }
 
 async function executeToolAndProcessResult(
-	cline: Task,
+	darbot: Task,
 	serverName: string,
 	toolName: string,
 	parsedArguments: Record<string, unknown> | undefined,
 	executionId: string,
 	pushToolResult: PushToolResult,
 ): Promise<void> {
-	await cline.say("mcp_server_request_started")
+	await darbot.say("mcp_server_request_started")
 
 	// Send started status
-	await sendExecutionStatus(cline, {
+	await sendExecutionStatus(darbot, {
 		executionId,
 		status: "started",
 		serverName,
 		toolName,
 	})
 
-	const toolResult = await cline.providerRef.deref()?.getMcpHub()?.callTool(serverName, toolName, parsedArguments)
+	const toolResult = await darbot.providerRef.deref()?.getMcpHub()?.callTool(serverName, toolName, parsedArguments)
 
 	let toolResultPretty = "(No response)"
 
@@ -135,7 +135,7 @@ async function executeToolAndProcessResult(
 		const outputText = processToolContent(toolResult)
 
 		if (outputText) {
-			await sendExecutionStatus(cline, {
+			await sendExecutionStatus(darbot, {
 				executionId,
 				status: "output",
 				response: outputText,
@@ -145,7 +145,7 @@ async function executeToolAndProcessResult(
 		}
 
 		// Send completion status
-		await sendExecutionStatus(cline, {
+		await sendExecutionStatus(darbot, {
 			executionId,
 			status: toolResult.isError ? "error" : "completed",
 			response: toolResultPretty,
@@ -153,19 +153,19 @@ async function executeToolAndProcessResult(
 		})
 	} else {
 		// Send error status if no result
-		await sendExecutionStatus(cline, {
+		await sendExecutionStatus(darbot, {
 			executionId,
 			status: "error",
 			error: "No response from MCP server",
 		})
 	}
 
-	await cline.say("mcp_server_response", toolResultPretty)
+	await darbot.say("mcp_server_response", toolResultPretty)
 	pushToolResult(formatResponse.toolResult(toolResultPretty))
 }
 
 export async function useMcpToolTool(
-	cline: Task,
+	darbot: Task,
 	block: ToolUse,
 	askApproval: AskApproval,
 	handleError: HandleError,
@@ -181,12 +181,12 @@ export async function useMcpToolTool(
 
 		// Handle partial requests
 		if (block.partial) {
-			await handlePartialRequest(cline, params, removeClosingTag)
+			await handlePartialRequest(darbot, params, removeClosingTag)
 			return
 		}
 
 		// Validate parameters
-		const validation = await validateParams(cline, params, pushToolResult)
+		const validation = await validateParams(darbot, params, pushToolResult)
 		if (!validation.isValid) {
 			return
 		}
@@ -194,7 +194,7 @@ export async function useMcpToolTool(
 		const { serverName, toolName, parsedArguments } = validation
 
 		// Reset mistake count on successful validation
-		cline.consecutiveMistakeCount = 0
+		darbot.consecutiveMistakeCount = 0
 
 		// Get user approval
 		const completeMessage = JSON.stringify({
@@ -202,9 +202,9 @@ export async function useMcpToolTool(
 			serverName,
 			toolName,
 			arguments: params.arguments,
-		} satisfies ClineAskUseMcpServer)
+		} satisfies DarbotAskUseMcpServer)
 
-		const executionId = cline.lastMessageTs?.toString() ?? Date.now().toString()
+		const executionId = darbot.lastMessageTs?.toString() ?? Date.now().toString()
 		const didApprove = await askApproval("use_mcp_server", completeMessage)
 
 		if (!didApprove) {
@@ -212,8 +212,9 @@ export async function useMcpToolTool(
 		}
 
 		// Execute the tool and process results
-		await executeToolAndProcessResult(cline, serverName!, toolName!, parsedArguments, executionId, pushToolResult)
+		await executeToolAndProcessResult(darbot, serverName!, toolName!, parsedArguments, executionId, pushToolResult)
 	} catch (error) {
 		await handleError("executing MCP tool", error)
 	}
 }
+

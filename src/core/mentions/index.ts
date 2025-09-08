@@ -17,7 +17,7 @@ import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"
 
 import { FileContextTracker } from "../context-tracking/FileContextTracker"
 
-import { RooIgnoreController } from "../ignore/RooIgnoreController"
+import { DarbotIgnoreController } from "../ignore/DarbotIgnoreController"
 
 import { t } from "../../i18n"
 
@@ -78,8 +78,8 @@ export async function parseMentions(
 	cwd: string,
 	urlContentFetcher: UrlContentFetcher,
 	fileContextTracker?: FileContextTracker,
-	rooIgnoreController?: RooIgnoreController,
-	showRooIgnoredFiles: boolean = true,
+	darbotIgnoreController?: DarbotIgnoreController,
+	showDarbotIgnoredFiles: boolean = true,
 ): Promise<string> {
 	const mentions: Set<string> = new Set()
 	let parsedText = text.replace(mentionRegexGlobal, (match, mention) => {
@@ -147,7 +147,7 @@ export async function parseMentions(
 		} else if (mention.startsWith("/")) {
 			const mentionPath = mention.slice(1)
 			try {
-				const content = await getFileOrFolderContent(mentionPath, cwd, rooIgnoreController, showRooIgnoredFiles)
+				const content = await getFileOrFolderContent(mentionPath, cwd, darbotIgnoreController, showDarbotIgnoredFiles)
 				if (mention.endsWith("/")) {
 					parsedText += `\n\n<folder_content path="${mentionPath}">\n${content}\n</folder_content>`
 				} else {
@@ -208,8 +208,8 @@ export async function parseMentions(
 async function getFileOrFolderContent(
 	mentionPath: string,
 	cwd: string,
-	rooIgnoreController?: any,
-	showRooIgnoredFiles: boolean = true,
+	darbotIgnoreController?: any,
+	showDarbotIgnoredFiles: boolean = true,
 ): Promise<string> {
 	const unescapedPath = unescapeSpaces(mentionPath)
 	const absPath = path.resolve(cwd, unescapedPath)
@@ -218,7 +218,7 @@ async function getFileOrFolderContent(
 		const stats = await fs.stat(absPath)
 
 		if (stats.isFile()) {
-			if (rooIgnoreController && !rooIgnoreController.validateAccess(absPath)) {
+			if (darbotIgnoreController && !darbotIgnoreController.validateAccess(absPath)) {
 				return `(File ${mentionPath} is ignored by .darbotignore)`
 			}
 			try {
@@ -240,11 +240,11 @@ async function getFileOrFolderContent(
 				const entryPath = path.join(absPath, entry.name)
 
 				let isIgnored = false
-				if (rooIgnoreController) {
-					isIgnored = !rooIgnoreController.validateAccess(entryPath)
+				if (darbotIgnoreController) {
+					isIgnored = !darbotIgnoreController.validateAccess(entryPath)
 				}
 
-				if (isIgnored && !showRooIgnoredFiles) {
+				if (isIgnored && !showDarbotIgnoredFiles) {
 					continue
 				}
 

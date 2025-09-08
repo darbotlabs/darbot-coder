@@ -1,5 +1,5 @@
 import type { McpHub as McpHubType, McpConnection } from "../McpHub"
-import type { ClineProvider } from "../../../core/webview/ClineProvider"
+import type { DarbotProvider } from "../../../core/webview/DarbotProvider"
 import type { ExtensionContext, Uri } from "vscode"
 import { ServerConfigSchema, McpHub } from "../McpHub"
 import fs from "fs/promises"
@@ -67,7 +67,7 @@ vi.mock("vscode", () => ({
 	},
 }))
 vi.mock("fs/promises")
-vi.mock("../../../core/webview/ClineProvider")
+vi.mock("../../../core/webview/DarbotProvider")
 
 // Mock the MCP SDK modules
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
@@ -81,7 +81,7 @@ vi.mock("@modelcontextprotocol/sdk/client/index.js", () => ({
 
 describe("McpHub", () => {
 	let mcpHub: McpHubType
-	let mockProvider: Partial<ClineProvider>
+	let mockProvider: Partial<DarbotProvider>
 
 	// Store original console methods
 	const originalConsoleError = console.error
@@ -155,7 +155,7 @@ describe("McpHub", () => {
 			}),
 		)
 
-		mcpHub = new McpHub(mockProvider as ClineProvider)
+		mcpHub = new McpHub(mockProvider as DarbotProvider)
 	})
 
 	afterEach(() => {
@@ -298,7 +298,7 @@ describe("McpHub", () => {
 
 			// Verify the config was updated with initialized alwaysAllow
 			// Find the write call with the normalized path
-			const normalizedSettingsPath = "/mock/settings/path/cline_mcp_settings.json"
+			const normalizedSettingsPath = "/mock/settings/path/darbot_mcp_settings.json"
 			const writeCalls = vi.mocked(fs.writeFile).mock.calls
 
 			// Find the write call with the normalized path
@@ -438,7 +438,7 @@ describe("McpHub", () => {
 
 			// Verify the config was updated with initialized disabledTools
 			// Find the write call with the normalized path
-			const normalizedSettingsPath = "/mock/settings/path/cline_mcp_settings.json"
+			const normalizedSettingsPath = "/mock/settings/path/darbot_mcp_settings.json"
 			const writeCalls = (fs.writeFile as Mock).mock.calls
 
 			// Find the write call with the normalized path
@@ -486,7 +486,7 @@ describe("McpHub", () => {
 
 			// Verify the config was updated correctly
 			// Find the write call with the normalized path
-			const normalizedSettingsPath = "/mock/settings/path/cline_mcp_settings.json"
+			const normalizedSettingsPath = "/mock/settings/path/darbot_mcp_settings.json"
 			const writeCalls = vi.mocked(fs.writeFile).mock.calls
 
 			// Find the write call with the normalized path
@@ -718,7 +718,7 @@ describe("McpHub", () => {
 
 				// Verify the config was updated correctly
 				// Find the write call with the normalized path
-				const normalizedSettingsPath = "/mock/settings/path/cline_mcp_settings.json"
+				const normalizedSettingsPath = "/mock/settings/path/darbot_mcp_settings.json"
 				const writeCalls = vi.mocked(fs.writeFile).mock.calls
 
 				// Find the write call with the normalized path
@@ -934,7 +934,7 @@ describe("McpHub", () => {
 			}))
 
 			// Create a new McpHub instance
-			const mcpHub = new McpHub(mockProvider as ClineProvider)
+			const mcpHub = new McpHub(mockProvider as DarbotProvider)
 
 			// Mock the config file read
 			vi.mocked(fs.readFile).mockResolvedValue(
@@ -996,7 +996,7 @@ describe("McpHub", () => {
 			}))
 
 			// Create a new McpHub instance
-			const mcpHub = new McpHub(mockProvider as ClineProvider)
+			const mcpHub = new McpHub(mockProvider as DarbotProvider)
 
 			// Mock the config file read
 			vi.mocked(fs.readFile).mockResolvedValue(
@@ -1058,7 +1058,7 @@ describe("McpHub", () => {
 			}))
 
 			// Create a new McpHub instance
-			const mcpHub = new McpHub(mockProvider as ClineProvider)
+			const mcpHub = new McpHub(mockProvider as DarbotProvider)
 
 			// Mock the config file read with cmd.exe already as command
 			vi.mocked(fs.readFile).mockResolvedValue(
@@ -1127,7 +1127,7 @@ describe("McpHub", () => {
 			}))
 
 			// Create a new McpHub instance
-			const mcpHub = new McpHub(mockProvider as ClineProvider)
+			const mcpHub = new McpHub(mockProvider as DarbotProvider)
 
 			// Mock the config file read - simulating fnm/nvm-windows scenario
 			vi.mocked(fs.readFile).mockResolvedValue(
@@ -1200,7 +1200,7 @@ describe("McpHub", () => {
 			}))
 
 			// Create a new McpHub instance
-			const mcpHub = new McpHub(mockProvider as ClineProvider)
+			const mcpHub = new McpHub(mockProvider as DarbotProvider)
 
 			// Mock the config file read with CMD (uppercase) as command
 			vi.mocked(fs.readFile).mockResolvedValue(

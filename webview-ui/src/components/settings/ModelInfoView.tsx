@@ -1,4 +1,4 @@
-import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeLink } from "../vscode-components"
 
 import type { ModelInfo } from "@darbot-code/types"
 

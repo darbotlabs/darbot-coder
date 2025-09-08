@@ -1,6 +1,6 @@
 // npx vitest run src/integrations/terminal/__tests__/ExecaTerminal.spec.ts
 
-import { RooTerminalCallbacks } from "../types"
+import { DarbotTerminalCallbacks } from "../types"
 import { ExecaTerminal } from "../ExecaTerminal"
 
 describe("ExecaTerminal", () => {
@@ -13,7 +13,7 @@ describe("ExecaTerminal", () => {
 		const terminal = new ExecaTerminal(1, "/tmp")
 		let result
 
-		const callbacks: RooTerminalCallbacks = {
+		const callbacks: DarbotTerminalCallbacks = {
 			onLine: vi.fn(),
 			onCompleted: (output) => (result = output),
 			onShellExecutionStarted: vi.fn(),
