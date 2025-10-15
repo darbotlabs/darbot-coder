@@ -1,6 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { motion, type Variants } from "framer-motion"
 import { FaRobot, FaCode, FaBrain, FaTools, FaTerminal, FaPuzzlePiece, FaGlobe } from "react-icons/fa"
 import { FeaturesMobile } from "./features-mobile"
 
@@ -75,7 +75,7 @@ export function Features() {
 				delayChildren: 0.3,
 			},
 		},
-	}
+	} satisfies Variants
 
 	const itemVariants = {
 		hidden: {
@@ -86,7 +86,7 @@ export function Features() {
 			opacity: 1,
 			y: 0,
 		},
-	}
+	} satisfies Variants
 
 	const backgroundVariants = {
 		hidden: {
@@ -95,7 +95,7 @@ export function Features() {
 		visible: {
 			opacity: 1,
 		},
-	}
+	} satisfies Variants
 
 	return (
 		<section className="relative overflow-hidden border-t border-border py-32">

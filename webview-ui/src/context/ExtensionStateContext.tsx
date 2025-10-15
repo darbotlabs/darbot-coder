@@ -10,7 +10,7 @@ import {
 	ORGANIZATION_ALLOW_ALL,
 } from "@darbot-code/types"
 
-import { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata } from "@darbot/ExtensionMessage"
+import { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata, SerializedMemlmContext, SerializedAgentSuggestion } from "@darbot/ExtensionMessage"
 import { findLastIndex } from "@darbot/array"
 import { McpServer } from "@darbot/mcp"
 import { checkExistKey } from "@darbot/checkExistApiConfig"
@@ -36,6 +36,8 @@ export interface ExtensionStateContextType extends ExtensionState {
 	organizationAllowList: OrganizationAllowList
 	cloudIsAuthenticated: boolean
 	sharingEnabled: boolean
+	memlmContext?: SerializedMemlmContext
+	agentSuggestion?: SerializedAgentSuggestion
 	maxConcurrentFileReads?: number
 	mdmCompliant?: boolean
 	hasOpenedModeSelector: boolean // New property to track if user has opened mode selector
@@ -163,6 +165,8 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		version: "",
 		darbotMessages: [],
 		taskHistory: [],
+		memlmContext: undefined,
+		agentSuggestion: undefined,
 		shouldShowAnnouncement: false,
 		allowedCommands: [],
 		deniedCommands: [],

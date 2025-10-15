@@ -127,20 +127,11 @@ export function Footer() {
 										</Link>
 									</li>
 									<li>
-										<a
-											href={EXTERNAL_LINKS.SECURITY}
-											target="_blank"
-											rel="noopener noreferrer"
+										<Link
+											href="/security"
 											className="text-sm leading-6 text-muted-foreground transition-colors hover:text-foreground">
 											Security
-										</a>
-									</li>
-									<li>
-										<ScrollButton
-											targetId="testimonials"
-											className="text-sm leading-6 text-muted-foreground transition-colors hover:text-foreground">
-											Testimonials
-										</ScrollButton>
+										</Link>
 									</li>
 									<li>
 										<a
@@ -252,15 +243,6 @@ export function Footer() {
 											href="https://github.com/DarbotLabs/darbot-coder/issues"
 											className="text-sm leading-6 text-muted-foreground transition-colors hover:text-foreground">
 											Contact
-										</a>
-									</li>
-									<li>
-										<a
-											href={EXTERNAL_LINKS.CAREERS}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="text-sm leading-6 text-muted-foreground transition-colors hover:text-foreground">
-											Careers
 										</a>
 									</li>
 									<li>

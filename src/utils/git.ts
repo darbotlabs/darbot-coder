@@ -3,6 +3,9 @@ import * as path from "path"
 import { promises as fs } from "fs"
 import { exec } from "child_process"
 import { promisify } from "util"
+
+import { GitCommit } from "../shared/git"
+
 import { truncateOutput } from "../integrations/misc/extract-text"
 
 const execAsync = promisify(exec)
@@ -12,14 +15,6 @@ export interface GitRepositoryInfo {
 	repositoryUrl?: string
 	repositoryName?: string
 	defaultBranch?: string
-}
-
-export interface GitCommit {
-	hash: string
-	shortHash: string
-	subject: string
-	author: string
-	date: string
 }
 
 /**

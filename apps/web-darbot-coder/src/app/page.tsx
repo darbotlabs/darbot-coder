@@ -8,7 +8,6 @@ import {
 	AnimatedBackground,
 	InstallSection,
 	Features,
-	Testimonials,
 	FAQSection,
 	CodeExample,
 } from "@/components/homepage"
@@ -86,13 +85,10 @@ export default async function Home() {
 			<div id="features">
 				<Features />
 			</div>
-			<div id="testimonials">
-				<Testimonials />
-			</div>
 			<div id="faq">
 				<FAQSection />
 			</div>
-			<InstallSection downloads={downloads} />
+			<InstallSection downloads={downloads.label} />
 		</>
 	)
 }

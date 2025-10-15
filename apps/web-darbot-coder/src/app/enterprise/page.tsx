@@ -1,10 +1,10 @@
 import { Code, CheckCircle, Shield, Users, Zap, Workflow, Lock } from "lucide-react"
+import Link from "next/link"
 
 import { Button } from "@/components/ui"
 import { AnimatedText } from "@/components/animated-text"
 import { AnimatedBackground } from "@/components/homepage"
 import { ContactForm } from "@/components/enterprise/contact-form"
-import { EXTERNAL_LINKS } from "@/lib/constants"
 
 export default async function Enterprise() {
 	return (
@@ -432,10 +432,10 @@ export default async function Enterprise() {
 									</p>
 								</div>
 								<Button size="lg" asChild className="w-full">
-									<a href={EXTERNAL_LINKS.SECURITY} target="_blank" rel="noopener noreferrer">
+									<Link href="/security">
 										View Security Details
 										<Shield className="ml-2 h-4 w-4" />
-									</a>
+									</Link>
 								</Button>
 							</div>
 						</div>

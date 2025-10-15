@@ -100,7 +100,6 @@ Make darbot-coder work your way with:
 
 ### Community
 
-- **Discord:** [Join our Discord server](https://discord.gg/darbot-coder) for real-time help and discussions
 - **GitHub:** Report [issues](https://github.com/DarbotFramework/darbot-coder/issues) or request [features](https://github.com/DarbotFramework/darbot-coder/discussions/categories/feature-requests)
 
 ---
@@ -110,6 +109,28 @@ Make darbot-coder work your way with:
 **darbot-coder is a derivative work based on open-source AI coding tools**, building upon excellent foundations in AI-assisted coding. We are deeply grateful to the open-source community for their foundational work that made this orchestration platform possible.
 
 **darbot-coder** creates an AI agent orchestration platform that embodies the **darbotian philosophy**: *"Proficiency and determination through ethical results driven outcomes."*
+
+---
+
+## Environment Configuration
+
+darbot-coder relies on a root `.env` file to describe every AI provider and integration that the orchestration layer can access. The committed template groups credentials for Azure OpenAI (Sora, GPT-Image-1, chat deployments), Flux/Foundry routing, Microsoft Dataverse, and optional GitHub automation.
+
+**Set up your secrets**
+
+1. Copy the template to a private file (`cp .env .env.local` on macOS/Linux or `Copy-Item .env .env.local` in PowerShell).
+2. Replace placeholder values such as `your-resource-name` or `your-api-key` with credentials from your own subscriptions.
+3. Remove entries for services you are not using—the extension skips providers without keys.
+4. Keep the populated file out of version control; `.gitignore` already covers `.env*`.
+
+**Variable groups at a glance**
+
+- `SORA_*` / `SORA_AOAI_*`: Azure OpenAI Sora video generation.
+- `IMAGEGEN_*`: Azure OpenAI GPT-Image-1 image generation.
+- `FOUNDRY_*`, `FLUX_*`, `GROK_*`, `GPT_4_1_*`, `GPT_5_*`, `MODEL_ROUTER_*`, `O4_*`: Model router and Foundry-hosted multimodal deployments.
+- `DATAVERSE_*`: Microsoft Dataverse connectivity for asset storage.
+- `GITHUB_*`: Optional GitHub integration for workflow automation.
+- `MODEL_PROVIDER`, `AOAI_API_VERSION`, and related IDs: Global defaults that keep orchestration aligned with the active provider.
 
 ---
 
@@ -127,7 +148,11 @@ git clone https://github.com/DarbotFramework/darbot-coder.git
 pnpm install
 ```
 
-3. **Run the extension**:
+3. **Configure environment variables**:
+
+    Copy `.env` to `.env.local` (or another untracked filename) and fill in the credentials described in [Environment Configuration](#environment-configuration).
+
+4. **Run the extension**:
 
 There are several ways to run the DR-Coder extension:
 
@@ -183,7 +208,7 @@ We use [changesets](https://github.com/changesets/changesets) for versioning and
 
 ## Disclaimer
 
-**Please note** that Darbot Code, Inc does **not** make any representations or warranties regarding any code, models, or other tools provided or made available in connection with Darbot Code, any associated third-party tools, or any resulting outputs. You assume **all risks** associated with the use of any such tools or outputs; such tools are provided on an **"AS IS"** and **"AS AVAILABLE"** basis. Such risks may include, without limitation, intellectual property infringement, cyber vulnerabilities or attacks, bias, inaccuracies, errors, defects, viruses, downtime, property loss or damage, and/or personal injury. You are solely responsible for your use of any such tools or outputs (including, without limitation, the legality, appropriateness, and results thereof).
+**Please note** that Darbot Labs does **not** make any representations or warranties regarding any code, models, or other tools provided or made available in connection with Darbot Code, any associated third-party tools, or any resulting outputs. You assume **all risks** associated with the use of any such tools or outputs; such tools are provided on an **"AS IS"** and **"AS AVAILABLE"** basis. Such risks may include, without limitation, intellectual property infringement, cyber vulnerabilities or attacks, bias, inaccuracies, errors, defects, viruses, downtime, property loss or damage, and/or personal injury. You are solely responsible for your use of any such tools or outputs (including, without limitation, the legality, appropriateness, and results thereof).
 
 ---
 

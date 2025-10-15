@@ -5,6 +5,10 @@
 		"build": {
 			"outputs": [".next/**"],
 			"inputs": ["src/**", "package.json", "tsconfig.json", "next.config.ts"]
+		},
+		"test": {
+			"outputs": [],
+			"inputs": ["src/**", "package.json", "tsconfig.json", "vitest.config.ts"]
 		}
 	}
 }

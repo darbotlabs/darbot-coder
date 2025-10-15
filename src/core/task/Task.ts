@@ -91,6 +91,7 @@ import { ApiMessage } from "../task-persistence/apiMessages"
 import { getMessagesSinceLastSummary, summarizeConversation } from "../condense"
 import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
 import { restoreTodoListForTask } from "../tools/updateTodoListTool"
+import { MemlmEngine, type MemlmExecutionStepLog, type MemlmExecutionSummary } from "../memory/MemlmEngine"
 
 // Constants
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
@@ -224,6 +225,18 @@ export class Task extends EventEmitter<DarbotEvents> {
 	didAlreadyUseTool = false
 	didCompleteReadingStream = false
 
+	private memlmEngine?: MemlmEngine
+	private memlmRecordedSteps: Set<string> = new Set()
+	private memlmStepHistory: Array<{
+		id: string
+		action: string
+		success: boolean
+		signals: string[]
+		keywords: string[]
+	}> = []
+	private memlmFinalized = false
+	private memlmCurrentMode: string = defaultModeSlug
+
 	constructor({
 		provider,
 		apiConfiguration,
@@ -271,6 +284,27 @@ export class Task extends EventEmitter<DarbotEvents> {
 		this.fuzzyMatchThreshold = fuzzyMatchThreshold
 		this.consecutiveMistakeLimit = consecutiveMistakeLimit ?? DEFAULT_CONSECUTIVE_MISTAKE_LIMIT
 		this.providerRef = new WeakRef(provider)
+		this.memlmEngine = provider.customModesManager.getMemlmEngine()
+		this.memlmEngine
+			?.initialize()
+			.catch((error) => {
+				console.error("[MemLM] Failed to initialize engine:", error)
+			})
+		provider
+			.getState()
+			.then((state) => {
+				if (state?.mode) {
+					this.memlmCurrentMode = state.mode
+				}
+			})
+			.catch((error) => {
+				console.error("[MemLM] Failed to resolve initial mode:", error)
+			})
+		this.on("taskModeSwitched", (_, mode) => {
+			if (typeof mode === "string" && mode.length > 0) {
+				this.memlmCurrentMode = mode
+			}
+		})
 		this.globalStoragePath = provider.context.globalStorageUri.fsPath
 		this.diffViewProvider = new DiffViewProvider(this.cwd)
 		this.enableCheckpoints = enableCheckpoints
@@ -377,6 +411,12 @@ export class Task extends EventEmitter<DarbotEvents> {
 		this.emit("message", { action: "created", message })
 		await this.saveDarbotMessages()
 
+		try {
+			await this.captureMemlmFromMessage(message)
+		} catch (error) {
+			console.error("[MemLM] Failed to capture step:", error)
+		}
+
 		const shouldCaptureMessage = message.partial !== true && CloudService.isEnabled()
 
 		if (shouldCaptureMessage) {
@@ -432,6 +472,250 @@ export class Task extends EventEmitter<DarbotEvents> {
 		}
 	}
 
+	private async captureMemlmFromMessage(message: DarbotMessage): Promise<void> {
+		if (!this.memlmEngine) {
+			return
+		}
+
+		if (message.type !== "say" || message.partial) {
+			return
+		}
+
+		const stepType = message.say
+		if (!stepType) {
+			return
+		}
+
+		if (this.darbotMessages.length === 1 && stepType === "text") {
+			return
+		}
+
+		const successSteps = new Set<string>([
+			"api_req_finished",
+			"command_output",
+			"browser_action_result",
+			"subtask_result",
+			"text",
+		])
+		const failureSteps = new Set<string>([
+			"error",
+			"api_req_failed",
+			"diff_error",
+			"darbotignore_error",
+			"condense_context_error",
+		])
+
+		let shouldRecord = false
+		let success = true
+
+		if (successSteps.has(stepType)) {
+			shouldRecord = true
+			success = true
+		} else if (failureSteps.has(stepType)) {
+			shouldRecord = true
+			success = false
+		} else if (stepType === "completion_result") {
+			shouldRecord = true
+			success = !this.containsFailureIndicator(message.text)
+		}
+
+		if (!shouldRecord) {
+			return
+		}
+
+		await this.memlmEngine.initialize()
+
+		const executionId = this.taskId
+		const stepIdBase = message.ts ? String(message.ts) : String(Date.now())
+		const stepId = `${executionId}:${stepIdBase}`
+
+		if (this.memlmRecordedSteps.has(stepId)) {
+			return
+		}
+
+		const keywords = this.extractMemlmKeywords(message.text, [stepType, this.memlmCurrentMode])
+		const signals = this.deriveMemlmSignals(stepType)
+		const log: MemlmExecutionStepLog = {
+			executionId,
+			stepId,
+			agentSlug: this.memlmCurrentMode,
+			action: this.describeMemlmAction(stepType, message.text),
+			success,
+			order: Math.max(0, this.darbotMessages.length - 1),
+			keywords,
+			outputSummary: this.buildMemlmOutputSummary(message),
+			cost: this.extractMemlmCost(message),
+			signals,
+		}
+
+		await this.memlmEngine.recordExecutionStep(log)
+		this.memlmRecordedSteps.add(stepId)
+		this.memlmStepHistory.push({
+			id: stepId,
+			action: log.action,
+			success,
+			signals,
+			keywords,
+		})
+		if (this.memlmStepHistory.length > 50) {
+			this.memlmStepHistory.shift()
+		}
+
+		if (stepType === "completion_result") {
+			await this.finalizeMemlmExecution(success, message.text)
+		}
+	}
+
+	private deriveMemlmSignals(stepType: string): string[] {
+		switch (stepType) {
+			case "command_output":
+				return ["terminal"]
+			case "browser_action_result":
+				return ["browser"]
+			case "api_req_finished":
+				return ["llm"]
+			case "subtask_result":
+				return ["subtask"]
+			case "completion_result":
+				return ["summary"]
+			case "error":
+			case "api_req_failed":
+			case "diff_error":
+			case "darbotignore_error":
+			case "condense_context_error":
+				return ["error"]
+			default:
+				return ["assistant"]
+		}
+	}
+
+	private describeMemlmAction(stepType: string, text?: string): string {
+		const snippet = text ? text.replace(/\s+/g, " " ).trim().slice(0, 120) : ""
+		switch (stepType) {
+			case "api_req_finished":
+				return snippet ? `LLM output: ${snippet}` : "LLM output"
+			case "command_output":
+				return snippet ? `Command output: ${snippet}` : "Command output"
+			case "browser_action_result":
+				return snippet ? `Browser action: ${snippet}` : "Browser action"
+			case "subtask_result":
+				return snippet ? `Subtask result: ${snippet}` : "Subtask result"
+			case "completion_result":
+				return snippet ? `Completion: ${snippet}` : "Completion"
+			case "error":
+				return snippet ? `Error: ${snippet}` : "Error"
+			case "api_req_failed":
+				return snippet ? `LLM failure: ${snippet}` : "LLM failure"
+			default:
+				return snippet ? `${stepType}: ${snippet}` : stepType
+		}
+	}
+
+	private buildMemlmOutputSummary(message: DarbotMessage): string | undefined {
+		if (!message.text) {
+			return undefined
+		}
+		const trimmed = message.text.trim()
+		if (!trimmed) {
+			return undefined
+		}
+		return trimmed.replace(/\s+/g, " " ).slice(0, 200)
+	}
+
+	private extractMemlmKeywords(text?: string, extras: string[] = []): string[] {
+		const base = (text ?? "")
+			.toLowerCase()
+			.replace(/[^a-z0-9_\-\s]/g, " " )
+			.split(/[\s_\-]+/g)
+			.filter((token) => token.length > 2)
+
+		const additional = extras.map((token) => token.toLowerCase())
+		const combined: string[] = []
+
+		for (const token of [...base, ...additional]) {
+			if (token && !combined.includes(token)) {
+				combined.push(token)
+			}
+		}
+
+		return combined.slice(0, 40)
+	}
+
+	private extractMemlmCost(message: DarbotMessage): number | undefined {
+		if (!message.text) {
+			return undefined
+		}
+		const trimmed = message.text.trim()
+		if (!trimmed.startsWith("{")) {
+			return undefined
+		}
+		try {
+			const parsed = JSON.parse(trimmed)
+			return typeof parsed?.cost === "number" ? parsed.cost : undefined
+		} catch {
+			return undefined
+		}
+	}
+
+	private containsFailureIndicator(text?: string): boolean {
+		if (!text) {
+			return false
+		}
+		const lowered = text.toLowerCase()
+		return lowered.includes("fail") || lowered.includes("error") || lowered.includes("unable")
+	}
+
+	private async finalizeMemlmExecution(success: boolean, failureReason?: string): Promise<void> {
+		if (this.memlmFinalized || !this.memlmEngine) {
+			return
+		}
+
+		this.memlmFinalized = true
+
+		try {
+			await this.memlmEngine.initialize()
+
+			const userTask = this.darbotMessages[0]?.text?.trim() ?? ""
+			const keywords = [...new Set(this.memlmStepHistory.flatMap((step) => step.keywords))].slice(0, 12)
+			const stepSummaries = this.memlmStepHistory.slice(-3).map((step) => step.action)
+			const signals = [...new Set(this.memlmStepHistory.flatMap((step) => step.signals))]
+
+			const summaryLines: string[] = []
+			if (keywords.length) {
+				summaryLines.push(`keywords: ${keywords.join(", ")}`)
+			}
+			if (stepSummaries.length) {
+				summaryLines.push(`steps: ${stepSummaries.join(" | ")}`)
+			}
+			if (signals.length) {
+				summaryLines.push(`signals: ${signals.join(", ")}`)
+			}
+			const analysisSummary = summaryLines.length ? summaryLines.join("\n") : `mode: ${this.memlmCurrentMode}`
+
+			const errors: string[] = []
+			for (const step of this.memlmStepHistory) {
+				if (!step.success) {
+					errors.push(step.action)
+				}
+			}
+			if (!success && failureReason) {
+				errors.push(failureReason)
+			}
+
+			const summary: MemlmExecutionSummary = {
+				executionId: this.taskId,
+				success,
+				userRequest: userTask,
+				analysisSummary,
+				recommendations: [],
+				errors,
+			}
+
+			await this.memlmEngine.finalizeExecution(summary)
+		} catch (error) {
+			console.error("[MemLM] Failed to finalize execution:", error)
+		}
+	}
 	// Note that `partial` has three valid states true (partial message),
 	// false (completion of partial message), undefined (individual complete
 	// message).
@@ -544,1461 +828,6 @@ export class Task extends EventEmitter<DarbotEvents> {
 		this.askResponseText = undefined
 		this.askResponseImages = undefined
 		this.emit("taskAskResponded")
-		return result
-	}
-
-	async handleWebviewAskResponse(askResponse: DarbotAskResponse, text?: string, images?: string[]) {
-		this.askResponse = askResponse
-		this.askResponseText = text
-		this.askResponseImages = images
-	}
-
-	async handleTerminalOperation(terminalOperation: "continue" | "abort") {
-		if (terminalOperation === "continue") {
-			this.terminalProcess?.continue()
-		} else if (terminalOperation === "abort") {
-			this.terminalProcess?.abort()
-		}
-	}
-
-	public async condenseContext(): Promise<void> {
-		const systemPrompt = await this.getSystemPrompt()
-
-		// Get condensing configuration
-		// Using type assertion to handle the case where Phase 1 hasn't been implemented yet
-		const state = await this.providerRef.deref()?.getState()
-		const customCondensingPrompt = state ? (state as any).customCondensingPrompt : undefined
-		const condensingApiConfigId = state ? (state as any).condensingApiConfigId : undefined
-		const listApiConfigMeta = state ? (state as any).listApiConfigMeta : undefined
-
-		// Determine API handler to use
-		let condensingApiHandler: ApiHandler | undefined
-		if (condensingApiConfigId && listApiConfigMeta && Array.isArray(listApiConfigMeta)) {
-			// Using type assertion for the id property to avoid implicit any
-			const matchingConfig = listApiConfigMeta.find((config: any) => config.id === condensingApiConfigId)
-			if (matchingConfig) {
-				const profile = await this.providerRef.deref()?.providerSettingsManager.getProfile({
-					id: condensingApiConfigId,
-				})
-				// Ensure profile and apiProvider exist before trying to build handler
-				if (profile && profile.apiProvider) {
-					condensingApiHandler = buildApiHandler(profile)
-				}
-			}
-		}
-
-		const { contextTokens: prevContextTokens } = this.getTokenUsage()
-		const {
-			messages,
-			summary,
-			cost,
-			newContextTokens = 0,
-			error,
-		} = await summarizeConversation(
-			this.apiConversationHistory,
-			this.api, // Main API handler (fallback)
-			systemPrompt, // Default summarization prompt (fallback)
-			this.taskId,
-			prevContextTokens,
-			false, // manual trigger
-			customCondensingPrompt, // User's custom prompt
-			condensingApiHandler, // Specific handler for condensing
-		)
-		if (error) {
-			this.say(
-				"condense_context_error",
-				error,
-				undefined /* images */,
-				false /* partial */,
-				undefined /* checkpoint */,
-				undefined /* progressStatus */,
-				{ isNonInteractive: true } /* options */,
-			)
-			return
-		}
-		await this.overwriteApiConversationHistory(messages)
-		const contextCondense: ContextCondense = { summary, cost, newContextTokens, prevContextTokens }
-		await this.say(
-			"condense_context",
-			undefined /* text */,
-			undefined /* images */,
-			false /* partial */,
-			undefined /* checkpoint */,
-			undefined /* progressStatus */,
-			{ isNonInteractive: true } /* options */,
-			contextCondense,
-		)
-	}
-
-	async say(
-		type: DarbotSay,
-		text?: string,
-		images?: string[],
-		partial?: boolean,
-		checkpoint?: Record<string, unknown>,
-		progressStatus?: ToolProgressStatus,
-		options: {
-			isNonInteractive?: boolean
-		} = {},
-		contextCondense?: ContextCondense,
-	): Promise<undefined> {
-		if (this.abort) {
-			throw new Error(`[DarbotCode#say] task ${this.taskId}.${this.instanceId} aborted`)
-		}
-
-		if (partial !== undefined) {
-			const lastMessage = this.darbotMessages.at(-1)
-
-			const isUpdatingPreviousPartial =
-				lastMessage && lastMessage.partial && lastMessage.type === "say" && lastMessage.say === type
-
-			if (partial) {
-				if (isUpdatingPreviousPartial) {
-					// Existing partial message, so update it.
-					lastMessage.text = text
-					lastMessage.images = images
-					lastMessage.partial = partial
-					lastMessage.progressStatus = progressStatus
-					this.updateDarbotMessage(lastMessage)
-				} else {
-					// This is a new partial message, so add it with partial state.
-					const sayTs = Date.now()
-
-					if (!options.isNonInteractive) {
-						this.lastMessageTs = sayTs
-					}
-
-					await this.addToDarbotMessages({
-						ts: sayTs,
-						type: "say",
-						say: type,
-						text,
-						images,
-						partial,
-						contextCondense,
-					})
-				}
-			} else {
-				// New now have a complete version of a previously partial message.
-				// This is the complete version of a previously partial
-				// message, so replace the partial with the complete version.
-				if (isUpdatingPreviousPartial) {
-					if (!options.isNonInteractive) {
-						this.lastMessageTs = lastMessage.ts
-					}
-
-					lastMessage.text = text
-					lastMessage.images = images
-					lastMessage.partial = false
-					lastMessage.progressStatus = progressStatus
-
-					// Instead of streaming partialMessage events, we do a save
-					// and post like normal to persist to disk.
-					await this.saveDarbotMessages()
-
-					// More performant than an entire `postStateToWebview`.
-					this.updateDarbotMessage(lastMessage)
-				} else {
-					// This is a new and complete message, so add it like normal.
-					const sayTs = Date.now()
-
-					if (!options.isNonInteractive) {
-						this.lastMessageTs = sayTs
-					}
-
-					await this.addToDarbotMessages({ ts: sayTs, type: "say", say: type, text, images, contextCondense })
-				}
-			}
-		} else {
-			// This is a new non-partial message, so add it like normal.
-			const sayTs = Date.now()
-
-			// A "non-interactive" message is a message is one that the user
-			// does not need to respond to. We don't want these message types
-			// to trigger an update to `lastMessageTs` since they can be created
-			// asynchronously and could interrupt a pending ask.
-			if (!options.isNonInteractive) {
-				this.lastMessageTs = sayTs
-			}
-
-			await this.addToDarbotMessages({
-				ts: sayTs,
-				type: "say",
-				say: type,
-				text,
-				images,
-				checkpoint,
-				contextCondense,
-			})
-		}
-	}
-
-	async sayAndCreateMissingParamError(toolName: ToolName, paramName: string, relPath?: string) {
-		await this.say(
-			"error",
-			`darbot tried to use ${toolName}${
-				relPath ? ` for '${relPath.toPosix()}'` : ""
-			} without value for required parameter '${paramName}'. Retrying...`,
-		)
-		return formatResponse.toolError(formatResponse.missingToolParameterError(paramName))
-	}
-
-	// Start / Abort / Resume
-
-	private async startTask(task?: string, images?: string[]): Promise<void> {
-		// `conversationHistory` (for API) and `darbotMessages` (for webview)
-		// need to be in sync.
-		// If the extension process were killed, then on restart the
-		// `darbotMessages` might not be empty, so we need to set it to [] when
-		// we create a new Darbot client (otherwise webview would show stale
-		// messages from previous session).
-		this.darbotMessages = []
-		this.apiConversationHistory = []
-		await this.providerRef.deref()?.postStateToWebview()
-
-		await this.say("text", task, images)
-		this.isInitialized = true
-
-		let imageBlocks: Anthropic.ImageBlockParam[] = formatResponse.imageBlocks(images)
-
-		console.log(`[subtasks] task ${this.taskId}.${this.instanceId} starting`)
-
-		await this.initiateTaskLoop([
-			{
-				type: "text",
-				text: `<task>\n${task}\n</task>`,
-			},
-			...imageBlocks,
-		])
-	}
-
-	public async resumePausedTask(lastMessage: string) {
-		// Release this darbot instance from paused state.
-		this.isPaused = false
-		this.emit("taskUnpaused")
-
-		// Fake an answer from the subtask that it has completed running and
-		// this is the result of what it has done  add the message to the chat
-		// history and to the webview ui.
-		try {
-			await this.say("subtask_result", lastMessage)
-
-			await this.addToApiConversationHistory({
-				role: "user",
-				content: [{ type: "text", text: `[new_task completed] Result: ${lastMessage}` }],
-			})
-		} catch (error) {
-			this.providerRef
-				.deref()
-				?.log(`Error failed to add reply from subtask into conversation of parent task, error: ${error}`)
-
-			throw error
-		}
-	}
-
-	private async resumeTaskFromHistory() {
-		const modifiedDarbotMessages = await this.getSavedDarbotMessages()
-
-		// Remove any resume messages that may have been added before
-		const lastRelevantMessageIndex = findLastIndex(
-			modifiedDarbotMessages,
-			(m) => !(m.ask === "resume_task" || m.ask === "resume_completed_task"),
-		)
-
-		if (lastRelevantMessageIndex !== -1) {
-			modifiedDarbotMessages.splice(lastRelevantMessageIndex + 1)
-		}
-
-		// since we don't use api_req_finished anymore, we need to check if the last api_req_started has a cost value, if it doesn't and no cancellation reason to present, then we remove it since it indicates an api request without any partial content streamed
-		const lastApiReqStartedIndex = findLastIndex(
-			modifiedDarbotMessages,
-			(m) => m.type === "say" && m.say === "api_req_started",
-		)
-
-		if (lastApiReqStartedIndex !== -1) {
-			const lastApiReqStarted = modifiedDarbotMessages[lastApiReqStartedIndex]
-			const { cost, cancelReason }: DarbotApiReqInfo = JSON.parse(lastApiReqStarted.text || "{}")
-			if (cost === undefined && cancelReason === undefined) {
-				modifiedDarbotMessages.splice(lastApiReqStartedIndex, 1)
-			}
-		}
-
-		await this.overwriteDarbotMessages(modifiedDarbotMessages)
-		this.darbotMessages = await this.getSavedDarbotMessages()
-
-		// Now present the darbot messages to the user and ask if they want to
-		// resume (NOTE: we ran into a bug before where the
-		// apiConversationHistory wouldn't be initialized when opening a old
-		// task, and it was because we were waiting for resume).
-		// This is important in case the user deletes messages without resuming
-		// the task first.
-		this.apiConversationHistory = await this.getSavedApiConversationHistory()
-
-		const lastDarbotMessage = this.darbotMessages
-			.slice()
-			.reverse()
-			.find((m) => !(m.ask === "resume_task" || m.ask === "resume_completed_task")) // could be multiple resume tasks
-
-		let askType: DarbotAsk
-		if (lastDarbotMessage?.ask === "completion_result") {
-			askType = "resume_completed_task"
-		} else {
-			askType = "resume_task"
-		}
-
-		this.isInitialized = true
-
-		const { response, text, images } = await this.ask(askType) // calls poststatetowebview
-		let responseText: string | undefined
-		let responseImages: string[] | undefined
-		if (response === "messageResponse") {
-			await this.say("user_feedback", text, images)
-			responseText = text
-			responseImages = images
-		}
-
-		// Make sure that the api conversation history can be resumed by the API,
-		// even if it goes out of sync with darbot messages.
-		let existingApiConversationHistory: ApiMessage[] = await this.getSavedApiConversationHistory()
-
-		// v2.0 xml tags refactor caveat: since we don't use tools anymore, we need to replace all tool use blocks with a text block since the API disallows conversations with tool uses and no tool schema
-		const conversationWithoutToolBlocks = existingApiConversationHistory.map((message) => {
-			if (Array.isArray(message.content)) {
-				const newContent = message.content.map((block) => {
-					if (block.type === "tool_use") {
-						// It's important we convert to the new tool schema
-						// format so the model doesn't get confused about how to
-						// invoke tools.
-						const inputAsXml = Object.entries(block.input as Record<string, string>)
-							.map(([key, value]) => `<${key}>\n${value}\n</${key}>`)
-							.join("\n")
-						return {
-							type: "text",
-							text: `<${block.name}>\n${inputAsXml}\n</${block.name}>`,
-						} as Anthropic.Messages.TextBlockParam
-					} else if (block.type === "tool_result") {
-						// Convert block.content to text block array, removing images
-						const contentAsTextBlocks = Array.isArray(block.content)
-							? block.content.filter((item) => item.type === "text")
-							: [{ type: "text", text: block.content }]
-						const textContent = contentAsTextBlocks.map((item) => item.text).join("\n\n")
-						const toolName = findToolName(block.tool_use_id, existingApiConversationHistory)
-						return {
-							type: "text",
-							text: `[${toolName} Result]\n\n${textContent}`,
-						} as Anthropic.Messages.TextBlockParam
-					}
-					return block
-				})
-				return { ...message, content: newContent }
-			}
-			return message
-		})
-		existingApiConversationHistory = conversationWithoutToolBlocks
-
-		// FIXME: remove tool use blocks altogether
-
-		// if the last message is an assistant message, we need to check if there's tool use since every tool use has to have a tool response
-		// if there's no tool use and only a text block, then we can just add a user message
-		// (note this isn't relevant anymore since we use custom tool prompts instead of tool use blocks, but this is here for legacy purposes in case users resume old tasks)
-
-		// if the last message is a user message, we can need to get the assistant message before it to see if it made tool calls, and if so, fill in the remaining tool responses with 'interrupted'
-
-		let modifiedOldUserContent: Anthropic.Messages.ContentBlockParam[] // either the last message if its user message, or the user message before the last (assistant) message
-		let modifiedApiConversationHistory: ApiMessage[] // need to remove the last user message to replace with new modified user message
-		if (existingApiConversationHistory.length > 0) {
-			const lastMessage = existingApiConversationHistory[existingApiConversationHistory.length - 1]
-
-			if (lastMessage.role === "assistant") {
-				const content = Array.isArray(lastMessage.content)
-					? lastMessage.content
-					: [{ type: "text", text: lastMessage.content }]
-				const hasToolUse = content.some((block) => block.type === "tool_use")
-
-				if (hasToolUse) {
-					const toolUseBlocks = content.filter(
-						(block) => block.type === "tool_use",
-					) as Anthropic.Messages.ToolUseBlock[]
-					const toolResponses: Anthropic.ToolResultBlockParam[] = toolUseBlocks.map((block) => ({
-						type: "tool_result",
-						tool_use_id: block.id,
-						content: "Task was interrupted before this tool call could be completed.",
-					}))
-					modifiedApiConversationHistory = [...existingApiConversationHistory] // no changes
-					modifiedOldUserContent = [...toolResponses]
-				} else {
-					modifiedApiConversationHistory = [...existingApiConversationHistory]
-					modifiedOldUserContent = []
-				}
-			} else if (lastMessage.role === "user") {
-				const previousAssistantMessage: ApiMessage | undefined =
-					existingApiConversationHistory[existingApiConversationHistory.length - 2]
-
-				const existingUserContent: Anthropic.Messages.ContentBlockParam[] = Array.isArray(lastMessage.content)
-					? lastMessage.content
-					: [{ type: "text", text: lastMessage.content }]
-				if (previousAssistantMessage && previousAssistantMessage.role === "assistant") {
-					const assistantContent = Array.isArray(previousAssistantMessage.content)
-						? previousAssistantMessage.content
-						: [{ type: "text", text: previousAssistantMessage.content }]
-
-					const toolUseBlocks = assistantContent.filter(
-						(block) => block.type === "tool_use",
-					) as Anthropic.Messages.ToolUseBlock[]
-
-					if (toolUseBlocks.length > 0) {
-						const existingToolResults = existingUserContent.filter(
-							(block) => block.type === "tool_result",
-						) as Anthropic.ToolResultBlockParam[]
-
-						const missingToolResponses: Anthropic.ToolResultBlockParam[] = toolUseBlocks
-							.filter(
-								(toolUse) => !existingToolResults.some((result) => result.tool_use_id === toolUse.id),
-							)
-							.map((toolUse) => ({
-								type: "tool_result",
-								tool_use_id: toolUse.id,
-								content: "Task was interrupted before this tool call could be completed.",
-							}))
-
-						modifiedApiConversationHistory = existingApiConversationHistory.slice(0, -1) // removes the last user message
-						modifiedOldUserContent = [...existingUserContent, ...missingToolResponses]
-					} else {
-						modifiedApiConversationHistory = existingApiConversationHistory.slice(0, -1)
-						modifiedOldUserContent = [...existingUserContent]
-					}
-				} else {
-					modifiedApiConversationHistory = existingApiConversationHistory.slice(0, -1)
-					modifiedOldUserContent = [...existingUserContent]
-				}
-			} else {
-				throw new Error("Unexpected: Last message is not a user or assistant message")
-			}
-		} else {
-			throw new Error("Unexpected: No existing API conversation history")
-		}
-
-		let newUserContent: Anthropic.Messages.ContentBlockParam[] = [...modifiedOldUserContent]
-
-		const agoText = ((): string => {
-			const timestamp = lastDarbotMessage?.ts ?? Date.now()
-			const now = Date.now()
-			const diff = now - timestamp
-			const minutes = Math.floor(diff / 60000)
-			const hours = Math.floor(minutes / 60)
-			const days = Math.floor(hours / 24)
-
-			if (days > 0) {
-				return `${days} day${days > 1 ? "s" : ""} ago`
-			}
-			if (hours > 0) {
-				return `${hours} hour${hours > 1 ? "s" : ""} ago`
-			}
-			if (minutes > 0) {
-				return `${minutes} minute${minutes > 1 ? "s" : ""} ago`
-			}
-			return "just now"
-		})()
-
-		const lastTaskResumptionIndex = newUserContent.findIndex(
-			(x) => x.type === "text" && x.text.startsWith("[TASK RESUMPTION]"),
-		)
-		if (lastTaskResumptionIndex !== -1) {
-			newUserContent.splice(lastTaskResumptionIndex, newUserContent.length - lastTaskResumptionIndex)
-		}
-
-		const wasRecent = lastDarbotMessage?.ts && Date.now() - lastDarbotMessage.ts < 30_000
-
-		newUserContent.push({
-			type: "text",
-			text:
-				`[TASK RESUMPTION] This task was interrupted ${agoText}. It may or may not be complete, so please reassess the task context. Be aware that the project state may have changed since then. If the task has not been completed, retry the last step before interruption and proceed with completing the task.\n\nNote: If you previously attempted a tool use that the user did not provide a result for, you should assume the tool use was not successful and assess whether you should retry. If the last tool was a browser_action, the browser has been closed and you must launch a new browser if needed.${
-					wasRecent
-						? "\n\nIMPORTANT: If the last tool use was a write_to_file that was interrupted, the file was reverted back to its original state before the interrupted edit, and you do NOT need to re-read the file as you already have its up-to-date contents."
-						: ""
-				}` +
-				(responseText
-					? `\n\nNew instructions for task continuation:\n<user_message>\n${responseText}\n</user_message>`
-					: ""),
-		})
-
-		if (responseImages && responseImages.length > 0) {
-			newUserContent.push(...formatResponse.imageBlocks(responseImages))
-		}
-
-		await this.overwriteApiConversationHistory(modifiedApiConversationHistory)
-
-		console.log(`[subtasks] task ${this.taskId}.${this.instanceId} resuming from history item`)
-
-		await this.initiateTaskLoop(newUserContent)
-	}
-
-	public dispose(): void {
-		// Stop waiting for child task completion.
-		if (this.pauseInterval) {
-			clearInterval(this.pauseInterval)
-			this.pauseInterval = undefined
-		}
-
-		// Release any terminals associated with this task.
-		try {
-			// Release any terminals associated with this task.
-			TerminalRegistry.releaseTerminalsForTask(this.taskId)
-		} catch (error) {
-			console.error("Error releasing terminals:", error)
-		}
-
-		try {
-			this.urlContentFetcher.closeBrowser()
-		} catch (error) {
-			console.error("Error closing URL content fetcher browser:", error)
-		}
-
-		try {
-			this.browserSession.closeBrowser()
-		} catch (error) {
-			console.error("Error closing browser session:", error)
-		}
-
-		try {
-			if (this.darbotIgnoreController) {
-				this.darbotIgnoreController.dispose()
-				this.darbotIgnoreController = undefined
-			}
-		} catch (error) {
-			console.error("Error disposing DarbotIgnoreController:", error)
-			// This is the critical one for the leak fix
-		}
-
-		try {
-			this.fileContextTracker.dispose()
-		} catch (error) {
-			console.error("Error disposing file context tracker:", error)
-		}
-
-		try {
-			// If we're not streaming then `abortStream` won't be called
-			if (this.isStreaming && this.diffViewProvider.isEditing) {
-				this.diffViewProvider.revertChanges().catch(console.error)
-			}
-		} catch (error) {
-			console.error("Error reverting diff changes:", error)
-		}
-	}
-
-	public async abortTask(isAbandoned = false) {
-		console.log(`[subtasks] aborting task ${this.taskId}.${this.instanceId}`)
-
-		// Will stop any autonomously running promises.
-		if (isAbandoned) {
-			this.abandoned = true
-		}
-
-		this.abort = true
-		this.emit("taskAborted")
-
-		try {
-			this.dispose() // Call the centralized dispose method
-		} catch (error) {
-			console.error(`Error during task ${this.taskId}.${this.instanceId} disposal:`, error)
-			// Don't rethrow - we want abort to always succeed
-		}
-		// Save the countdown message in the automatic retry or other content.
-		try {
-			// Save the countdown message in the automatic retry or other content.
-			await this.saveDarbotMessages()
-		} catch (error) {
-			console.error(`Error saving messages during abort for task ${this.taskId}.${this.instanceId}:`, error)
-		}
-	}
-
-	// Used when a sub-task is launched and the parent task is waiting for it to
-	// finish.
-	// TBD: The 1s should be added to the settings, also should add a timeout to
-	// prevent infinite waiting.
-	public async waitForResume() {
-		await new Promise<void>((resolve) => {
-			this.pauseInterval = setInterval(() => {
-				if (!this.isPaused) {
-					clearInterval(this.pauseInterval)
-					this.pauseInterval = undefined
-					resolve()
-				}
-			}, 1000)
-		})
-	}
-
-	// Task Loop
-
-	private async initiateTaskLoop(userContent: Anthropic.Messages.ContentBlockParam[]): Promise<void> {
-		// Kicks off the checkpoints initialization process in the background.
-		getCheckpointService(this)
-
-		let nextUserContent = userContent
-		let includeFileDetails = true
-
-		this.emit("taskStarted")
-
-		while (!this.abort) {
-			const didEndLoop = await this.recursivelyMakeDarbotRequests(nextUserContent, includeFileDetails)
-			includeFileDetails = false // we only need file details the first time
-
-			// The way this agentic loop works is that darbot will be given a
-			// task that he then calls tools to complete. Unless there's an
-			// attempt_completion call, we keep responding back to him with his
-			// tool's responses until he either attempt_completion or does not
-			// use anymore tools. If he does not use anymore tools, we ask him
-			// to consider if he's completed the task and then call
-			// attempt_completion, otherwise proceed with completing the task.
-			// There is a MAX_REQUESTS_PER_TASK limit to prevent infinite
-			// requests, but darbot is prompted to finish the task as efficiently
-			// as he can.
-
-			if (didEndLoop) {
-				// For now a task never 'completes'. This will only happen if
-				// the user hits max requests and denies resetting the count.
-				break
-			} else {
-				nextUserContent = [{ type: "text", text: formatResponse.noToolsUsed() }]
-				this.consecutiveMistakeCount++
-			}
-		}
-	}
-
-	public async recursivelyMakeDarbotRequests(
-		userContent: Anthropic.Messages.ContentBlockParam[],
-		includeFileDetails: boolean = false,
-	): Promise<boolean> {
-		if (this.abort) {
-			throw new Error(`[DarbotCode#recursivelyMakeDarbotRequests] task ${this.taskId}.${this.instanceId} aborted`)
-		}
-
-		if (this.consecutiveMistakeLimit > 0 && this.consecutiveMistakeCount >= this.consecutiveMistakeLimit) {
-			const { response, text, images } = await this.ask(
-				"mistake_limit_reached",
-				t("common:errors.mistake_limit_guidance"),
-			)
-
-			if (response === "messageResponse") {
-				userContent.push(
-					...[
-						{ type: "text" as const, text: formatResponse.tooManyMistakes(text) },
-						...formatResponse.imageBlocks(images),
-					],
-				)
-
-				await this.say("user_feedback", text, images)
-
-				// Track consecutive mistake errors in telemetry.
-				TelemetryService.instance.captureConsecutiveMistakeError(this.taskId)
-			}
-
-			this.consecutiveMistakeCount = 0
-		}
-
-		// In this darbot request loop, we need to check if this task instance
-		// has been asked to wait for a subtask to finish before continuing.
-		const provider = this.providerRef.deref()
-
-		if (this.isPaused && provider) {
-			provider.log(`[subtasks] paused ${this.taskId}.${this.instanceId}`)
-			await this.waitForResume()
-			provider.log(`[subtasks] resumed ${this.taskId}.${this.instanceId}`)
-			const currentMode = (await provider.getState())?.mode ?? defaultModeSlug
-
-			if (currentMode !== this.pausedModeSlug) {
-				// The mode has changed, we need to switch back to the paused mode.
-				await provider.handleModeSwitch(this.pausedModeSlug)
-
-				// Delay to allow mode change to take effect before next tool is executed.
-				await delay(500)
-
-				provider.log(
-					`[subtasks] task ${this.taskId}.${this.instanceId} has switched back to '${this.pausedModeSlug}' from '${currentMode}'`,
-				)
-			}
-		}
-
-		// Getting verbose details is an expensive operation, it uses ripgrep to
-		// top-down build file structure of project which for large projects can
-		// take a few seconds. For the best UX we show a placeholder api_req_started
-		// message with a loading spinner as this happens.
-
-		// Determine API protocol based on provider and model
-		const modelId = getModelId(this.apiConfiguration)
-		const apiProtocol = getApiProtocol(this.apiConfiguration.apiProvider, modelId)
-
-		await this.say(
-			"api_req_started",
-			JSON.stringify({
-				request:
-					userContent.map((block) => formatContentBlockToMarkdown(block)).join("\n\n") + "\n\nLoading...",
-				apiProtocol,
-			}),
-		)
-
-		const { showDarbotIgnoredFiles = true } = (await this.providerRef.deref()?.getState()) ?? {}
-
-		const parsedUserContent = await processUserContentMentions({
-			userContent,
-			cwd: this.cwd,
-			urlContentFetcher: this.urlContentFetcher,
-			fileContextTracker: this.fileContextTracker,
-			darbotIgnoreController: this.darbotIgnoreController,
-			showDarbotIgnoredFiles,
-		})
-
-		const environmentDetails = await getEnvironmentDetails(this, includeFileDetails)
-
-		// Add environment details as its own text block, separate from tool
-		// results.
-		const finalUserContent = [...parsedUserContent, { type: "text" as const, text: environmentDetails }]
-
-		await this.addToApiConversationHistory({ role: "user", content: finalUserContent })
-		TelemetryService.instance.captureConversationMessage(this.taskId, "user")
-
-		// Since we sent off a placeholder api_req_started message to update the
-		// webview while waiting to actually start the API request (to load
-		// potential details for example), we need to update the text of that
-		// message.
-		const lastApiReqIndex = findLastIndex(this.darbotMessages, (m) => m.say === "api_req_started")
-
-		this.darbotMessages[lastApiReqIndex].text = JSON.stringify({
-			request: finalUserContent.map((block) => formatContentBlockToMarkdown(block)).join("\n\n"),
-			apiProtocol,
-		} satisfies DarbotApiReqInfo)
-
-		await this.saveDarbotMessages()
-		await provider?.postStateToWebview()
-
-		try {
-			let cacheWriteTokens = 0
-			let cacheReadTokens = 0
-			let inputTokens = 0
-			let outputTokens = 0
-			let totalCost: number | undefined
-
-			// We can't use `api_req_finished` anymore since it's a unique case
-			// where it could come after a streaming message (i.e. in the middle
-			// of being updated or executed).
-			// Fortunately `api_req_finished` was always parsed out for the GUI
-			// anyways, so it remains solely for legacy purposes to keep track
-			// of prices in tasks from history (it's worth removing a few months
-			// from now).
-			const updateApiReqMsg = (cancelReason?: DarbotApiReqCancelReason, streamingFailedMessage?: string) => {
-				const existingData = JSON.parse(this.darbotMessages[lastApiReqIndex].text || "{}")
-				this.darbotMessages[lastApiReqIndex].text = JSON.stringify({
-					...existingData,
-					tokensIn: inputTokens,
-					tokensOut: outputTokens,
-					cacheWrites: cacheWriteTokens,
-					cacheReads: cacheReadTokens,
-					cost:
-						totalCost ??
-						calculateApiCostAnthropic(
-							this.api.getModel().info,
-							inputTokens,
-							outputTokens,
-							cacheWriteTokens,
-							cacheReadTokens,
-						),
-					cancelReason,
-					streamingFailedMessage,
-				} satisfies DarbotApiReqInfo)
-			}
-
-			const abortStream = async (cancelReason: DarbotApiReqCancelReason, streamingFailedMessage?: string) => {
-				if (this.diffViewProvider.isEditing) {
-					await this.diffViewProvider.revertChanges() // closes diff view
-				}
-
-				// if last message is a partial we need to update and save it
-				const lastMessage = this.darbotMessages.at(-1)
-
-				if (lastMessage && lastMessage.partial) {
-					// lastMessage.ts = Date.now() DO NOT update ts since it is used as a key for virtuoso list
-					lastMessage.partial = false
-					// instead of streaming partialMessage events, we do a save and post like normal to persist to disk
-					console.log("updating partial message", lastMessage)
-					// await this.saveDarbotMessages()
-				}
-
-				// Let assistant know their response was interrupted for when task is resumed
-				await this.addToApiConversationHistory({
-					role: "assistant",
-					content: [
-						{
-							type: "text",
-							text:
-								assistantMessage +
-								`\n\n[${
-									cancelReason === "streaming_failed"
-										? "Response interrupted by API Error"
-										: "Response interrupted by user"
-								}]`,
-						},
-					],
-				})
-
-				// Update `api_req_started` to have cancelled and cost, so that
-				// we can display the cost of the partial stream.
-				updateApiReqMsg(cancelReason, streamingFailedMessage)
-				await this.saveDarbotMessages()
-
-				// Signals to provider that it can retrieve the saved messages
-				// from disk, as abortTask can not be awaited on in nature.
-				this.didFinishAbortingStream = true
-			}
-
-			// Reset streaming state.
-			this.currentStreamingContentIndex = 0
-			this.assistantMessageContent = []
-			this.didCompleteReadingStream = false
-			this.userMessageContent = []
-			this.userMessageContentReady = false
-			this.didRejectTool = false
-			this.didAlreadyUseTool = false
-			this.presentAssistantMessageLocked = false
-			this.presentAssistantMessageHasPendingUpdates = false
-
-			await this.diffViewProvider.reset()
-
-			// Yields only if the first chunk is successful, otherwise will
-			// allow the user to retry the request (most likely due to rate
-			// limit error, which gets thrown on the first chunk).
-			const stream = this.attemptApiRequest()
-			let assistantMessage = ""
-			let reasoningMessage = ""
-			this.isStreaming = true
-
-			try {
-				for await (const chunk of stream) {
-					if (!chunk) {
-						// Sometimes chunk is undefined, no idea that can cause
-						// it, but this workaround seems to fix it.
-						continue
-					}
-
-					switch (chunk.type) {
-						case "reasoning":
-							reasoningMessage += chunk.text
-							await this.say("reasoning", reasoningMessage, undefined, true)
-							break
-						case "usage":
-							inputTokens += chunk.inputTokens
-							outputTokens += chunk.outputTokens
-							cacheWriteTokens += chunk.cacheWriteTokens ?? 0
-							cacheReadTokens += chunk.cacheReadTokens ?? 0
-							totalCost = chunk.totalCost
-							break
-						case "text": {
-							assistantMessage += chunk.text
-
-							// Parse raw assistant message into content blocks.
-							const prevLength = this.assistantMessageContent.length
-							this.assistantMessageContent = parseAssistantMessage(assistantMessage)
-
-							if (this.assistantMessageContent.length > prevLength) {
-								// New content we need to present, reset to
-								// false in case previous content set this to true.
-								this.userMessageContentReady = false
-							}
-
-							// Present content to user.
-							presentAssistantMessage(this)
-							break
-						}
-					}
-
-					if (this.abort) {
-						console.log(`aborting stream, this.abandoned = ${this.abandoned}`)
-
-						if (!this.abandoned) {
-							// Only need to gracefully abort if this instance
-							// isn't abandoned (sometimes OpenRouter stream
-							// hangs, in which case this would affect future
-							// instances of darbot).
-							await abortStream("user_cancelled")
-						}
-
-						break // Aborts the stream.
-					}
-
-					if (this.didRejectTool) {
-						// `userContent` has a tool rejection, so interrupt the
-						// assistant's response to present the user's feedback.
-						assistantMessage += "\n\n[Response interrupted by user feedback]"
-						// Instead of setting this preemptively, we allow the
-						// present iterator to finish and set
-						// userMessageContentReady when its ready.
-						// this.userMessageContentReady = true
-						break
-					}
-
-					// PREV: We need to let the request finish for openrouter to
-					// get generation details.
-					// UPDATE: It's better UX to interrupt the request at the
-					// cost of the API cost not being retrieved.
-					if (this.didAlreadyUseTool) {
-						assistantMessage +=
-							"\n\n[Response interrupted by a tool use result. Only one tool may be used at a time and should be placed at the end of the message.]"
-						break
-					}
-				}
-			} catch (error) {
-				// Abandoned happens when extension is no longer waiting for the
-				// darbot instance to finish aborting (error is thrown here when
-				// any function in the for loop throws due to this.abort).
-				if (!this.abandoned) {
-					// If the stream failed, there's various states the task
-					// could be in (i.e. could have streamed some tools the user
-					// may have executed), so we just resort to replicating a
-					// cancel task.
-					this.abortTask()
-
-					// Check if this was a user-initiated cancellation
-					// If this.abort is true, it means the user clicked cancel, so we should
-					// treat this as "user_cancelled" rather than "streaming_failed"
-					const cancelReason = this.abort ? "user_cancelled" : "streaming_failed"
-					const streamingFailedMessage = this.abort
-						? undefined
-						: (error.message ?? JSON.stringify(serializeError(error), null, 2))
-
-					await abortStream(cancelReason, streamingFailedMessage)
-
-					const history = await provider?.getTaskWithId(this.taskId)
-
-					if (history) {
-						await provider?.initDarbotWithHistoryItem(history.historyItem)
-					}
-				}
-			} finally {
-				this.isStreaming = false
-			}
-
-			if (inputTokens > 0 || outputTokens > 0 || cacheWriteTokens > 0 || cacheReadTokens > 0) {
-				TelemetryService.instance.captureLlmCompletion(this.taskId, {
-					inputTokens,
-					outputTokens,
-					cacheWriteTokens,
-					cacheReadTokens,
-					cost:
-						totalCost ??
-						calculateApiCostAnthropic(
-							this.api.getModel().info,
-							inputTokens,
-							outputTokens,
-							cacheWriteTokens,
-							cacheReadTokens,
-						),
-				})
-			}
-
-			// Need to call here in case the stream was aborted.
-			if (this.abort || this.abandoned) {
-				throw new Error(`[DarbotCode#recursivelyMakeDarbotRequests] task ${this.taskId}.${this.instanceId} aborted`)
-			}
-
-			this.didCompleteReadingStream = true
-
-			// Set any blocks to be complete to allow `presentAssistantMessage`
-			// to finish and set `userMessageContentReady` to true.
-			// (Could be a text block that had no subsequent tool uses, or a
-			// text block at the very end, or an invalid tool use, etc. Whatever
-			// the case, `presentAssistantMessage` relies on these blocks either
-			// to be completed or the user to reject a block in order to proceed
-			// and eventually set userMessageContentReady to true.)
-			const partialBlocks = this.assistantMessageContent.filter((block) => block.partial)
-			partialBlocks.forEach((block) => (block.partial = false))
-
-			// Can't just do this b/c a tool could be in the middle of executing.
-			// this.assistantMessageContent.forEach((e) => (e.partial = false))
-
-			if (partialBlocks.length > 0) {
-				// If there is content to update then it will complete and
-				// update `this.userMessageContentReady` to true, which we
-				// `pWaitFor` before making the next request. All this is really
-				// doing is presenting the last partial message that we just set
-				// to complete.
-				presentAssistantMessage(this)
-			}
-
-			updateApiReqMsg()
-			await this.saveDarbotMessages()
-			await this.providerRef.deref()?.postStateToWebview()
-
-			// Now add to apiConversationHistory.
-			// Need to save assistant responses to file before proceeding to
-			// tool use since user can exit at any moment and we wouldn't be
-			// able to save the assistant's response.
-			let didEndLoop = false
-
-			if (assistantMessage.length > 0) {
-				await this.addToApiConversationHistory({
-					role: "assistant",
-					content: [{ type: "text", text: assistantMessage }],
-				})
-
-				TelemetryService.instance.captureConversationMessage(this.taskId, "assistant")
-
-				// NOTE: This comment is here for future reference - this was a
-				// workaround for `userMessageContent` not getting set to true.
-				// It was due to it not recursively calling for partial blocks
-				// when `didRejectTool`, so it would get stuck waiting for a
-				// partial block to complete before it could continue.
-				// In case the content blocks finished it may be the api stream
-				// finished after the last parsed content block was executed, so
-				// we are able to detect out of bounds and set
-				// `userMessageContentReady` to true (note you should not call
-				// `presentAssistantMessage` since if the last block i
-				//  completed it will be presented again).
-				// const completeBlocks = this.assistantMessageContent.filter((block) => !block.partial) // If there are any partial blocks after the stream ended we can consider them invalid.
-				// if (this.currentStreamingContentIndex >= completeBlocks.length) {
-				// 	this.userMessageContentReady = true
-				// }
-
-				await pWaitFor(() => this.userMessageContentReady)
-
-				// If the model did not tool use, then we need to tell it to
-				// either use a tool or attempt_completion.
-				const didToolUse = this.assistantMessageContent.some((block) => block.type === "tool_use")
-
-				if (!didToolUse) {
-					this.userMessageContent.push({ type: "text", text: formatResponse.noToolsUsed() })
-					this.consecutiveMistakeCount++
-				}
-
-				const recDidEndLoop = await this.recursivelyMakeDarbotRequests(this.userMessageContent)
-				didEndLoop = recDidEndLoop
-			} else {
-				// If there's no assistant_responses, that means we got no text
-				// or tool_use content blocks from API which we should assume is
-				// an error.
-				await this.say(
-					"error",
-					"Unexpected API Response: The language model did not provide any assistant messages. This may indicate an issue with the API or the model's output.",
-				)
-
-				await this.addToApiConversationHistory({
-					role: "assistant",
-					content: [{ type: "text", text: "Failure: I did not provide a response." }],
-				})
-			}
-
-			return didEndLoop // Will always be false for now.
-		} catch (error) {
-			// This should never happen since the only thing that can throw an
-			// error is the attemptApiRequest, which is wrapped in a try catch
-			// that sends an ask where if noButtonClicked, will clear current
-			// task and destroy this instance. However to avoid unhandled
-			// promise rejection, we will end this loop which will end execution
-			// of this instance (see `startTask`).
-			return true // Needs to be true so parent loop knows to end task.
-		}
-	}
-
-	private async getSystemPrompt(): Promise<string> {
-		const { mcpEnabled } = (await this.providerRef.deref()?.getState()) ?? {}
-		let mcpHub: McpHub | undefined
-		if (mcpEnabled ?? true) {
-			const provider = this.providerRef.deref()
-
-			if (!provider) {
-				throw new Error("Provider reference lost during view transition")
-			}
-
-			// Wait for MCP hub initialization through McpServerManager
-			mcpHub = await McpServerManager.getInstance(provider.context, provider)
-
-			if (!mcpHub) {
-				throw new Error("Failed to get MCP hub from server manager")
-			}
-
-			// Wait for MCP servers to be connected before generating system prompt
-			await pWaitFor(() => !mcpHub!.isConnecting, { timeout: 10_000 }).catch(() => {
-				console.error("MCP servers failed to connect in time")
-			})
-		}
-
-		const darbotIgnoreInstructions = this.darbotIgnoreController?.getInstructions()
-
-		const state = await this.providerRef.deref()?.getState()
-
-		const {
-			browserViewportSize,
-			mode,
-			customModes,
-			customModePrompts,
-			customInstructions,
-			experiments,
-			enableMcpServerCreation,
-			browserToolEnabled,
-			language,
-			maxConcurrentFileReads,
-			maxReadFileLine,
-		} = state ?? {}
-
-		return await (async () => {
-			const provider = this.providerRef.deref()
-
-			if (!provider) {
-				throw new Error("Provider not available")
-			}
-
-			return SYSTEM_PROMPT(
-				provider.context,
-				this.cwd,
-				(this.api.getModel().info.supportsComputerUse ?? false) && (browserToolEnabled ?? true),
-				mcpHub,
-				this.diffStrategy,
-				browserViewportSize,
-				mode,
-				customModePrompts,
-				customModes,
-				customInstructions,
-				this.diffEnabled,
-				experiments,
-				enableMcpServerCreation,
-				language,
-				darbotIgnoreInstructions,
-				maxReadFileLine !== -1,
-				{
-					maxConcurrentFileReads,
-				},
-			)
-		})()
-	}
-
-	public async *attemptApiRequest(retryAttempt: number = 0): ApiStream {
-		const state = await this.providerRef.deref()?.getState()
-		const {
-			apiConfiguration,
-			autoApprovalEnabled,
-			alwaysApproveResubmit,
-			requestDelaySeconds,
-			mode,
-			autoCondenseContext = true,
-			autoCondenseContextPercent = 100,
-			profileThresholds = {},
-		} = state ?? {}
-
-		// Get condensing configuration for automatic triggers
-		const customCondensingPrompt = state?.customCondensingPrompt
-		const condensingApiConfigId = state?.condensingApiConfigId
-		const listApiConfigMeta = state?.listApiConfigMeta
-
-		// Determine API handler to use for condensing
-		let condensingApiHandler: ApiHandler | undefined
-		if (condensingApiConfigId && listApiConfigMeta && Array.isArray(listApiConfigMeta)) {
-			// Using type assertion for the id property to avoid implicit any
-			const matchingConfig = listApiConfigMeta.find((config: any) => config.id === condensingApiConfigId)
-			if (matchingConfig) {
-				const profile = await this.providerRef.deref()?.providerSettingsManager.getProfile({
-					id: condensingApiConfigId,
-				})
-				// Ensure profile and apiProvider exist before trying to build handler
-				if (profile && profile.apiProvider) {
-					condensingApiHandler = buildApiHandler(profile)
-				}
-			}
-		}
-
-		let rateLimitDelay = 0
-
-		// Use the shared timestamp so that subtasks respect the same rate-limit
-		// window as their parent tasks.
-		if (Task.lastGlobalApiRequestTime) {
-			const now = Date.now()
-			const timeSinceLastRequest = now - Task.lastGlobalApiRequestTime
-			const rateLimit = apiConfiguration?.rateLimitSeconds || 0
-			rateLimitDelay = Math.ceil(Math.max(0, rateLimit * 1000 - timeSinceLastRequest) / 1000)
-		}
-
-		// Only show rate limiting message if we're not retrying. If retrying, we'll include the delay there.
-		if (rateLimitDelay > 0 && retryAttempt === 0) {
-			// Show countdown timer
-			for (let i = rateLimitDelay; i > 0; i--) {
-				const delayMessage = `Rate limiting for ${i} seconds...`
-				await this.say("api_req_retry_delayed", delayMessage, undefined, true)
-				await delay(1000)
-			}
-		}
-
-		// Update last request time before making the request so that subsequent
-		// requests — even from new subtasks — will honour the provider's rate-limit.
-		Task.lastGlobalApiRequestTime = Date.now()
-
-		const systemPrompt = await this.getSystemPrompt()
-		const { contextTokens } = this.getTokenUsage()
-
-		if (contextTokens) {
-			const modelInfo = this.api.getModel().info
-
-			const maxTokens = getModelMaxOutputTokens({
-				modelId: this.api.getModel().id,
-				model: modelInfo,
-				settings: this.apiConfiguration,
-			})
-
-			const contextWindow = modelInfo.contextWindow
-
-			const currentProfileId =
-				state?.listApiConfigMeta.find((profile) => profile.name === state?.currentApiConfigName)?.id ??
-				"default"
-
-			const truncateResult = await truncateConversationIfNeeded({
-				messages: this.apiConversationHistory,
-				totalTokens: contextTokens,
-				maxTokens,
-				contextWindow,
-				apiHandler: this.api,
-				autoCondenseContext,
-				autoCondenseContextPercent,
-				systemPrompt,
-				taskId: this.taskId,
-				customCondensingPrompt,
-				condensingApiHandler,
-				profileThresholds,
-				currentProfileId,
-			})
-			if (truncateResult.messages !== this.apiConversationHistory) {
-				await this.overwriteApiConversationHistory(truncateResult.messages)
-			}
-			if (truncateResult.error) {
-				await this.say("condense_context_error", truncateResult.error)
-			} else if (truncateResult.summary) {
-				const { summary, cost, prevContextTokens, newContextTokens = 0 } = truncateResult
-				const contextCondense: ContextCondense = { summary, cost, newContextTokens, prevContextTokens }
-				await this.say(
-					"condense_context",
-					undefined /* text */,
-					undefined /* images */,
-					false /* partial */,
-					undefined /* checkpoint */,
-					undefined /* progressStatus */,
-					{ isNonInteractive: true } /* options */,
-					contextCondense,
-				)
-			}
-		}
-
-		const messagesSinceLastSummary = getMessagesSinceLastSummary(this.apiConversationHistory)
-		const cleanConversationHistory = maybeRemoveImageBlocks(messagesSinceLastSummary, this.api).map(
-			({ role, content }) => ({ role, content }),
-		)
-
-		// Check if we've reached the maximum number of auto-approved requests
-		const maxRequests = state?.allowedMaxRequests || Infinity
-
-		// Increment the counter for each new API request
-		this.consecutiveAutoApprovedRequestsCount++
-
-		if (this.consecutiveAutoApprovedRequestsCount > maxRequests) {
-			const { response } = await this.ask("auto_approval_max_req_reached", JSON.stringify({ count: maxRequests }))
-			// If we get past the promise, it means the user approved and did not start a new task
-			if (response === "yesButtonClicked") {
-				this.consecutiveAutoApprovedRequestsCount = 0
-			}
-		}
-
-		const metadata: ApiHandlerCreateMessageMetadata = {
-			mode: mode,
-			taskId: this.taskId,
-		}
-
-		const stream = this.api.createMessage(systemPrompt, cleanConversationHistory, metadata)
-		const iterator = stream[Symbol.asyncIterator]()
-
-		try {
-			// Awaiting first chunk to see if it will throw an error.
-			this.isWaitingForFirstChunk = true
-			const firstChunk = await iterator.next()
-			yield firstChunk.value
-			this.isWaitingForFirstChunk = false
-		} catch (error) {
-			this.isWaitingForFirstChunk = false
-			// note that this api_req_failed ask is unique in that we only present this option if the api hasn't streamed any content yet (ie it fails on the first chunk due), as it would allow them to hit a retry button. However if the api failed mid-stream, it could be in any arbitrary state where some tools may have executed, so that error is handled differently and requires cancelling the task entirely.
-			if (autoApprovalEnabled && alwaysApproveResubmit) {
-				let errorMsg
-
-				if (error.error?.metadata?.raw) {
-					errorMsg = JSON.stringify(error.error.metadata.raw, null, 2)
-				} else if (error.message) {
-					errorMsg = error.message
-				} else {
-					errorMsg = "Unknown error"
-				}
-
-				const baseDelay = requestDelaySeconds || 5
-				let exponentialDelay = Math.min(
-					Math.ceil(baseDelay * Math.pow(2, retryAttempt)),
-					MAX_EXPONENTIAL_BACKOFF_SECONDS,
-				)
-
-				// If the error is a 429, and the error details contain a retry delay, use that delay instead of exponential backoff
-				if (error.status === 429) {
-					const geminiRetryDetails = error.errorDetails?.find(
-						(detail: any) => detail["@type"] === "type.googleapis.com/google.rpc.RetryInfo",
-					)
-					if (geminiRetryDetails) {
-						const match = geminiRetryDetails?.retryDelay?.match(/^(\d+)s$/)
-						if (match) {
-							exponentialDelay = Number(match[1]) + 1
-						}
-					}
-				}
-
-				// Wait for the greater of the exponential delay or the rate limit delay
-				const finalDelay = Math.max(exponentialDelay, rateLimitDelay)
-
-				// Show countdown timer with exponential backoff
-				for (let i = finalDelay; i > 0; i--) {
-					await this.say(
-						"api_req_retry_delayed",
-						`${errorMsg}\n\nRetry attempt ${retryAttempt + 1}\nRetrying in ${i} seconds...`,
-						undefined,
-						true,
-					)
-					await delay(1000)
-				}
-
-				await this.say(
-					"api_req_retry_delayed",
-					`${errorMsg}\n\nRetry attempt ${retryAttempt + 1}\nRetrying now...`,
-					undefined,
-					false,
-				)
-
-				// Delegate generator output from the recursive call with
-				// incremented retry count.
-				yield* this.attemptApiRequest(retryAttempt + 1)
-
-				return
-			} else {
-				const { response } = await this.ask(
-					"api_req_failed",
-					error.message ?? JSON.stringify(serializeError(error), null, 2),
-				)
-
-				if (response !== "yesButtonClicked") {
-					// This will never happen since if noButtonClicked, we will
-					// clear current task, aborting this instance.
-					throw new Error("API request failed")
-				}
-
-				await this.say("api_req_retried")
-
-				// Delegate generator output from the recursive call.
-				yield* this.attemptApiRequest()
-				return
-			}
-		}
-
-		// No error, so we can continue to yield all remaining chunks.
-		// (Needs to be placed outside of try/catch since it we want caller to
-		// handle errors not with api_req_failed as that is reserved for first
-		// chunk failures only.)
-		// This delegates to another generator or iterable object. In this case,
-		// it's saying "yield all remaining values from this iterator". This
-		// effectively passes along all subsequent chunks from the original
-		// stream.
-		yield* iterator
-	}
-
-	// Checkpoints
-
-	public async checkpointSave(force: boolean = false) {
-		return checkpointSave(this, force)
-	}
-
-	public async checkpointRestore(options: CheckpointRestoreOptions) {
-		return checkpointRestore(this, options)
-	}
-
-	public async checkpointDiff(options: CheckpointDiffOptions) {
-		return checkpointDiff(this, options)
-	}
-
-	// Metrics
-
-	public combineMessages(messages: DarbotMessage[]) {
-		return combineApiRequests(combineCommandSequences(messages))
-	}
-
-	public getTokenUsage(): TokenUsage {
-		return getApiMetrics(this.combineMessages(this.darbotMessages.slice(1)))
-	}
-
-	public recordToolUsage(toolName: ToolName) {
-		if (!this.toolUsage[toolName]) {
-			this.toolUsage[toolName] = { attempts: 0, failures: 0 }
-		}
-
-		this.toolUsage[toolName].attempts++
-	}
-
-	public recordToolError(toolName: ToolName, error?: string) {
-		if (!this.toolUsage[toolName]) {
-			this.toolUsage[toolName] = { attempts: 0, failures: 0 }
-		}
-
-		this.toolUsage[toolName].failures++
-
-		if (error) {
-			this.emit("taskToolFailed", this.taskId, toolName, error)
-		}
-	}
-
-	// Getters
-
-	public get cwd() {
-		return this.workspacePath
-	}
-
-	// Parallel Execution Support - Phase 2 Enhancement
-
-	/**
-	 * Execute the task with parallel execution support
-	 * This is the main entry point for the ParallelTaskManager
-	 */
-	public async execute(): Promise<any> {
-		this.parallelExecutionStatus = 'running'
-		this.executionStartTime = new Date()
-		
-		try {
-			// If this is not a parallel execution, use the standard task flow
-			if (!this.isParallelExecution) {
-				return await this.executeStandardTask()
-			}
-
-			// For parallel execution, we need to handle it differently
-			return await this.executeParallelTask()
-
-		} catch (error) {
-			this.parallelExecutionStatus = 'failed'
-			this.executionEndTime = new Date()
-			throw error
-		}
-	}
-
-	/**
-	 * Execute standard task using existing task flow
-	 */
-	private async executeStandardTask(): Promise<any> {
-		// This would typically involve the normal task execution
-		// For now, we'll simulate task execution with a delay
-		await delay(1000) // Simulate work
-		
-		this.parallelExecutionStatus = 'completed'
-		this.executionEndTime = new Date()
-		
-		const result = {
-			success: true,
-			taskId: this.taskId,
-			message: 'Task completed successfully'
-		}
-		
-		this.parallelResult = result
 		return result
 	}
 

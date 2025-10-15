@@ -56,6 +56,7 @@ import SystemPromptWarning from "./SystemPromptWarning"
 import ProfileViolationWarning from "./ProfileViolationWarning"
 import { CheckpointWarning } from "./CheckpointWarning"
 import { getLatestTodo } from "@darbot/todo"
+import MemlmInsights from "./MemlmInsights"
 
 export interface ChatViewProps {
 	isHidden: boolean
@@ -115,6 +116,8 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		historyPreviewCollapsed, // Added historyPreviewCollapsed
 		soundEnabled,
 		soundVolume,
+		memlmContext,
+		agentSuggestion,
 	} = useExtensionState()
 
 	const messagesRef = useRef(messages)
@@ -1658,6 +1661,8 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						onClose={handleTaskCloseButtonClick}
 						todos={latestTodos}
 					/>
+
+					<MemlmInsights context={memlmContext} agentSuggestion={agentSuggestion} />
 
 					{hasSystemPromptOverride && (
 						<div className="px-3">

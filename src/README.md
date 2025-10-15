@@ -113,6 +113,29 @@ Make darbot-coder work your way with:
 
 ---
 
+## Environment Configuration
+
+darbot-coder relies on a root `.env` file to describe every AI provider and integration that the orchestration layer can access. The committed template groups credentials for Azure OpenAI (Sora, GPT-Image-1, chat deployments), Flux/Foundry routing, Microsoft Dataverse, and optional GitHub automation.
+
+**Set up your secrets**
+
+1. Copy the template to a private file (`cp .env .env.local` on macOS/Linux or `Copy-Item .env .env.local` in PowerShell).
+2. Replace placeholder values such as `your-resource-name` or `your-api-key` with credentials from your own subscriptions.
+3. Remove entries for services you are not using—the extension skips providers without keys.
+4. Keep the populated file out of version control; `.gitignore` already covers `.env*`.
+
+**Variable groups at a glance**
+
+- `SORA_*` / `SORA_AOAI_*`: Azure OpenAI Sora video generation.
+- `IMAGEGEN_*`: Azure OpenAI GPT-Image-1 image generation.
+- `FOUNDRY_*`, `FLUX_*`, `GROK_*`, `GPT_4_1_*`, `GPT_5_*`, `MODEL_ROUTER_*`, `O4_*`: Model router and Foundry-hosted multimodal deployments.
+- `DATAVERSE_*`: Microsoft Dataverse connectivity for asset storage.
+- `GITHUB_*`: Optional GitHub integration for workflow automation.
+- `MODEL_PROVIDER`, `AOAI_API_VERSION`, and related IDs: Global defaults that keep orchestration aligned with the active provider.
+- `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`: Optional analytics key/host for the marketing site (`apps/web-darbot-coder`). When unset, the site skips loading PostHog entirely and renders without warnings.
+
+---
+
 ## Local Setup & Development
 
 1. **Clone** the repo:
@@ -127,7 +150,11 @@ git clone https://github.com/DarbotFramework/darbot-coder.git
 pnpm install
 ```
 
-3. **Run the extension**:
+3. **Configure environment variables**:
+
+    Copy `.env` to `.env.local` (or another untracked filename) and fill in the credentials described in [Environment Configuration](#environment-configuration).
+
+4. **Run the extension**:
 
 There are several ways to run the DR-Coder extension:
 

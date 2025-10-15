@@ -4,7 +4,7 @@ import { Task } from "../task/Task"
 import { CustomModesManager } from "../config/CustomModesManager"
 import { logger } from "../../utils/logging"
 import crypto from "crypto"
-
+import { MemlmEngine, type MemlmTaskContext, type MemlmAgentRecommendation, type MemlmExecutionStepLog, type MemlmExecutionSummary } from "../memory/MemlmEngine"
 /**
  * Agent capability definitions for intelligent orchestration
  */
@@ -34,6 +34,7 @@ export interface TaskAnalysis {
 	requiredCapabilities: string[]
 	suggestedAgents: AgentSelection[]
 	executionPlan: ExecutionStep[]
+	memoryContext: MemlmTaskContext
 }
 
 /**
@@ -60,6 +61,14 @@ export interface ExecutionStep {
 	expectedOutputs: string[]
 }
 
+interface StepExecutionResult {
+	success: boolean
+	cost?: number
+	outputSummary?: string
+	signals?: string[]
+	error?: string
+}
+
 /**
  * Orchestration result with performance metrics
  */
@@ -72,6 +81,7 @@ export interface OrchestrationResult {
 	qualityScore: number
 	errors: string[]
 	recommendations: string[]
+	memoryContext: MemlmTaskContext
 }
 
 /**
@@ -84,7 +94,8 @@ export class OrchestrationEngine {
 
 	constructor(
 		private readonly customModesManager: CustomModesManager,
-		private readonly context: vscode.ExtensionContext
+		private readonly context: vscode.ExtensionContext,
+		private readonly memlm: MemlmEngine
 	) {
 		this.initializeAgentCapabilities()
 	}
@@ -201,8 +212,14 @@ export class OrchestrationEngine {
 		const parallelizable = this.assessParallelizability(userRequest)
 		const requiredCapabilities = this.identifyRequiredCapabilities(userRequest, primaryDomains)
 
+		const memoryMetadata = { ...(context ?? {}), keywords: primaryDomains }
+		const memoryContext = await this.memlm.getTaskContext(userRequest, memoryMetadata)
+
 		// Agent selection
-		const suggestedAgents = this.selectOptimalAgents(requiredCapabilities, complexity)
+		let suggestedAgents = this.selectOptimalAgents(requiredCapabilities, complexity)
+		if (memoryContext.recommendedAgents.length > 0) {
+			suggestedAgents = this.mergeAgentRecommendations(suggestedAgents, memoryContext.recommendedAgents, complexity)
+		}
 		
 		// Execution planning
 		const executionPlan = this.createExecutionPlan(suggestedAgents, parallelizable)
@@ -214,14 +231,16 @@ export class OrchestrationEngine {
 			parallelizable,
 			requiredCapabilities,
 			suggestedAgents,
-			executionPlan
+			executionPlan,
+			memoryContext
 		}
 
 		logger.info('Task analysis completed', {
 			complexity,
 			domains: primaryDomains,
 			agents: suggestedAgents.length,
-			steps: executionPlan.length
+			steps: executionPlan.length,
+			memorySignals: memoryContext.signals
 		})
 
 		return analysis
@@ -242,46 +261,59 @@ export class OrchestrationEngine {
 		logger.info('Starting orchestrated execution', {
 			taskId: executionId,
 			agents: analysis.suggestedAgents.length,
-			steps: analysis.executionPlan.length
+			steps: analysis.executionPlan.length,
+			memorySignals: analysis.memoryContext.signals
 		})
 
 		let totalCost = 0
-		let executedSteps: ExecutionStep[] = []
+		const executedSteps: ExecutionStep[] = []
 		const errors: string[] = []
 		const recommendations: string[] = []
+		let orchestrationResult: OrchestrationResult | null = null
 
 		try {
 			this.activeExecutions.set(executionId, analysis.executionPlan)
 
-			// Execute steps according to plan
 			for (const step of analysis.executionPlan) {
 				try {
 					const stepResult = await this.executeStep(step, userRequest, providerSettings)
 					executedSteps.push(step)
-					totalCost += stepResult.cost || 0
+					totalCost += stepResult.cost ?? 0
 
-					// Check for step dependencies and validation
+					const stepLog: MemlmExecutionStepLog = {
+						executionId,
+						stepId: step.stepId,
+						agentSlug: step.agentSlug,
+						action: step.action,
+						success: stepResult.success,
+						cost: stepResult.cost,
+						order: executedSteps.length - 1,
+						keywords: this.deriveStepKeywords(step, userRequest),
+						outputSummary: stepResult.outputSummary,
+						signals: stepResult.signals,
+					}
+
+					await this.safeRecordStep(stepLog)
+
 					if (stepResult.success) {
 						logger.info(`Step ${step.stepId} completed successfully`, { agentSlug: step.agentSlug })
 					} else {
-						errors.push(`Step ${step.stepId} failed: ${stepResult.error}`)
-						logger.error(`Step ${step.stepId} failed`, { error: stepResult.error })
+						const errorMessage = stepResult.error ?? `Step ${step.stepId} reported failure`
+						errors.push(errorMessage)
+						logger.error(`Step ${step.stepId} failed`, { error: errorMessage })
 					}
 
 				} catch (stepError) {
 					const errorMessage = stepError instanceof Error ? stepError.message : String(stepError)
 					errors.push(`Step ${step.stepId} encountered error: ${errorMessage}`)
-					logger.error(`Step execution failed`, { stepId: step.stepId, error: errorMessage })
+					logger.error('Step execution failed', { stepId: step.stepId, error: errorMessage })
 				}
 			}
 
-			// Calculate quality score
-			const qualityScore = this.calculateQualityScore(executedSteps, errors)
-
-			// Generate recommendations
+			const qualityScore = executedSteps.length === 0 ? 0 : this.calculateQualityScore(executedSteps, errors)
 			recommendations.push(...this.generateRecommendations(analysis, executedSteps, errors))
 
-			const result: OrchestrationResult = {
+			orchestrationResult = {
 				success: errors.length === 0,
 				taskId: executionId,
 				executedSteps,
@@ -289,25 +321,62 @@ export class OrchestrationEngine {
 				totalTime: Date.now() - startTime,
 				qualityScore,
 				errors,
-				recommendations
+				recommendations,
+				memoryContext: analysis.memoryContext
 			}
 
 			logger.info('Orchestration completed', {
 				taskId: executionId,
-				success: result.success,
+				success: orchestrationResult.success,
 				steps: executedSteps.length,
 				cost: totalCost,
-				time: result.totalTime,
-				quality: qualityScore
+				time: orchestrationResult.totalTime,
+				quality: orchestrationResult.qualityScore
 			})
 
-			return result
-
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			errors.push(errorMessage)
+			const qualityScore = executedSteps.length === 0 ? 0 : this.calculateQualityScore(executedSteps, errors)
+			recommendations.push(...this.generateRecommendations(analysis, executedSteps, errors))
+			orchestrationResult = {
+				success: false,
+				taskId: executionId,
+				executedSteps,
+				totalCost,
+				totalTime: Date.now() - startTime,
+				qualityScore,
+				errors,
+				recommendations,
+				memoryContext: analysis.memoryContext
+			}
+			logger.error('Orchestration failed', { taskId: executionId, error: errorMessage })
 		} finally {
+			try {
+				await this.finalizeMemlm(executionId, analysis, orchestrationResult, errors, recommendations, userRequest)
+			} catch (memError) {
+				const message = memError instanceof Error ? memError.message : String(memError)
+				logger.warn('Failed to persist MEMLM summary', { error: message })
+			}
 			this.activeExecutions.delete(executionId)
 		}
-	}
 
+		if (!orchestrationResult) {
+			orchestrationResult = {
+				success: false,
+				taskId: executionId,
+				executedSteps,
+				totalCost,
+				totalTime: Date.now() - startTime,
+				qualityScore: 0,
+				errors: errors.length ? errors : ['Unknown orchestration outcome'],
+				recommendations,
+				memoryContext: analysis.memoryContext
+			}
+		}
+
+		return orchestrationResult
+	}
 	/**
 	 * Get intelligent agent suggestion for a user request
 	 */
@@ -448,7 +517,7 @@ export class OrchestrationEngine {
 		step: ExecutionStep, 
 		userRequest: string, 
 		providerSettings: ProviderSettings
-	): Promise<{ success: boolean; cost?: number; error?: string }> {
+	): Promise<StepExecutionResult> {
 		// This would integrate with the existing Task execution system
 		// For now, return a mock result
 		logger.info(`Executing step ${step.stepId} with agent ${step.agentSlug}`)
@@ -459,6 +528,8 @@ export class OrchestrationEngine {
 		return {
 			success: true,
 			cost: Math.random() * 0.1, // Mock cost
+			outputSummary: `Simulated output for ${step.agentSlug}`,
+			signals: step.expectedOutputs
 		}
 	}
 
@@ -487,6 +558,87 @@ export class OrchestrationEngine {
 		}
 
 		return recommendations
+	}
+
+
+	private async safeRecordStep(log: MemlmExecutionStepLog): Promise<void> {
+		try {
+			await this.memlm.recordExecutionStep(log)
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error)
+			logger.warn('Failed to record MEMLM step', { error: message })
+		}
+	}
+
+	private async finalizeMemlm(
+		executionId: string,
+		analysis: TaskAnalysis,
+		result: OrchestrationResult | null,
+		errors: string[],
+		recommendations: string[],
+		userRequest: string,
+	): Promise<void> {
+		const summary: MemlmExecutionSummary = {
+			executionId,
+			success: result?.success ?? false,
+			userRequest,
+			analysisSummary: analysis.memoryContext.summary,
+			recommendations,
+			errors,
+		}
+		await this.memlm.finalizeExecution(summary)
+	}
+
+	private deriveStepKeywords(step: ExecutionStep, userRequest: string): string[] {
+		const base = `${step.action} ${step.agentSlug} ${userRequest}`
+		return base
+			.toLowerCase()
+			.replace(/[^a-z0-9_\-\s]/g, ' ')
+			.split(/[\s_\-]+/g)
+			.filter((token) => token.length > 2)
+			.slice(0, 20)
+	}
+
+	private mergeAgentRecommendations(
+		base: AgentSelection[],
+		memoryAgents: MemlmAgentRecommendation[],
+		complexity: string,
+	): AgentSelection[] {
+		const merged = [...base]
+		const indexBySlug = new Map(base.map((agent, index) => [agent.slug, index]))
+
+		for (const recommendation of memoryAgents) {
+			const capability = this.capabilities.get(recommendation.slug)
+			if (!capability) {
+				continue
+			}
+
+			const estimatedCost = this.estimateCost(capability, complexity)
+			const estimatedTime = this.estimateTime(capability, complexity)
+			const memConfidence = Math.max(0, Math.min(1, recommendation.confidence))
+
+			if (indexBySlug.has(recommendation.slug)) {
+				const existingIndex = indexBySlug.get(recommendation.slug)!
+				const existing = merged[existingIndex]
+				const confidence = Math.round(Math.min(0.99, (existing.confidence + memConfidence) / 2) * 100) / 100
+				merged[existingIndex] = {
+					...existing,
+					confidence,
+					reasoning: `${existing.reasoning}; MEMLM: ${recommendation.reason}`,
+				}
+			} else {
+				merged.push({
+					slug: recommendation.slug,
+					confidence: Math.round(Math.min(0.99, memConfidence) * 100) / 100,
+					reasoning: `MEMLM: ${recommendation.reason}`,
+					estimatedCost: estimatedCost,
+					estimatedTime: estimatedTime,
+				})
+				indexBySlug.set(recommendation.slug, merged.length - 1)
+			}
+		}
+
+		return merged
 	}
 
 	private inferFunctionsFromMode(mode: ModeConfig): string[] {
@@ -578,3 +730,6 @@ export class OrchestrationEngine {
 		return complexityScore * Math.max(1, domainCount)
 	}
 }
+
+
+

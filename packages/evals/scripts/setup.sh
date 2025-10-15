@@ -214,20 +214,28 @@ for i in "${!options[@]}"; do
 
   case "${plugin}" in
   "nodejs")
+    REQUIRED_NODE_MAJOR=20
+    REQUIRED_NODE_LABEL="20.x LTS"
+
     if ! command -v node &>/dev/null; then
-      asdf install nodejs 20.19.2 || exit 1
-      asdf set nodejs 20.19.2 || exit 1
-      NODE_VERSION=$(node --version)
-      echo "✅ Node.js is installed ($NODE_VERSION)"
-    else
-      NODE_VERSION=$(node --version)
-      echo "✅ Node.js is installed ($NODE_VERSION)"
+      if command -v asdf &>/dev/null; then
+        asdf install nodejs "latest:${REQUIRED_NODE_MAJOR}" || exit 1
+        asdf set nodejs "latest:${REQUIRED_NODE_MAJOR}" || exit 1
+      fi
     fi
 
-    if [[ $(node --version) != "v20.19.2" ]]; then
+    if command -v node &>/dev/null; then
       NODE_VERSION=$(node --version)
-      echo "🚨 You have the wrong version of node installed ($NODE_VERSION)."
-      echo "💡 If you are using nvm then run 'nvm install' to install the version specified by the repo's .nvmrc."
+      echo "✅ Node.js is installed ($NODE_VERSION)"
+
+      NODE_MAJOR=$(echo "$NODE_VERSION" | sed -E 's/^v([0-9]+).*/\1/')
+      if [[ "$NODE_MAJOR" -ne ${REQUIRED_NODE_MAJOR} ]]; then
+        echo "🚨 Node.js ${REQUIRED_NODE_LABEL} is required (found $NODE_VERSION)."
+        echo "💡 If you are using nvm then run 'nvm install' to install the version specified by the repo's .nvmrc."
+        exit 1
+      fi
+    else
+      echo "🚨 Node.js ${REQUIRED_NODE_LABEL} is required but could not be installed automatically."
       exit 1
     fi
     ;;

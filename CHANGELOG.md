@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Added Vitest coverage and supporting tooling for the marketing site stats helpers.
+
+### Fixed
+
+- Hardened GitHub and VS Code Marketplace stat fetching with schema validation, caching, and graceful UI fallbacks.
+- Disabled PostHog analytics unless credentials are configured and documented the environment variables.
+
 ## [3.23.16] - 2025-01-30
 
 ### Changed

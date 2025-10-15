@@ -7,12 +7,63 @@ import Shell from "./shell"
 
 import "./globals.css"
 
+const siteUrl = "https://darbot.ai"
+
 export const metadata: Metadata = {
-	title: "Darbot Coder – Your AI-Powered Dev Team in VS Code",
+	metadataBase: new URL(siteUrl),
+	title: {
+		default: "Darbot Coder – Your AI-Powered Dev Team in VS Code",
+		template: "%s | Darbot Coder",
+	},
 	description:
 		"Darbot Coder puts an entire AI dev team right in your editor, outpacing closed tools with deep project-wide context, multi-step agentic coding, and unmatched developer-centric flexibility.",
+	keywords: [
+		"AI coding assistant",
+		"VS Code extension",
+		"multi-agent orchestration",
+		"autonomous coding",
+		"Darbot",
+	],
+	authors: [{ name: "Darbot Labs" }],
+	creator: "Darbot Labs",
+	openGraph: {
+		type: "website",
+		locale: "en_US",
+		url: siteUrl,
+		title: "Darbot Coder – AI-Powered Dev Team",
+		description:
+			"Run an orchestrated troupe of AI coding agents directly inside VS Code. Plan, build, test, and ship faster with deep project context and human-in-the-loop safeguards.",
+		siteName: "Darbot Coder",
+		images: [
+			{
+				url: "/og-image.png",
+				width: 1200,
+				height: 630,
+				alt: "Darbot Coder hero graphic",
+			},
+		],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Darbot Coder – AI-Powered Dev Team",
+		description:
+			"Turn VS Code into an AI-driven development workstation with orchestrated, specialized agents.",
+		creator: "@darbot_code",
+		images: ["/og-image.png"],
+	},
+	robots: {
+		index: true,
+		follow: true,
+		googleBot: {
+			index: true,
+			follow: true,
+			"max-video-preview": -1,
+			"max-image-preview": "large",
+			"max-snippet": -1,
+		},
+	},
 	alternates: {
-		canonical: "https://github.com/DarbotLabs/darbot-coder",
+		canonical: siteUrl,
 	},
 	icons: {
 		icon: [
@@ -38,6 +89,28 @@ export const metadata: Metadata = {
 	},
 }
 
+const softwareJsonLd = {
+	"@context": "https://schema.org",
+	"@type": "SoftwareApplication",
+	name: "Darbot Coder",
+	applicationCategory: "DeveloperApplication",
+	opratingSystem: "Windows, macOS, Linux",
+	description:
+		"Open-source AI coding assistant that orchestrates multiple agents inside VS Code to plan, implement, test, and document software projects.",
+	softwareVersion: "1.0.0",
+	url: siteUrl,
+	image: `${siteUrl}/og-image.png`,
+	author: {
+		"@type": "Organization",
+		name: "Darbot Labs",
+	},
+	offers: {
+		"@type": "Offer",
+		price: "0",
+		priceCurrency: "USD",
+	},
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
@@ -47,10 +120,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 					type="text/css"
 					href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css"
 				/>
+				<script
+					type="application/ld+json"
+					dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareJsonLd) }}
+				/>
 			</head>
 			<body className="font-sans">
 				<div itemScope itemType="https://schema.org/WebSite">
-					<link itemProp="url" href="https://github.com/DarbotLabs/darbot-coder" />
+					<link itemProp="url" href={siteUrl} />
 					<meta itemProp="name" content="darbot-coder" />
 				</div>
 				<Providers>

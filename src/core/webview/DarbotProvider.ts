@@ -60,6 +60,8 @@ import { setTtsEnabled, setTtsSpeed } from "../../utils/tts"
 import { ContextProxy } from "../config/ContextProxy"
 import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
 import { CustomModesManager } from "../config/CustomModesManager"
+import { type AgentSelection } from "../orchestration/OrchestrationEngine"
+import { type MemlmTaskContext } from "../memory/MemlmEngine"
 import { buildApiHandler } from "../../api"
 import { Task, TaskOptions } from "../task/Task"
 import { getNonce } from "./getNonce"
@@ -79,6 +81,24 @@ import { getWorkspaceGitInfo } from "../../utils/git"
 
 export type DarbotProviderEvents = {
 	darbotCreated: [darbot: Task]
+}
+
+interface SerializedMemlmContext {
+	summary: string
+	keywords: string[]
+	signals: string[]
+	relatedMemories: Array<{
+		id: string
+		summary: string
+		relevance: number
+		agentSlug?: string
+	}>
+	recommendedAgents: Array<{
+		slug: string
+		confidence: number
+		reason: string
+		signals: string[]
+	}>
 }
 
 class OrganizationAllowListViolationError extends Error {
@@ -109,6 +129,8 @@ export class DarbotProvider
 	protected mcpHub?: McpHub // Change from private to protected
 	private marketplaceManager: MarketplaceManager
 	private mdmService?: MdmService
+	private latestMemlmContext: SerializedMemlmContext | null = null
+	private latestAgentSuggestion: AgentSelection | null = null
 
 	public isViewLaunched = false
 	public settingsImportedAt?: number
@@ -536,6 +558,7 @@ export class DarbotProvider
 			>
 		> = {},
 	) {
+		const state = await this.getState()
 		const {
 			apiConfiguration,
 			organizationAllowList,
@@ -543,7 +566,9 @@ export class DarbotProvider
 			enableCheckpoints,
 			fuzzyMatchThreshold,
 			experiments,
-		} = await this.getState()
+			mode: currentModeSlug,
+		} = state
+		const normalizedMode = currentModeSlug ?? defaultModeSlug
 
 		if (!ProfileValidator.isProfileAllowed(apiConfiguration, organizationAllowList)) {
 			throw new OrganizationAllowListViolationError(t("common:errors.violated_organization_allowlist"))
@@ -572,19 +597,25 @@ export class DarbotProvider
 			`[subtasks] ${darbot.parentTask ? "child" : "parent"} task ${darbot.taskId}.${darbot.instanceId} instantiated`,
 		)
 
+		await this.refreshMemlmInsights(task, { mode: normalizedMode })
+		await this.postStateToWebview()
+
 		return darbot
 	}
 
 	public async initDarbotWithHistoryItem(historyItem: HistoryItem & { rootTask?: Task; parentTask?: Task }) {
 		await this.removeDarbotFromStack()
 
+		const state = await this.getState()
 		const {
 			apiConfiguration,
 			diffEnabled: enableDiff,
 			enableCheckpoints,
 			fuzzyMatchThreshold,
 			experiments,
-		} = await this.getState()
+			mode: currentModeSlug,
+		} = state
+		const normalizedMode = currentModeSlug ?? defaultModeSlug
 
 		const darbot = new Task({
 			provider: this,
@@ -605,6 +636,8 @@ export class DarbotProvider
 		this.log(
 			`[subtasks] ${darbot.parentTask ? "child" : "parent"} task ${darbot.taskId}.${darbot.instanceId} instantiated`,
 		)
+		await this.refreshMemlmInsights(historyItem.task, { mode: normalizedMode })
+		await this.postStateToWebview()
 		return darbot
 	}
 
@@ -1245,6 +1278,51 @@ export class DarbotProvider
 		await this.postStateToWebview()
 	}
 
+	private serializeMemlmContext(context: MemlmTaskContext): SerializedMemlmContext {
+		return {
+			summary: context.summary,
+			keywords: context.keywords?.slice(0, 12) ?? [],
+			signals: context.signals?.slice(0, 12) ?? [],
+			relatedMemories: context.relatedMemories?.slice(0, 5).map((memory) => ({
+				id: memory.id,
+				summary: memory.summary,
+				relevance: memory.relevance,
+				agentSlug: memory.agentSlug,
+			})) ?? [],
+			recommendedAgents: context.recommendedAgents?.slice(0, 5).map((agent) => ({
+				slug: agent.slug,
+				confidence: agent.confidence,
+				reason: agent.reason,
+				signals: agent.signals ?? [],
+			})) ?? [],
+		}
+	}
+
+	private async refreshMemlmInsights(
+		userRequest?: string,
+		metadata?: Record<string, any>,
+	): Promise<void> {
+		if (!userRequest || userRequest.trim().length === 0) {
+			this.latestMemlmContext = null
+			this.latestAgentSuggestion = null
+			return
+		}
+
+		try {
+			const [context, suggestion] = await Promise.all([
+				this.customModesManager.getTaskContext(userRequest, metadata),
+				this.customModesManager.getAgentSuggestion(userRequest),
+			])
+
+			this.latestMemlmContext = context ? this.serializeMemlmContext(context) : null
+			this.latestAgentSuggestion = suggestion
+		} catch (error) {
+			this.latestMemlmContext = null
+			this.latestAgentSuggestion = null
+			this.log(`[MemLM] Failed to refresh insights: ${error instanceof Error ? error.message : String(error)}`)
+		}
+	}
+
 	async postStateToWebview() {
 		const state = await this.getStateToPostToWebview()
 		this.postMessageToWebview({ type: "state", state })
@@ -1478,6 +1556,8 @@ export class DarbotProvider
 			taskHistory: (taskHistory || [])
 				.filter((item: HistoryItem) => item.ts && item.task)
 				.sort((a: HistoryItem, b: HistoryItem) => b.ts - a.ts),
+			memlmContext: this.latestMemlmContext ?? undefined,
+			agentSuggestion: this.latestAgentSuggestion ?? undefined,
 			soundEnabled: soundEnabled ?? false,
 			ttsEnabled: ttsEnabled ?? false,
 			ttsSpeed: ttsSpeed ?? 1.0,

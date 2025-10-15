@@ -12,7 +12,7 @@ import type {
 	ShareVisibility,
 } from "@darbot-code/types"
 
-import { GitCommit } from "../utils/git"
+import { GitCommit } from "./git"
 
 import { McpServer } from "./mcp"
 import { Mode } from "./modes"
@@ -163,6 +163,36 @@ export interface ExtensionMessage {
 	context?: string
 }
 
+export interface SerializedMemlmRelatedMemory {
+	id: string
+	summary: string
+	relevance: number
+	agentSlug?: string
+}
+
+export interface SerializedMemlmRecommendation {
+	slug: string
+	confidence: number
+	reason: string
+	signals: string[]
+}
+
+export interface SerializedMemlmContext {
+	summary: string
+	keywords: string[]
+	signals: string[]
+	relatedMemories: SerializedMemlmRelatedMemory[]
+	recommendedAgents: SerializedMemlmRecommendation[]
+}
+
+export interface SerializedAgentSuggestion {
+	slug: string
+	confidence: number
+	reasoning: string
+	estimatedCost: number
+	estimatedTime: number
+}
+
 export type ExtensionState = Pick<
 	GlobalSettings,
 	| "currentApiConfigName"
@@ -243,6 +273,8 @@ export type ExtensionState = Pick<
 	shouldShowAnnouncement: boolean
 
 	taskHistory: HistoryItem[]
+	memlmContext?: SerializedMemlmContext
+	agentSuggestion?: SerializedAgentSuggestion
 
 	writeDelayMs: number
 	requestDelaySeconds: number

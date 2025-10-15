@@ -2,7 +2,7 @@
 
 import { VscVscode } from "react-icons/vsc"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, type Variants } from "framer-motion"
 
 interface InstallSectionProps {
 	downloads: string | null
@@ -20,7 +20,7 @@ export function InstallSection({ downloads }: InstallSectionProps) {
 				ease: "easeOut",
 			},
 		},
-	}
+	} satisfies Variants
 
 	return (
 		<section className="relative overflow-hidden border-t border-border py-16 sm:py-24 lg:py-32">

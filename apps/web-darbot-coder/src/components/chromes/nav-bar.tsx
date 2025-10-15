@@ -12,12 +12,13 @@ import { IoClose } from "react-icons/io5"
 
 import { EXTERNAL_LINKS } from "@/lib/constants"
 import { useLogoSrc } from "@/lib/hooks/use-logo-src"
+import type { StatDisplayValue } from "@/lib/stats"
 import { ScrollButton } from "@/components/ui"
 import ThemeToggle from "@/components/chromes/theme-toggle"
 
 interface NavBarProps {
-	stars: string | null
-	downloads: string | null
+	stars: StatDisplayValue
+	downloads: StatDisplayValue
 }
 
 export function NavBar({ stars, downloads }: NavBarProps) {
@@ -35,16 +36,10 @@ export function NavBar({ stars, downloads }: NavBarProps) {
 
 				{/* Desktop Navigation */}
 				<nav className="hidden text-sm font-medium md:flex md:items-center md:space-x-3 xl:space-x-8">
-					{/* note: features and testimonials links are hidden for screen sizes smaller than lg */}
 					<ScrollButton
 						targetId="features"
-						className="text-muted-foreground transition-transform duration-200 hover:scale-105 hover:text-foreground max-lg:hidden">
+						className="text-muted-foreground transition-transform duration-200 hover:scale-105 hover:text-foreground">
 						Features
-					</ScrollButton>
-					<ScrollButton
-						targetId="testimonials"
-						className="text-muted-foreground transition-transform duration-200 hover:scale-105 hover:text-foreground max-lg:hidden">
-						Testimonials
 					</ScrollButton>
 					<ScrollButton
 						targetId="faq"
@@ -52,34 +47,20 @@ export function NavBar({ stars, downloads }: NavBarProps) {
 						FAQ
 					</ScrollButton>
 					<Link
-						href="/evals"
-						className="text-muted-foreground transition-transform duration-200 hover:scale-105 hover:text-foreground">
-						Evals
-					</Link>
-					<Link
 						href="/enterprise"
 						className="text-muted-foreground transition-transform duration-200 hover:scale-105 hover:text-foreground">
 						Enterprise
 					</Link>
-					<a
-						href={EXTERNAL_LINKS.SECURITY}
-						target="_blank"
-						rel="noopener noreferrer"
+					<Link
+						href="/security"
 						className="text-muted-foreground transition-transform duration-200 hover:scale-105 hover:text-foreground">
 						Security
-					</a>
-					<a
-						href={EXTERNAL_LINKS.DOCUMENTATION}
-						target="_blank"
+					</Link>
+					<Link
+						href="/documentation"
 						className="text-muted-foreground transition-transform duration-200 hover:scale-105 hover:text-foreground">
 						Documentation
-					</a>
-					<a
-						href={EXTERNAL_LINKS.CAREERS}
-						target="_blank"
-						className="text-muted-foreground transition-transform duration-200 hover:scale-105 hover:text-foreground">
-						Careers
-					</a>
+					</Link>
 				</nav>
 
 				<div className="hidden md:flex md:items-center md:space-x-4">
@@ -88,26 +69,30 @@ export function NavBar({ stars, downloads }: NavBarProps) {
 						<Link
 							href={EXTERNAL_LINKS.GITHUB}
 							target="_blank"
-							className="hidden items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground md:flex">
+							className="hidden items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground md:flex"
+							title={buildTitle(stars, "View GitHub repository")}
+							data-source={stars.source}>
 							<RxGithubLogo className="h-4 w-4" />
-							{stars !== null && <span>{stars}</span>}
+							<StatLabel stat={stars} srFallback="Live GitHub star data is temporarily unavailable." />
 						</Link>
 					</div>
 					<Link
 						href={EXTERNAL_LINKS.MARKETPLACE}
 						target="_blank"
-						className="hidden items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:flex">
+						className="hidden items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:flex"
+						title={buildTitle(downloads, "View extension listing")}
+						data-source={downloads.source}>
 						<VscVscode className="-mr-[2px] mt-[1px] h-4 w-4" />
 						<span>
 							Install <span className="font-black max-lg:text-xs">&middot;</span>
 						</span>
-						{downloads !== null && <span>{downloads}</span>}
+						<StatLabel stat={downloads} srFallback="Live install statistics are temporarily unavailable." />
 					</Link>
 				</div>
 
 				{/* Mobile Menu Button */}
 				<button
-					aria-expanded={isMenuOpen}
+					aria-expanded={isMenuOpen ? "true" : "false"}
 					onClick={() => setIsMenuOpen(!isMenuOpen)}
 					className="flex items-center justify-center rounded-full p-2 transition-colors hover:bg-accent md:hidden"
 					aria-label="Toggle mobile menu">
@@ -126,51 +111,29 @@ export function NavBar({ stars, downloads }: NavBarProps) {
 						Features
 					</ScrollButton>
 					<ScrollButton
-						targetId="testimonials"
-						className="w-full px-8 py-3 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-						onClick={() => setIsMenuOpen(false)}>
-						Testimonials
-					</ScrollButton>
-					<ScrollButton
 						targetId="faq"
 						className="w-full px-8 py-3 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
 						onClick={() => setIsMenuOpen(false)}>
 						FAQ
 					</ScrollButton>
 					<Link
-						href="/evals"
-						className="w-full px-8 py-3 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-						onClick={() => setIsMenuOpen(false)}>
-						Evals
-					</Link>
-					<Link
 						href="/enterprise"
 						className="w-full px-8 py-3 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
 						onClick={() => setIsMenuOpen(false)}>
 						Enterprise
 					</Link>
-					<a
-						href={EXTERNAL_LINKS.SECURITY}
-						target="_blank"
-						rel="noopener noreferrer"
+					<Link
+						href="/security"
 						className="w-full px-8 py-3 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
 						onClick={() => setIsMenuOpen(false)}>
 						Security
-					</a>
-					<a
-						href={EXTERNAL_LINKS.DOCUMENTATION}
-						target="_blank"
+					</Link>
+					<Link
+						href="/documentation"
 						className="w-full px-8 py-3 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
 						onClick={() => setIsMenuOpen(false)}>
 						Documentation
-					</a>
-					<a
-						href={EXTERNAL_LINKS.CAREERS}
-						target="_blank"
-						className="w-full px-8 py-3 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-						onClick={() => setIsMenuOpen(false)}>
-						Careers
-					</a>
+					</Link>
 
 					<hr className="mx-8 my-2 border-t border-border/50" />
 
@@ -180,9 +143,11 @@ export function NavBar({ stars, downloads }: NavBarProps) {
 							href={EXTERNAL_LINKS.GITHUB}
 							target="_blank"
 							className="inline-flex items-center gap-2 rounded-md p-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-							onClick={() => setIsMenuOpen(false)}>
+							onClick={() => setIsMenuOpen(false)}
+							title={buildTitle(stars, "View GitHub repository")}
+							data-source={stars.source}>
 							<RxGithubLogo className="h-5 w-5" />
-							{stars !== null && <span>{stars}</span>}
+							<StatLabel stat={stars} srFallback="Live GitHub star data is temporarily unavailable." />
 						</Link>
 						<div className="flex items-center rounded-md p-2 transition-colors hover:bg-accent">
 							<ThemeToggle />
@@ -191,13 +156,37 @@ export function NavBar({ stars, downloads }: NavBarProps) {
 							href={EXTERNAL_LINKS.MARKETPLACE}
 							target="_blank"
 							className="inline-flex items-center gap-2 rounded-md p-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-							onClick={() => setIsMenuOpen(false)}>
+							onClick={() => setIsMenuOpen(false)}
+							title={buildTitle(downloads, "View extension listing")}
+							data-source={downloads.source}>
 							<VscVscode className="h-5 w-5" />
-							{downloads !== null && <span>{downloads}</span>}
+							<StatLabel stat={downloads} srFallback="Live install statistics are temporarily unavailable." />
 						</Link>
 					</div>
 				</nav>
 			</div>
 		</header>
+	)
+}
+
+function buildTitle(stat: StatDisplayValue, fallback: string): string {
+	if (stat.message) {
+		return stat.message
+	}
+	if (stat.source === "cached") {
+		return `${fallback}. Showing cached data while we refresh stats.`
+	}
+	if (stat.source === "fallback") {
+		return `${fallback}. Live data is unavailable.`
+	}
+	return fallback
+}
+
+function StatLabel({ stat, srFallback }: { stat: StatDisplayValue; srFallback: string }) {
+	return (
+		<span aria-live="polite">
+			{stat.label}
+			{stat.source !== "live" && <span className="sr-only">{stat.message ?? srFallback}</span>}
+		</span>
 	)
 }

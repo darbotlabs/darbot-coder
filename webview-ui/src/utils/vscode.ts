@@ -1,6 +1,7 @@
 import type { WebviewApi } from "vscode-webview"
 
 import { WebviewMessage } from "@darbot/WebviewMessage"
+import { createMockVSCode, isStandaloneDevelopment } from "./mockVscode"
 
 /**
  * A utility wrapper around the acquireVsCodeApi() function, which enables
@@ -13,12 +14,17 @@ import { WebviewMessage } from "@darbot/WebviewMessage"
  */
 class VSCodeAPIWrapper {
 	private readonly vsCodeApi: WebviewApi<unknown> | undefined
+	private readonly mockApi: any
 
 	constructor() {
 		// Check if the acquireVsCodeApi function exists in the current development
 		// context (i.e. VS Code development window or web browser)
 		if (typeof acquireVsCodeApi === "function") {
 			this.vsCodeApi = acquireVsCodeApi()
+		} else if (isStandaloneDevelopment()) {
+			// Use mock API for standalone development
+			this.mockApi = createMockVSCode()
+			console.log("[VSCode API] Running in standalone development mode with mock API")
 		}
 	}
 
@@ -33,6 +39,8 @@ class VSCodeAPIWrapper {
 	public postMessage(message: WebviewMessage) {
 		if (this.vsCodeApi) {
 			this.vsCodeApi.postMessage(message)
+		} else if (this.mockApi) {
+			this.mockApi.postMessage(message)
 		} else {
 			console.log(message)
 		}
@@ -49,6 +57,8 @@ class VSCodeAPIWrapper {
 	public getState(): unknown | undefined {
 		if (this.vsCodeApi) {
 			return this.vsCodeApi.getState()
+		} else if (this.mockApi) {
+			return this.mockApi.getState()
 		} else {
 			const state = localStorage.getItem("vscodeState")
 			return state ? JSON.parse(state) : undefined
@@ -69,6 +79,8 @@ class VSCodeAPIWrapper {
 	public setState<T extends unknown | undefined>(newState: T): T {
 		if (this.vsCodeApi) {
 			return this.vsCodeApi.setState(newState)
+		} else if (this.mockApi) {
+			return this.mockApi.setState(newState)
 		} else {
 			localStorage.setItem("vscodeState", JSON.stringify(newState))
 			return newState

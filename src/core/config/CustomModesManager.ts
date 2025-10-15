@@ -15,6 +15,7 @@ import { GlobalFileNames } from "../../shared/globalFileNames"
 import { ensureSettingsDirectoryExists } from "../../utils/globalContext"
 import { t } from "../../i18n"
 import { OrchestrationEngine, type AgentSelection } from "../orchestration/OrchestrationEngine"
+import { MemlmEngine, type MemlmTaskContext } from "../memory/MemlmEngine"
 
 const DARBOTMODES_FILENAME = ".darbotmodes"
 
@@ -52,28 +53,54 @@ export class CustomModesManager {
 	private cachedModes: ModeConfig[] | null = null
 	private cachedAt: number = 0
 	private orchestrationEngine?: OrchestrationEngine
+	private readonly memlm: MemlmEngine
+	private orchestrationInitPromise?: Promise<void>
 
 	constructor(
 		private readonly context: vscode.ExtensionContext,
 		private readonly onUpdate: () => Promise<void>,
 	) {
+		this.memlm = new MemlmEngine({
+			globalState: context.globalState,
+			workspaceState: context.workspaceState,
+		})
 		this.watchCustomModesFiles().catch((error) => {
 			console.error("[CustomModesManager] Failed to setup file watchers:", error)
 		})
-		
-		// Initialize orchestration engine
-		this.initializeOrchestration()
+
+		// Initialize orchestration engine in the background
+		this.ensureOrchestrationReady().catch((error) => {
+			logger.error("Failed to prepare orchestration engine", { error })
+		})
 	}
 
 	/**
 	 * Initialize the orchestration engine for intelligent agent selection
 	 */
+	private async ensureOrchestrationReady(): Promise<void> {
+		if (this.orchestrationEngine) {
+			return
+		}
+
+		if (!this.orchestrationInitPromise) {
+			this.orchestrationInitPromise = this.initializeOrchestration()
+		}
+
+		await this.orchestrationInitPromise
+	}
+
 	private async initializeOrchestration(): Promise<void> {
+		if (this.orchestrationEngine) {
+			return
+		}
+
 		try {
-			this.orchestrationEngine = new OrchestrationEngine(this, this.context)
-			logger.info('Orchestration engine initialized for intelligent mode selection')
+			await this.memlm.initialize()
+			this.orchestrationEngine = new OrchestrationEngine(this, this.context, this.memlm)
+			logger.info("Orchestration engine initialized for intelligent mode selection")
 		} catch (error) {
-			logger.error('Failed to initialize orchestration engine', { error })
+			logger.error("Failed to initialize orchestration engine", { error })
+			throw error
 		}
 	}
 
@@ -81,14 +108,29 @@ export class CustomModesManager {
 	 * Get intelligent agent suggestion for a user request
 	 */
 	public async getAgentSuggestion(userRequest: string): Promise<AgentSelection | null> {
-		if (!this.orchestrationEngine) {
+		try {
+			await this.ensureOrchestrationReady()
+			return this.orchestrationEngine
+				? await this.orchestrationEngine.getAgentSuggestion(userRequest)
+				: null
+		} catch (error) {
+			logger.error("Failed to get agent suggestion", { error })
 			return null
 		}
-		
+	}
+
+	/**
+	 * Resolve task context from the MEMLM engine
+	 */
+	public async getTaskContext(
+		userRequest: string,
+		metadata?: Record<string, any>,
+	): Promise<MemlmTaskContext | null> {
 		try {
-			return await this.orchestrationEngine.getAgentSuggestion(userRequest)
+			await this.memlm.initialize()
+			return await this.memlm.getTaskContext(userRequest, metadata)
 		} catch (error) {
-			logger.error('Failed to get agent suggestion', { error })
+			logger.error("Failed to build MEMLM task context", { error })
 			return null
 		}
 	}
@@ -98,6 +140,10 @@ export class CustomModesManager {
 	 */
 	public getOrchestrationCapabilities() {
 		return this.orchestrationEngine?.getAvailableCapabilities() || []
+	}
+
+	public getMemlmEngine(): MemlmEngine {
+		return this.memlm
 	}
 
 	private async queueWrite(operation: () => Promise<void>): Promise<void> {

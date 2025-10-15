@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react"
 import { useEvent } from "react-use"
-import { LanguageModelChatSelector } from "vscode"
 
 import type { ProviderSettings } from "@darbot-code/types"
 
+import type { LanguageModelChatSelector } from "@darbot/ExtensionMessage"
 import { ExtensionMessage } from "@darbot/ExtensionMessage"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"

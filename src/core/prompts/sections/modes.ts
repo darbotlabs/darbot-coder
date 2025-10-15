@@ -4,7 +4,7 @@ import { promises as fs } from "fs"
 
 import type { ModeConfig } from "@darbot-code/types"
 
-import { getAllModesWithPrompts } from "../../../shared/modes"
+import { getAllModesWithPrompts } from "../../../shared/modes-extension"
 
 export async function getModesSection(context: vscode.ExtensionContext): Promise<string> {
 	const settingsDir = path.join(context.globalStorageUri.fsPath, "settings")

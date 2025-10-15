@@ -11,10 +11,12 @@
 	},
 	"engines": {
 		"vscode": "^1.84.0",
-		"node": "20.19.2"
-	},	"author": {
+		"node": ">=20.10.0 <21"
+	},
+	"author": {
 		"name": "DarbotFramework"
-	},"repository": {
+	},
+	"repository": {
 		"type": "git",
 		"url": "https://github.com/DarbotFramework/darbot-coder"
 	},
@@ -486,7 +488,7 @@
 		"@types/diff-match-patch": "^1.0.36",
 		"@types/glob": "^8.1.0",
 		"@types/mocha": "^10.0.10",
-		"@types/node": "20.x",
+		"@types/node": "^22.10.5",
 		"@types/node-cache": "^4.1.3",
 		"@types/node-ipc": "^9.2.3",
 		"@types/proper-lockfile": "^4.1.4",
